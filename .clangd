@@ -1,0 +1,31 @@
+CompileFlags:
+  Add: [# compile header path
+        -ID:/msys2/clang64/include/c++/v1,
+        -ID:/msys2/clang64/lib/clang/18/include,
+        -ID:/msys2/clang64/include,
+        # project header path
+        -I,"D:/mashuo/project/nav_cxx/src/rtklib/include",
+        -I,"D:/mashuo/project/nav_cxx/src/core/include",
+        # standard
+        -std=c++23,
+        # flags
+        -DWIN32
+       ]
+
+
+Diagnostics:
+  Suppress: 'builtin_definition'
+
+
+#  gcc in msys2 include path2
+# -ID:/msys2/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include,
+# -ID:/msys2/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include_fixed,
+# -ID:/msys2/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include/c++,
+# -ID:/msys2/mingw64/include/c++/13.2.0,
+# -ID:/msys2/mingw64/include/c++/13.2.0/backward,
+# -ID:/msys2/mingw64/include/c++/13.2.0/x86_64-w64-mingw32,
+
+# clang in msys2 include path
+# -ID:/msys2/clang64/include/c++/v1,
+# -ID:/msys2/clang64/lib/clang/18/include,
+# -ID:/msys2/clang64/include,
