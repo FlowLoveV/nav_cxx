@@ -2,6 +2,9 @@
 .xmake/
 build/
 
+# clangd
+.clangd
+
 # obj,lib,binary files
 libs/
 bin/
@@ -10,6 +13,7 @@ bin/
 .vscode/
 .idea/
 .cache/
+
 
 # MacOS Cache
 .DS_Store

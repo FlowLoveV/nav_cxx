@@ -1,0 +1,50 @@
+name: Compile and test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install xmake
+        run: |
+          choco install xmake
+      - name: Build with Clang
+        run: xmake f -p windows --toolchain=clang && xmake
+      - name: Build with GCC
+        run: xmake f -p windows --toolchain=gcc && xmake
+
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install xmake
+        run: |
+          sudo apt update
+          sudo apt install -y xmake
+      - name: Build with Clang
+        run: xmake f -p linux --toolchain=clang && xmake
+      - name: Build with GCC
+        run: xmake f -p linux --toolchain=gcc && xmake
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install xmake
+        run: |
+          brew install xmake
+      - name: Build with Clang
+        run: xmake f -p macosx --toolchain=clang && xmake
+      - name: Build with GCC
+        run: xmake f -p macosx --toolchain=gcc && xmake

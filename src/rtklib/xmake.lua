@@ -11,8 +11,8 @@ target("rtklib")
     if is_os("windows") then
         add_links("wsock32", "ws2_32", "winmm", {public = true })
         add_defines("WIN_DLL", "WIN32", {public = true })
-    elseif is_os("linux") then 
-        add_link("pthread", "m", {public = true })
+    else
+        add_links("pthread", "m", {public = true })
     end
     set_optimize("fastest")
 target_end()

@@ -1,6 +1,3 @@
-#include <cstdint>
-#include <ratio>
-
 #include "macro.hpp"
 
 // export module time, only valid when ENMODULES is defined
@@ -10,12 +7,18 @@ NAV_IMPORT STD_MODULE;
 #ifndef ENMODULES
 #pragma once
 #include <chrono>
-#include <expected>
+
 #endif
 
 namespace nav {
 
 using namespace std::chrono_literals;
+
+NAV_EXPORT enum class TimeScaleBenchmark : uint8_t {
+  EarthRotation,  // 基于地球自转
+  Atomic,         // 基于原子内部的电子震荡
+  Relativity,     // 基于相对论框架
+};
 
 NAV_EXPORT enum class TimeScale : uint8_t {
   /// TAI is the representation of an Epoch internally
@@ -80,30 +83,5 @@ NAV_EXPORT class Bdst;
 NAV_EXPORT class Utc;
 NAV_EXPORT class Mjd;
 NAV_EXPORT class Doy;
-
-NAV_EXPORT class Gpst {
- public:
-  static constexpr auto scale = TimeScale::GPST;
-};
-
-NAV_EXPORT class Bdst {
- public:
-  static constexpr auto scale = TimeScale::BDT;
-};
-
-NAV_EXPORT class Utc {
- public:
-  static constexpr auto scale = TimeScale::UTC;
-};
-
-NAV_EXPORT class Mjd {
- public:
-  static constexpr auto scale = TimeScale::TT;
-};
-
-NAV_EXPORT class Doy {
- public:
-  static constexpr auto scale = TimeScale::TT;
-};
 
 }  // namespace nav
