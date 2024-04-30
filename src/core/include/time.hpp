@@ -41,7 +41,7 @@ NAV_EXPORT enum class TimeScale : uint8_t {
 
 struct period {
   std::chrono::duration<uint64_t, std::ratio<1>> second{0s};
-  std::chrono::duration<double_t, std::nano> nanos{0s};
+  std::chrono::duration<double, std::nano> nanos{0s};
 };
 
 NAV_NODISCARD period RefEpochAtTaiZero(const TimeScale scale) NAV_NOEXCEPT {
@@ -73,7 +73,7 @@ NAV_EXPORT class Epoch {
   period _period;            // time since reference epoch
 
  public:
-  NAV_NODISCARD auto time_scale() NAV_NOEXCEPT -> nav::TimeScale {
+  NAV_NODISCARD auto time_scale() NAV_NOEXCEPT->nav::TimeScale {
     return _scale;
   }
 };

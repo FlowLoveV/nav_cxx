@@ -1,5 +1,5 @@
 add_rules("mode.debug", "mode.release")
-set_xmakever("2.9.1")
+set_xmakever("2.8.7")
 
 -- global settings
 set_targetdir("$(projectdir)/bin")

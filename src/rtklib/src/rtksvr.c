@@ -1,51 +1,51 @@
 /*------------------------------------------------------------------------------
-* rtksvr.c : rtk server functions
-*
-*          Copyright (C) 2007-2020 by T.TAKASU, All rights reserved.
-*
-* options : -DWIN32    use WIN32 API
-*
-* version : $Revision:$ $Date:$
-* history : 2009/01/07  1.0  new
-*           2009/06/02  1.1  support glonass
-*           2010/07/25  1.2  support correction input/log stream
-*                            supoort online change of output/log streams
-*                            supoort monitor stream
-*                            added api:
-*                                rtksvropenstr(),rtksvrclosestr()
-*                            changed api:
-*                                rtksvrstart()
-*           2010/08/25  1.3  fix problem of ephemeris time inversion (2.4.0_p6)
-*           2010/09/08  1.4  fix problem of ephemeris and ssr squence upset
-*                            (2.4.0_p8)
-*           2011/01/10  1.5  change api: rtksvrstart(),rtksvrostat()
-*           2011/06/21  1.6  fix ephemeris handover problem
-*           2012/05/14  1.7  fix bugs
-*           2013/03/28  1.8  fix problem on lack of glonass freq number in raw
-*                            fix problem on ephemeris with inverted toe
-*                            add api rtksvrfree()
-*           2014/06/28  1.9  fix probram on ephemeris update of beidou
-*           2015/04/29  1.10 fix probram on ssr orbit/clock inconsistency
-*           2015/07/31  1.11 add phase bias (fcb) correction
-*           2015/12/05  1.12 support opt->pppopt=-DIS_FCB
-*           2016/07/01  1.13 support averaging single pos as base position
-*           2016/07/31  1.14 fix bug on ion/utc parameters input
-*           2016/08/20  1.15 support api change of sendnmea()
-*           2016/09/18  1.16 fix server-crash with server-cycle > 1000
-*           2016/09/20  1.17 change api rtksvrstart()
-*           2016/10/01  1.18 change api rtksvrstart()
-*           2016/10/04  1.19 fix problem to send nmea of single solution
-*           2016/10/09  1.20 add reset-and-single-sol mode for nmea-request
-*           2017/04/11  1.21 add rtkfree() in rtksvrfree()
-*           2020/11/30  1.22 add initializing svr->nav in rtksvrinit()
-*                            allocate double size ephemeris in rtksvrinit()
-*                            handle multiple ephemeris sets in updatesvr()
-*                            use API sat2freq() to get carrier frequency
-*                            use integer types in stdint.h
-*-----------------------------------------------------------------------------*/
+ * rtksvr.c : rtk server functions
+ *
+ *          Copyright (C) 2007-2020 by T.TAKASU, All rights reserved.
+ *
+ * options : -DWIN32    use WIN32 API
+ *
+ * version : $Revision:$ $Date:$
+ * history : 2009/01/07  1.0  new
+ *           2009/06/02  1.1  support glonass
+ *           2010/07/25  1.2  support correction input/log stream
+ *                            supoort online change of output/log streams
+ *                            supoort monitor stream
+ *                            added api:
+ *                                rtksvropenstr(),rtksvrclosestr()
+ *                            changed api:
+ *                                rtksvrstart()
+ *           2010/08/25  1.3  fix problem of ephemeris time inversion (2.4.0_p6)
+ *           2010/09/08  1.4  fix problem of ephemeris and ssr squence upset
+ *                            (2.4.0_p8)
+ *           2011/01/10  1.5  change api: rtksvrstart(),rtksvrostat()
+ *           2011/06/21  1.6  fix ephemeris handover problem
+ *           2012/05/14  1.7  fix bugs
+ *           2013/03/28  1.8  fix problem on lack of glonass freq number in raw
+ *                            fix problem on ephemeris with inverted toe
+ *                            add api rtksvrfree()
+ *           2014/06/28  1.9  fix probram on ephemeris update of beidou
+ *           2015/04/29  1.10 fix probram on ssr orbit/clock inconsistency
+ *           2015/07/31  1.11 add phase bias (fcb) correction
+ *           2015/12/05  1.12 support opt->pppopt=-DIS_FCB
+ *           2016/07/01  1.13 support averaging single pos as base position
+ *           2016/07/31  1.14 fix bug on ion/utc parameters input
+ *           2016/08/20  1.15 support api change of sendnmea()
+ *           2016/09/18  1.16 fix server-crash with server-cycle > 1000
+ *           2016/09/20  1.17 change api rtksvrstart()
+ *           2016/10/01  1.18 change api rtksvrstart()
+ *           2016/10/04  1.19 fix problem to send nmea of single solution
+ *           2016/10/09  1.20 add reset-and-single-sol mode for nmea-request
+ *           2017/04/11  1.21 add rtkfree() in rtksvrfree()
+ *           2020/11/30  1.22 add initializing svr->nav in rtksvrinit()
+ *                            allocate double size ephemeris in rtksvrinit()
+ *                            handle multiple ephemeris sets in updatesvr()
+ *                            use API sat2freq() to get carrier frequency
+ *                            use integer types in stdint.h
+ *-----------------------------------------------------------------------------*/
 #include "rtklib.h"
 
-#define MIN_INT_RESET   30000   /* mininum interval of reset command (ms) */
+#define MIN_INT_RESET 30000 /* mininum interval of reset command (ms) */
 
 /* write solution header to output stream ------------------------------------*/
 static void writesolhead(stream_t *stream, const solopt_t *solopt) {
@@ -74,12 +74,10 @@ static void writesol(rtksvr_t *svr, int index) {
   tracet(4, "writesol: index=%d\n", index);
 
   for (i = 0; i < 2; i++) {
-
     if (svr->solopt[i].posf == SOLF_STAT) {
-
       /* output solution status */
       rtksvrlock(svr);
-      n = rtkoutstat(&svr->rtk, (char *) buff);
+      n = rtkoutstat(&svr->rtk, (char *)buff);
       rtksvrunlock(svr);
     } else {
       /* output solution */
@@ -158,15 +156,15 @@ static void update_eph(rtksvr_t *svr, nav_t *nav, int ephsat, int ephset,
   if (satsys(ephsat, &prn) != SYS_GLO) {
     if (!svr->navsel || svr->navsel == index + 1) {
       /* svr->nav.eph={current_set1,current_set2,prev_set1,prev_set2} */
-      eph1 = nav->eph + ephsat - 1 + MAXSAT * ephset;         /* received */
-      eph2 = svr->nav.eph + ephsat - 1 + MAXSAT * ephset;     /* current */
+      eph1 = nav->eph + ephsat - 1 + MAXSAT * ephset;           /* received */
+      eph2 = svr->nav.eph + ephsat - 1 + MAXSAT * ephset;       /* current */
       eph3 = svr->nav.eph + ephsat - 1 + MAXSAT * (2 + ephset); /* previous */
       if (eph2->ttr.time == 0 ||
           (eph1->iode != eph3->iode && eph1->iode != eph2->iode) ||
           (timediff(eph1->toe, eph3->toe) != 0.0 &&
-              timediff(eph1->toe, eph2->toe) != 0.0) ||
+           timediff(eph1->toe, eph2->toe) != 0.0) ||
           (timediff(eph1->toc, eph3->toc) != 0.0 &&
-              timediff(eph1->toc, eph2->toc) != 0.0)) {
+           timediff(eph1->toc, eph2->toc) != 0.0)) {
         *eph3 = *eph2; /* current ->previous */
         *eph2 = *eph1; /* received->current */
       }
@@ -323,7 +321,6 @@ static int decoderaw(rtksvr_t *svr, int index) {
   rtksvrlock(svr);
 
   for (i = 0; i < svr->nb[index]; i++) {
-
     /* input rtcm/receiver raw data from stream */
     if (svr->format[index] == STRFMT_RTCM2) {
       ret = input_rtcm2(svr->rtcm + index, svr->buff[index][i]);
@@ -338,7 +335,8 @@ static int decoderaw(rtksvr_t *svr, int index) {
       ephsat = svr->rtcm[index].ephsat;
       ephset = svr->rtcm[index].ephset;
     } else {
-      ret = input_raw(svr->raw + index, svr->format[index], svr->buff[index][i]);
+      ret =
+          input_raw(svr->raw + index, svr->format[index], svr->buff[index][i]);
       obs = &svr->raw[index].obs;
       nav = &svr->raw[index].nav;
       ephsat = svr->raw[index].ephsat;
@@ -357,7 +355,10 @@ static int decoderaw(rtksvr_t *svr, int index) {
     }
     /* observation data received */
     if (ret == 1) {
-      if (fobs < MAXOBSBUF) fobs++; else svr->prcout++;
+      if (fobs < MAXOBSBUF)
+        fobs++;
+      else
+        svr->prcout++;
     }
   }
   svr->nb[index] = 0;
@@ -377,12 +378,12 @@ static void decodefile(rtksvr_t *svr, int index) {
   rtksvrlock(svr);
 
   /* check file path completed */
-  if ((nb = svr->nb[index]) <= 2 ||
-      svr->buff[index][nb - 2] != '\r' || svr->buff[index][nb - 1] != '\n') {
+  if ((nb = svr->nb[index]) <= 2 || svr->buff[index][nb - 2] != '\r' ||
+      svr->buff[index][nb - 1] != '\n') {
     rtksvrunlock(svr);
     return;
   }
-  strncpy(file, (char *) svr->buff[index], nb - 2);
+  strncpy(file, (char *)svr->buff[index], nb - 2);
   file[nb - 2] = '\0';
   svr->nb[index] = 0;
 
@@ -447,8 +448,9 @@ static void periodic_cmd(int cycle, const char *cmd, stream_t *stream) {
   int n, period;
 
   for (p = cmd;; p = q + 1) {
-    for (q = p;; q++) if (*q == '\r' || *q == '\n' || *q == '\0') break;
-    n = (int) (q - p);
+    for (q = p;; q++)
+      if (*q == '\r' || *q == '\n' || *q == '\0') break;
+    n = (int)(q - p);
     strncpy(msg, p, n);
     msg[n] = '\0';
 
@@ -501,11 +503,11 @@ static void send_nmea(rtksvr_t *svr, uint32_t *tickreset) {
 
     /* send reset command if baseline over threshold */
     bl = baseline_len(&svr->rtk);
-    if (bl >= svr->bl_reset && (int) (tick - *tickreset) > MIN_INT_RESET) {
+    if (bl >= svr->bl_reset && (int)(tick - *tickreset) > MIN_INT_RESET) {
       strsendcmd(svr->stream + 1, svr->cmd_reset);
 
-      tracet(2, "send reset: bl=%.3f rr=%.3f %.3f %.3f rb=%.3f %.3f %.3f\n",
-             bl, svr->rtk.sol.rr[0], svr->rtk.sol.rr[1], svr->rtk.sol.rr[2],
+      tracet(2, "send reset: bl=%.3f rr=%.3f %.3f %.3f rb=%.3f %.3f %.3f\n", bl,
+             svr->rtk.sol.rr[0], svr->rtk.sol.rr[1], svr->rtk.sol.rr[2],
              svr->rtk.rb[0], svr->rtk.rb[1], svr->rtk.rb[2]);
       *tickreset = tick;
     }
@@ -533,7 +535,7 @@ static DWORD WINAPI rtksvrthread(void *arg)
 static void *rtksvrthread(void *arg)
 #endif
 {
-  rtksvr_t *svr = (rtksvr_t *) arg;
+  rtksvr_t *svr = (rtksvr_t *)arg;
   obs_t obs;
   obsd_t data[MAXOBS * 2];
   sol_t sol = {{0}};
@@ -611,21 +613,20 @@ static void *rtksvrthread(void *arg)
       rtksvrunlock(svr);
 
       if (svr->rtk.sol.stat != SOLQ_NONE) {
-
         /* adjust current time */
-        tt = (int) (tickget() - tick) / 1000.0 + DTTOL;
+        tt = (int)(tickget() - tick) / 1000.0 + DTTOL;
         timeset(gpst2utc(timeadd(svr->rtk.sol.time, tt)));
 
         /* write solution */
         writesol(svr, i);
       }
       /* if cpu overload, inclement obs outage counter and break */
-      if ((int) (tickget() - tick) >= svr->cycle) {
+      if ((int)(tickget() - tick) >= svr->cycle) {
         svr->prcout += fobs[0] - i - 1;
       }
     }
     /* send null solution if no solution (1hz) */
-    if (svr->rtk.sol.stat == SOLQ_NONE && (int) (tick - tick1hz) >= 1000) {
+    if (svr->rtk.sol.stat == SOLQ_NONE && (int)(tick - tick1hz) >= 1000) {
       writesol(svr, 0);
       tick1hz = tick;
     }
@@ -634,11 +635,11 @@ static void *rtksvrthread(void *arg)
       periodic_cmd(cycle * svr->cycle, svr->cmds_periodic[i], svr->stream + i);
     }
     /* send nmea request to base/nrtk input stream */
-    if (svr->nmeacycle > 0 && (int) (tick - ticknmea) >= svr->nmeacycle) {
+    if (svr->nmeacycle > 0 && (int)(tick - ticknmea) >= svr->nmeacycle) {
       send_nmea(svr, &tickreset);
       ticknmea = tick;
     }
-    if ((cputime = (int) (tickget() - tick)) > 0) svr->cputime = cputime;
+    if ((cputime = (int)(tickget() - tick)) > 0) svr->cputime = cputime;
 
     /* sleep until next cycle */
     sleepms(svr->cycle - cputime);
@@ -661,10 +662,10 @@ static void *rtksvrthread(void *arg)
   return 0;
 }
 /* initialize rtk server -------------------------------------------------------
-* initialize rtk server
-* args   : rtksvr_t *svr    IO rtk server
-* return : status (0:error,1:ok)
-*-----------------------------------------------------------------------------*/
+ * initialize rtk server
+ * args   : rtksvr_t *svr    IO rtk server
+ * return : status (0:error,1:ok)
+ *-----------------------------------------------------------------------------*/
 extern int rtksvrinit(rtksvr_t *svr) {
   gtime_t time0 = {0};
   sol_t sol0 = {{0}};
@@ -689,7 +690,8 @@ extern int rtksvrinit(rtksvr_t *svr) {
   for (i = 0; i < 2; i++) svr->sbuf[i] = NULL;
   for (i = 0; i < 3; i++) svr->pbuf[i] = NULL;
   for (i = 0; i < MAXSOLBUF; i++) svr->solbuf[i] = sol0;
-  for (i = 0; i < 3; i++) for (j = 0; j < 10; j++) svr->nmsg[i][j] = 0;
+  for (i = 0; i < 3; i++)
+    for (j = 0; j < 10; j++) svr->nmsg[i][j] = 0;
   for (i = 0; i < 3; i++) svr->ftime[i] = time0;
   for (i = 0; i < 3; i++) svr->files[i][0] = '\0';
   svr->moni = NULL;
@@ -699,9 +701,9 @@ extern int rtksvrinit(rtksvr_t *svr) {
   for (i = 0; i < 3; i++) svr->rb_ave[i] = 0.0;
 
   memset(&svr->nav, 0, sizeof(nav_t));
-  if (!(svr->nav.eph = (eph_t *) malloc(sizeof(eph_t) * MAXSAT * 4)) ||
-      !(svr->nav.geph = (geph_t *) malloc(sizeof(geph_t) * NSATGLO * 2)) ||
-      !(svr->nav.seph = (seph_t *) malloc(sizeof(seph_t) * NSATSBS * 2))) {
+  if (!(svr->nav.eph = (eph_t *)malloc(sizeof(eph_t) * MAXSAT * 4)) ||
+      !(svr->nav.geph = (geph_t *)malloc(sizeof(geph_t) * NSATGLO * 2)) ||
+      !(svr->nav.seph = (seph_t *)malloc(sizeof(seph_t) * NSATSBS * 2))) {
     tracet(1, "rtksvrinit: malloc error\n");
     return 0;
   }
@@ -714,7 +716,7 @@ extern int rtksvrinit(rtksvr_t *svr) {
 
   for (i = 0; i < 3; i++)
     for (j = 0; j < MAXOBSBUF; j++) {
-      if (!(svr->obs[i][j].data = (obsd_t *) malloc(sizeof(obsd_t) * MAXOBS))) {
+      if (!(svr->obs[i][j].data = (obsd_t *)malloc(sizeof(obsd_t) * MAXOBS))) {
         tracet(1, "rtksvrinit: malloc error\n");
         return 0;
       }
@@ -733,10 +735,10 @@ extern int rtksvrinit(rtksvr_t *svr) {
   return 1;
 }
 /* free rtk server -------------------------------------------------------------
-* free rtk server
-* args   : rtksvr_t *svr    IO rtk server
-* return : none
-*-----------------------------------------------------------------------------*/
+ * free rtk server
+ * args   : rtksvr_t *svr    IO rtk server
+ * return : none
+ *-----------------------------------------------------------------------------*/
 extern void rtksvrfree(rtksvr_t *svr) {
   int i, j;
 
@@ -750,58 +752,57 @@ extern void rtksvrfree(rtksvr_t *svr) {
   rtkfree(&svr->rtk);
 }
 /* lock/unlock rtk server ------------------------------------------------------
-* lock/unlock rtk server
-* args   : rtksvr_t *svr    IO rtk server
-* return : status (1:ok 0:error)
-*-----------------------------------------------------------------------------*/
-extern void rtksvrlock(rtksvr_t *svr) { rtklib_lock  (&svr->lock); }
-extern void rtksvrunlock(rtksvr_t *svr) { unlock(&svr->lock); }
+ * lock/unlock rtk server
+ * args   : rtksvr_t *svr    IO rtk server
+ * return : status (1:ok 0:error)
+ *-----------------------------------------------------------------------------*/
+extern void rtksvrlock(rtksvr_t *svr) { rtklib_lock(&svr->lock); }
+extern void rtksvrunlock(rtksvr_t *svr) { rtklib_unlock(&svr->lock); }
 
 /* start rtk server ------------------------------------------------------------
-* start rtk server thread
-* args   : rtksvr_t *svr    IO rtk server
-*          int     cycle    I  server cycle (ms)
-*          int     buffsize I  input buffer size (bytes)
-*          int     *strs    I  stream types (STR_???)
-*                              types[0]=input stream rover
-*                              types[1]=input stream base station
-*                              types[2]=input stream correction
-*                              types[3]=output stream solution 1
-*                              types[4]=output stream solution 2
-*                              types[5]=log stream rover
-*                              types[6]=log stream base station
-*                              types[7]=log stream correction
-*          char    *paths   I  input stream paths
-*          int     *format  I  input stream formats (STRFMT_???)
-*                              format[0]=input stream rover
-*                              format[1]=input stream base station
-*                              format[2]=input stream correction
-*          int     navsel   I  navigation message select
-*                              (0:rover,1:base,2:ephem,3:all)
-*          char    **cmds   I  input stream start commands
-*                              cmds[0]=input stream rover (NULL: no command)
-*                              cmds[1]=input stream base (NULL: no command)
-*                              cmds[2]=input stream corr (NULL: no command)
-*          char    **cmds_periodic I input stream periodic commands
-*                              cmds[0]=input stream rover (NULL: no command)
-*                              cmds[1]=input stream base (NULL: no command)
-*                              cmds[2]=input stream corr (NULL: no command)
-*          char    **rcvopts I receiver options
-*                              rcvopt[0]=receiver option rover
-*                              rcvopt[1]=receiver option base
-*                              rcvopt[2]=receiver option corr
-*          int     nmeacycle I nmea request cycle (ms) (0:no request)
-*          int     nmeareq  I  nmea request type
-*                              (0:no,1:base pos,2:single sol,3:reset and single)
-*          double *nmeapos  I  transmitted nmea position (ecef) (m)
-*          prcopt_t *prcopt I  rtk processing options
-*          solopt_t *solopt I  solution options
-*                              solopt[0]=solution 1 options
-*                              solopt[1]=solution 2 options
-*          stream_t *moni   I  monitor stream (NULL: not used)
-*          char   *errmsg   O  error message
-* return : status (1:ok 0:error)
-*-----------------------------------------------------------------------------*/
+ * start rtk server thread
+ * args   : rtksvr_t *svr    IO rtk server
+ *          int     cycle    I  server cycle (ms)
+ *          int     buffsize I  input buffer size (bytes)
+ *          int     *strs    I  stream types (STR_???)
+ *                              types[0]=input stream rover
+ *                              types[1]=input stream base station
+ *                              types[2]=input stream correction
+ *                              types[3]=output stream solution 1
+ *                              types[4]=output stream solution 2
+ *                              types[5]=log stream rover
+ *                              types[6]=log stream base station
+ *                              types[7]=log stream correction
+ *          char    *paths   I  input stream paths
+ *          int     *format  I  input stream formats (STRFMT_???)
+ *                              format[0]=input stream rover
+ *                              format[1]=input stream base station
+ *                              format[2]=input stream correction
+ *          int     navsel   I  navigation message select
+ *                              (0:rover,1:base,2:ephem,3:all)
+ *          char    **cmds   I  input stream start commands
+ *                              cmds[0]=input stream rover (NULL: no command)
+ *                              cmds[1]=input stream base (NULL: no command)
+ *                              cmds[2]=input stream corr (NULL: no command)
+ *          char    **cmds_periodic I input stream periodic commands
+ *                              cmds[0]=input stream rover (NULL: no command)
+ *                              cmds[1]=input stream base (NULL: no command)
+ *                              cmds[2]=input stream corr (NULL: no command)
+ *          char    **rcvopts I receiver options
+ *                              rcvopt[0]=receiver option rover
+ *                              rcvopt[1]=receiver option base
+ *                              rcvopt[2]=receiver option corr
+ *          int     nmeacycle I nmea request cycle (ms) (0:no request)
+ *          int     nmeareq  I  nmea request type
+ *                              (0:no,1:base pos,2:single sol,3:reset and
+ *single) double *nmeapos  I  transmitted nmea position (ecef) (m) prcopt_t
+ **prcopt I  rtk processing options solopt_t *solopt I  solution options
+ *                              solopt[0]=solution 1 options
+ *                              solopt[1]=solution 2 options
+ *          stream_t *moni   I  monitor stream (NULL: not used)
+ *          char   *errmsg   O  error message
+ * return : status (1:ok 0:error)
+ *-----------------------------------------------------------------------------*/
 extern int rtksvrstart(rtksvr_t *svr, int cycle, int buffsize, int *strs,
                        char **paths, int *formats, int navsel, char **cmds,
                        char **cmds_periodic, char **rcvopts, int nmeacycle,
@@ -810,8 +811,10 @@ extern int rtksvrstart(rtksvr_t *svr, int cycle, int buffsize, int *strs,
   gtime_t time, time0 = {0};
   int i, j, rw;
 
-  tracet(3, "rtksvrstart: cycle=%d buffsize=%d navsel=%d nmeacycle=%d nmeareq=%d\n",
-         cycle, buffsize, navsel, nmeacycle, nmeareq);
+  tracet(
+      3,
+      "rtksvrstart: cycle=%d buffsize=%d navsel=%d nmeacycle=%d nmeareq=%d\n",
+      cycle, buffsize, navsel, nmeacycle, nmeareq);
 
   if (svr->state) {
     sprintf(errmsg, "server already started");
@@ -837,8 +840,8 @@ extern int rtksvrstart(rtksvr_t *svr, int cycle, int buffsize, int *strs,
   }
   for (i = 0; i < 3; i++) { /* input/log streams */
     svr->nb[i] = svr->npb[i] = 0;
-    if (!(svr->buff[i] = (uint8_t *) malloc(buffsize)) ||
-        !(svr->pbuf[i] = (uint8_t *) malloc(buffsize))) {
+    if (!(svr->buff[i] = (uint8_t *)malloc(buffsize)) ||
+        !(svr->pbuf[i] = (uint8_t *)malloc(buffsize))) {
       tracet(1, "rtksvrstart: malloc error\n");
       sprintf(errmsg, "rtk server malloc error");
       return 0;
@@ -859,7 +862,7 @@ extern int rtksvrstart(rtksvr_t *svr, int cycle, int buffsize, int *strs,
     svr->rtcm[i].dgps = svr->nav.dgps;
   }
   for (i = 0; i < 2; i++) { /* output peek buffer */
-    if (!(svr->sbuf[i] = (uint8_t *) malloc(buffsize))) {
+    if (!(svr->sbuf[i] = (uint8_t *)malloc(buffsize))) {
       tracet(1, "rtksvrstart: malloc error\n");
       sprintf(errmsg, "rtk server malloc error");
       return 0;
@@ -895,8 +898,10 @@ extern int rtksvrstart(rtksvr_t *svr, int cycle, int buffsize, int *strs,
     /* set initial time for rtcm and raw */
     if (i < 3) {
       time = utc2gpst(timeget());
-      svr->raw[i].time = strs[i] == STR_FILE ? strgettime(svr->stream + i) : time;
-      svr->rtcm[i].time = strs[i] == STR_FILE ? strgettime(svr->stream + i) : time;
+      svr->raw[i].time =
+          strs[i] == STR_FILE ? strgettime(svr->stream + i) : time;
+      svr->rtcm[i].time =
+          strs[i] == STR_FILE ? strgettime(svr->stream + i) : time;
     }
   }
   /* sync input streams */
@@ -906,7 +911,7 @@ extern int rtksvrstart(rtksvr_t *svr, int cycle, int buffsize, int *strs,
   /* write start commands to input streams */
   for (i = 0; i < 3; i++) {
     if (!cmds[i]) continue;
-    strwrite(svr->stream + i, (uint8_t *) "", 0); /* for connect */
+    strwrite(svr->stream + i, (uint8_t *)"", 0); /* for connect */
     sleepms(100);
     strsendcmd(svr->stream + i, cmds[i]);
   }
@@ -918,7 +923,7 @@ extern int rtksvrstart(rtksvr_t *svr, int cycle, int buffsize, int *strs,
 #ifdef WIN32
   if (!(svr->thread = CreateThread(NULL, 0, rtksvrthread, svr, 0, NULL))) {
 #else
-    if (pthread_create(&svr->thread,NULL,rtksvrthread,svr)) {
+  if (pthread_create(&svr->thread, NULL, rtksvrthread, svr)) {
 #endif
     for (i = 0; i < MAXSTRRTK; i++) strclose(svr->stream + i);
     sprintf(errmsg, "thread create error\n");
@@ -927,14 +932,14 @@ extern int rtksvrstart(rtksvr_t *svr, int cycle, int buffsize, int *strs,
   return 1;
 }
 /* stop rtk server -------------------------------------------------------------
-* start rtk server thread
-* args   : rtksvr_t *svr    IO rtk server
-*          char    **cmds   I  input stream stop commands
-*                              cmds[0]=input stream rover (NULL: no command)
-*                              cmds[1]=input stream base  (NULL: no command)
-*                              cmds[2]=input stream ephem (NULL: no command)
-* return : none
-*-----------------------------------------------------------------------------*/
+ * start rtk server thread
+ * args   : rtksvr_t *svr    IO rtk server
+ *          char    **cmds   I  input stream stop commands
+ *                              cmds[0]=input stream rover (NULL: no command)
+ *                              cmds[1]=input stream base  (NULL: no command)
+ *                              cmds[2]=input stream ephem (NULL: no command)
+ * return : none
+ *-----------------------------------------------------------------------------*/
 extern void rtksvrstop(rtksvr_t *svr, char **cmds) {
   int i;
 
@@ -955,20 +960,20 @@ extern void rtksvrstop(rtksvr_t *svr, char **cmds) {
   WaitForSingleObject(svr->thread, 10000);
   CloseHandle(svr->thread);
 #else
-  pthread_join(svr->thread,NULL);
+  pthread_join(svr->thread, NULL);
 #endif
 }
 /* open output/log stream ------------------------------------------------------
-* open output/log stream
-* args   : rtksvr_t *svr    IO rtk server
-*          int     index    I  output/log stream index
-*                              (3:solution 1,4:solution 2,5:log rover,
-*                               6:log base station,7:log correction)
-*          int     str      I  output/log stream types (STR_???)
-*          char    *path    I  output/log stream path
-*          solopt_t *solopt I  solution options
-* return : status (1:ok 0:error)
-*-----------------------------------------------------------------------------*/
+ * open output/log stream
+ * args   : rtksvr_t *svr    IO rtk server
+ *          int     index    I  output/log stream index
+ *                              (3:solution 1,4:solution 2,5:log rover,
+ *                               6:log base station,7:log correction)
+ *          int     str      I  output/log stream types (STR_???)
+ *          char    *path    I  output/log stream path
+ *          solopt_t *solopt I  solution options
+ * return : status (1:ok 0:error)
+ *-----------------------------------------------------------------------------*/
 extern int rtksvropenstr(rtksvr_t *svr, int index, int str, const char *path,
                          const solopt_t *solopt) {
   tracet(3, "rtksvropenstr: index=%d str=%d path=%s\n", index, str, path);
@@ -996,13 +1001,13 @@ extern int rtksvropenstr(rtksvr_t *svr, int index, int str, const char *path,
   return 1;
 }
 /* close output/log stream -----------------------------------------------------
-* close output/log stream
-* args   : rtksvr_t *svr    IO rtk server
-*          int     index    I  output/log stream index
-*                              (3:solution 1,4:solution 2,5:log rover,
-*                               6:log base station,7:log correction)
-* return : none
-*-----------------------------------------------------------------------------*/
+ * close output/log stream
+ * args   : rtksvr_t *svr    IO rtk server
+ *          int     index    I  output/log stream index
+ *                              (3:solution 1,4:solution 2,5:log rover,
+ *                               6:log base station,7:log correction)
+ * return : none
+ *-----------------------------------------------------------------------------*/
 extern void rtksvrclosestr(rtksvr_t *svr, int index) {
   tracet(3, "rtksvrclosestr: index=%d\n", index);
 
@@ -1015,18 +1020,18 @@ extern void rtksvrclosestr(rtksvr_t *svr, int index) {
   rtksvrunlock(svr);
 }
 /* get observation data status -------------------------------------------------
-* get current observation data status
-* args   : rtksvr_t *svr    I  rtk server
-*          int     rcv      I  receiver (0:rover,1:base,2:ephem)
-*          gtime_t *time    O  time of observation data
-*          int     *sat     O  satellite prn numbers
-*          double  *az      O  satellite azimuth angles (rad)
-*          double  *el      O  satellite elevation angles (rad)
-*          int     **snr    O  satellite snr for each freq (dBHz)
-*                              snr[i][j] = sat i freq j snr
-*          int     *vsat    O  valid satellite flag
-* return : number of satellites
-*-----------------------------------------------------------------------------*/
+ * get current observation data status
+ * args   : rtksvr_t *svr    I  rtk server
+ *          int     rcv      I  receiver (0:rover,1:base,2:ephem)
+ *          gtime_t *time    O  time of observation data
+ *          int     *sat     O  satellite prn numbers
+ *          double  *az      O  satellite azimuth angles (rad)
+ *          double  *el      O  satellite elevation angles (rad)
+ *          int     **snr    O  satellite snr for each freq (dBHz)
+ *                              snr[i][j] = sat i freq j snr
+ *          int     *vsat    O  valid satellite flag
+ * return : number of satellites
+ *-----------------------------------------------------------------------------*/
 extern int rtksvrostat(rtksvr_t *svr, int rcv, gtime_t *time, int *sat,
                        double *az, double *el, int **snr, int *vsat) {
   int i, j, ns;
@@ -1044,7 +1049,7 @@ extern int rtksvrostat(rtksvr_t *svr, int rcv, gtime_t *time, int *sat,
     az[i] = svr->rtk.ssat[sat[i] - 1].azel[0];
     el[i] = svr->rtk.ssat[sat[i] - 1].azel[1];
     for (j = 0; j < NFREQ; j++) {
-      snr[i][j] = (int) (svr->obs[rcv][0].data[i].SNR[j] * SNR_UNIT + 0.5);
+      snr[i][j] = (int)(svr->obs[rcv][0].data[i].SNR[j] * SNR_UNIT + 0.5);
     }
     if (svr->rtk.sol.stat == SOLQ_NONE || svr->rtk.sol.stat == SOLQ_SINGLE) {
       vsat[i] = svr->rtk.ssat[sat[i] - 1].vs;
@@ -1056,12 +1061,12 @@ extern int rtksvrostat(rtksvr_t *svr, int rcv, gtime_t *time, int *sat,
   return ns;
 }
 /* get stream status -----------------------------------------------------------
-* get current stream status
-* args   : rtksvr_t *svr    I  rtk server
-*          int     *sstat   O  status of streams
-*          char    *msg     O  status messages
-* return : none
-*-----------------------------------------------------------------------------*/
+ * get current stream status
+ * args   : rtksvr_t *svr    I  rtk server
+ *          int     *sstat   O  status of streams
+ *          char    *msg     O  status messages
+ * return : none
+ *-----------------------------------------------------------------------------*/
 extern void rtksvrsstat(rtksvr_t *svr, int *sstat, char *msg) {
   int i;
   char s[MAXSTRMSG], *p = msg;
@@ -1076,12 +1081,12 @@ extern void rtksvrsstat(rtksvr_t *svr, int *sstat, char *msg) {
   rtksvrunlock(svr);
 }
 /* mark current position -------------------------------------------------------
-* open output/log stream
-* args   : rtksvr_t *svr    IO rtk server
-*          char    *name    I  marker name
-*          char    *comment I  comment string
-* return : status (1:ok 0:error)
-*-----------------------------------------------------------------------------*/
+ * open output/log stream
+ * args   : rtksvr_t *svr    IO rtk server
+ *          char    *name    I  marker name
+ *          char    *comment I  comment string
+ * return : status (1:ok 0:error)
+ *-----------------------------------------------------------------------------*/
 extern int rtksvrmark(rtksvr_t *svr, const char *name, const char *comment) {
   char buff[MAXSOLMSG + 1], tstr[32], *p, *q;
   double tow, pos[3];
@@ -1104,25 +1109,25 @@ extern int rtksvrmark(rtksvr_t *svr, const char *name, const char *comment) {
                    svr->rtk.sol.stat, svr->rtk.sol.rr[0], svr->rtk.sol.rr[1],
                    svr->rtk.sol.rr[2], name, comment);
     } else if (svr->solopt[i].posf == SOLF_NMEA) {
-      p += sprintf(p, "$GPTXT,01,01,02,MARK:%s,%s,%.9f,%.9f,%.4f,%d,%s",
-                   name, tstr, pos[0] * R2D, pos[1] * R2D, pos[2], svr->rtk.sol.stat,
+      p += sprintf(p, "$GPTXT,01,01,02,MARK:%s,%s,%.9f,%.9f,%.4f,%d,%s", name,
+                   tstr, pos[0] * R2D, pos[1] * R2D, pos[2], svr->rtk.sol.stat,
                    comment);
-      for (q = (char *) buff + 1, sum = 0; *q; q++) sum ^= *q; /* check-sum */
+      for (q = (char *)buff + 1, sum = 0; *q; q++) sum ^= *q; /* check-sum */
       p += sprintf(p, "*%02X\r\n", sum);
     } else {
-      p += sprintf(p, "%s MARK: %s,%s,%.9f,%.9f,%.4f,%d,%s\r\n", COMMENTH,
-                   name, tstr, pos[0] * R2D, pos[1] * R2D, pos[2], svr->rtk.sol.stat,
+      p += sprintf(p, "%s MARK: %s,%s,%.9f,%.9f,%.4f,%d,%s\r\n", COMMENTH, name,
+                   tstr, pos[0] * R2D, pos[1] * R2D, pos[2], svr->rtk.sol.stat,
                    comment);
     }
-    strwrite(svr->stream + i + 3, (uint8_t *) buff, (int) (p - buff));
-    saveoutbuf(svr, (uint8_t *) buff, (int) (p - buff), i);
+    strwrite(svr->stream + i + 3, (uint8_t *)buff, (int)(p - buff));
+    saveoutbuf(svr, (uint8_t *)buff, (int)(p - buff), i);
   }
   if (svr->moni) {
     p = buff;
-    p += sprintf(p, "%s MARK: %s,%s,%.9f,%.9f,%.4f,%d,%s\r\n", COMMENTH,
-                 name, tstr, pos[0] * R2D, pos[1] * R2D, pos[2], svr->rtk.sol.stat,
+    p += sprintf(p, "%s MARK: %s,%s,%.9f,%.9f,%.4f,%d,%s\r\n", COMMENTH, name,
+                 tstr, pos[0] * R2D, pos[1] * R2D, pos[2], svr->rtk.sol.stat,
                  comment);
-    strwrite(svr->moni, (uint8_t *) buff, (int) (p - buff));
+    strwrite(svr->moni, (uint8_t *)buff, (int)(p - buff));
   }
   rtksvrunlock(svr);
   return 1;
