@@ -8,17 +8,21 @@ set_languages("c++23","c11")
 set_toolchains("clang")
 
 -- required libraries
-
+-- add_repositories("my-repo my-repo")
+-- add_requires("nav_module")
 
 -- sub modules
-includes("src/rtklib")
-includes("src/core")
+includes("src/rtklib/xmake.lua")
+includes("src/core/xmake.lua")
 
 target("main")
     set_kind("binary")
+    set_languages("c++23")
     add_files("src/main.cpp")
     add_deps("rtklib")
-    -- enable c++ 20 modules
+    add_deps("nav_core")
+    -- add_packages("nav_module")
     -- set_policy("build.c++.modules",true)
+
 
 

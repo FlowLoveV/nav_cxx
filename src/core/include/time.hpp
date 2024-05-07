@@ -1,13 +1,13 @@
 #include "macro.hpp"
 
+#ifdef ENMODULES
 // export module time, only valid when ENMODULES is defined
 NAV_EXPORT NAV_MODULE NAV_MODULE_NAME(time);
 NAV_IMPORT STD_MODULE;
 // if don't enable modules, include files
-#ifndef ENMODULES
+#else
 #pragma once
 #include <chrono>
-
 #endif
 
 namespace nav {
