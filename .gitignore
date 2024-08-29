@@ -22,4 +22,7 @@ data
 # MacOS Cache
 .DS_Store
 
+Doxyfile
+
+test_resources
 
