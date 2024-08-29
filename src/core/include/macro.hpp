@@ -23,16 +23,24 @@
 // macro FORMATLIB, decides which format library will be used
 // 0 - fmt (https://github.com/fmtlib/fmt)
 // 1 - c++20 format,c++23 print(which is not support on linux and macos)
-#if FORMATLIB == 0
-#define NAV_FORMAT fmt::format
-#define NAV_PRINT fmt::print
-#elif FORMATLIB == 1
+
 #define NAV_FORMAT std::format
 #define NAV_PRINT std::print
-#endif
+#define NAV_PRINTLN std::println
 
 // some alias
 #define NAV_NODISCARD [[nodiscard]]
 #define NAV_NODISCARD_WITHMSG(msg) [[nodiscard(msg)]]
 #define NAV_NOEXCEPT noexcept
 #define NAV_UNUSED [[maybe_unused]]
+
+// format num
+#define FORMAT_NUM(outter_formatter, inner_formatter, num) \
+  NAV_FORMAT(outter_formatter, NAV_FORMAT(inner_formatter, num))
+
+// some attributes
+#if defined(__GNUC__) || defined(__clang__)
+#define ANNOTATE(attr) __attribute__((annotate(attr)))
+#else
+#define ANNOTATE(attr)
+#endif

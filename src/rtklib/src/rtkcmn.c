@@ -1791,7 +1791,6 @@ extern double timediff(gtime_t t1, gtime_t t2) {
  * args   : none
  * return : current time in utc
  *-----------------------------------------------------------------------------*/
-// setings for timeoffset_
 static double timeoffset_ = 0.0; /* time offset (s) */
 
 extern gtime_t timeget(void) {
