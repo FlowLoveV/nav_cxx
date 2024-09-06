@@ -821,7 +821,7 @@ void tideDisp(
 
 	tracepdeex(lv, trace, "\n\n%s: time=%s", __FUNCTION__, time.to_string(2).c_str());
 
-	ERPValues erpv = getErp(nav.erp, time);
+	ERPValues erpv = getErp(nav_.erp, time);
 
 	MjDateUt1 mjdUt1(time, erpv.ut1Utc);
 

@@ -51,13 +51,13 @@ bool queryVectorElement(
 void OrbitIntegrator::computeCommon(
 	GTime		time)
 {
-	ERPValues	erpv = getErp(nav.erp, time);
+	ERPValues	erpv = getErp(nav_.erp, time);
 
 	eci2ecef(time, erpv, eci2ecf, &deci2ecf);
 
 	for (auto& body : E_ThirdBody::_values())
 	{
-		jplEphPos(nav.jplEph_ptr, time, body, planetsPosMap[body], &planetsVelMap[body]);
+		jplEphPos(nav_.jplEph_ptr, time, body, planetsPosMap[body], &planetsVelMap[body]);
 	}
 
 	Array6d dood_arr = IERS2010::doodson(time, erpv.ut1Utc);
@@ -175,7 +175,7 @@ void OrbitIntegrator::computeAcceleration(
 			MatrixXd&	dAdParam,
 	const	GTime		time)
 {
-	auto trace = getTraceFile(nav.satNavMap[orbInit.Sat]);
+	auto trace = getTraceFile(nav_.satNavMap[orbInit.Sat]);
 	
 	trace << std::endl << "Computing accelerations at " << time;
 	
@@ -349,7 +349,7 @@ void OrbitIntegrator::computeAcceleration(
 			satPos.satVel		= eci2ecf * vSat + deci2ecf * rSat;
 			satPos.posTime		= timeInit;
 			satPos.Sat			= orbInit.Sat;
-			satPos.satNav_ptr 	= &nav.satNavMap[orbInit.Sat];
+			satPos.satNav_ptr 	= &nav_.satNavMap[orbInit.Sat];
 
 			updateSatAtts(satPos);
 
@@ -743,7 +743,7 @@ Orbits prepareOrbits(
 
 		orbit.posVelSTM	= MatrixXd::Identity(6, orbit.subState.kfIndexMap.size());
 
-		orbit.attStatus	= nav.satNavMap[Sat].attStatus;
+		orbit.attStatus	= nav_.satNavMap[Sat].attStatus;
 
 		orbit.numEmp	= orbit.empInput.size();
 
@@ -876,7 +876,7 @@ void predictOrbits(
 
 	for (auto& orbit : orbits)
 	{
-		auto& satNav	= nav.satNavMap[orbit.Sat];
+		auto& satNav	= nav_.satNavMap[orbit.Sat];
 		auto& satPos0	= satNav.satPos0;
 		
 		auto satTrace = getTraceFile(satNav);

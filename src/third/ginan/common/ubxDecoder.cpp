@@ -242,7 +242,7 @@ void UbxDecoder::decodeEphFrames(
 		std::cout << std::endl << "*";
 		eph.Sat		= Sat;
 		eph.type	= E_NavMsgType::LNAV;
-		nav.ephMap[eph.Sat][eph.type][eph.toe] = eph;
+		nav_.ephMap[eph.Sat][eph.type][eph.toe] = eph;
 
 
 		bsoncxx::builder::basic::document doc = {};

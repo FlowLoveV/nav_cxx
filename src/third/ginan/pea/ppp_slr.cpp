@@ -248,9 +248,9 @@ void receiverSlr(
 		getRecPosApriori	(obs, rec);
 	}
 
-	satPossSlr(trace, rec.obsList, nav, {E_Source::PRECISE}, E_OffsetType::COM, E_Relativity::OFF, &kfState);
+	satPossSlr(trace, rec.obsList, nav_, {E_Source::PRECISE}, E_OffsetType::COM, E_Relativity::OFF, &kfState);
 
-	ERPValues erpv = getErp(nav.erp, time);
+	ERPValues erpv = getErp(nav_.erp, time);
 
 	FrameSwapper frameSwapper(time, erpv);
 

@@ -318,7 +318,7 @@ VectorEci propagateEllipse(
 	VectorEcef&	ecef,
 	VectorEcef* vSatEcef_ptr)
 {
-	ERPValues erpv = getErp(nav.erp, time);
+	ERPValues erpv = getErp(nav_.erp, time);
 	
 	FrameSwapper frameSwapper(time + dt, erpv);
 	

@@ -201,11 +201,11 @@ void preprocessor(
 			continue;
 		}
 
-		obs.satNav_ptr = &nav.satNavMap[obs.Sat];
+		obs.satNav_ptr = &nav_.satNavMap[obs.Sat];
 
 		E_NavMsgType nvtyp = acsConfig.used_nav_types[obs.Sat.sys];
-		if (obs.Sat.sys == +E_Sys::GLO)		obs.satNav_ptr->eph_ptr = seleph<Geph>	(trace, obs.time, obs.Sat, nvtyp, ANY_IODE, nav);
-		else								obs.satNav_ptr->eph_ptr = seleph<Eph>	(trace, obs.time, obs.Sat, nvtyp, ANY_IODE, nav);
+		if (obs.Sat.sys == +E_Sys::GLO)		obs.satNav_ptr->eph_ptr = seleph<Geph>	(trace, obs.time, obs.Sat, nvtyp, ANY_IODE, nav_);
+		else								obs.satNav_ptr->eph_ptr = seleph<Eph>	(trace, obs.time, obs.Sat, nvtyp, ANY_IODE, nav_);
 
 		updatenav(obs);
 
@@ -219,11 +219,11 @@ void preprocessor(
 			continue;
 		}
 
-		obs.satNav_ptr = &nav.satNavMap[obs.Sat];
+		obs.satNav_ptr = &nav_.satNavMap[obs.Sat];
 
 		E_NavMsgType nvtyp = acsConfig.used_nav_types[obs.Sat.sys];
-		if (obs.Sat.sys == +E_Sys::GLO)		obs.satNav_ptr->eph_ptr	= seleph<Geph>	(trace, obs.time, obs.Sat, nvtyp, ANY_IODE, nav);
-		else								obs.satNav_ptr->eph_ptr	= seleph<Eph>	(trace, obs.time, obs.Sat, nvtyp, ANY_IODE, nav);
+		if (obs.Sat.sys == +E_Sys::GLO)		obs.satNav_ptr->eph_ptr	= seleph<Geph>	(trace, obs.time, obs.Sat, nvtyp, ANY_IODE, nav_);
+		else								obs.satNav_ptr->eph_ptr	= seleph<Eph>	(trace, obs.time, obs.Sat, nvtyp, ANY_IODE, nav_);
 
 		updatenav(obs);
 

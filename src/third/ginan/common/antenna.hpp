@@ -48,9 +48,9 @@ Vector3d antPco(string id, E_Sys sys, E_FType ft, GTime time, double& var, E_Rad
 double antPcv(string id, E_Sys sys, E_FType ft, GTime time, AttStatus& attStatus, VectorEcef e,
               double* az_ptr = nullptr, double* zen_ptr = nullptr);
 
-bool findAntenna(string code, E_Sys sys, GTime time, Navigation& nav, E_FType ft,
+bool findAntenna(string code, E_Sys sys, GTime time, Navigation& nav_, E_FType ft,
                  PhaseCenterData** pcd_ptr_ptr = nullptr);
 
-void readantexf(string file, Navigation& nav);
+void readantexf(string file, Navigation& nav_);
 
 void radome2none(string& antenna_type);

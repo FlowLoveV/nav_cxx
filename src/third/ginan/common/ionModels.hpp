@@ -33,7 +33,7 @@ double ionppp(
 
 bool iontec(
 	GTime				time,
-	const Navigation*	nav,
+	const Navigation*	nav_,
 	const VectorPos&	pos,
 	const AzEl&			azel,
 	E_IonoMapFn			mapFn,
@@ -44,5 +44,5 @@ bool iontec(
 
 void readTec(
 	string				file,
-	Navigation*			nav);
+	Navigation*			nav_);
 

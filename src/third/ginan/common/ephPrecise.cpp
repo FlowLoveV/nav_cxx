@@ -161,7 +161,7 @@ bool pephpos(
 	Trace&		trace,
 	GTime		time,
 	SatSys		Sat,
-	Navigation&	nav,
+	Navigation&	nav_,
 	Vector3d&	rSat,
 	double*		vare)
 {
@@ -169,15 +169,15 @@ bool pephpos(
 
 	rSat = Vector3d::Zero();
 
-	if (nav.pephMap.empty())
+	if (nav_.pephMap.empty())
 	{
 		BOOST_LOG_TRIVIAL(warning) << "Warning: Looking for precise positions, but no precise ephemerides found";
 
 		return false;
 	}
 
-	auto it = nav.pephMap.find(Sat.id());
-	if (it == nav.pephMap.end())
+	auto it = nav_.pephMap.find(Sat.id());
+	if (it == nav_.pephMap.end())
 	{
 		BOOST_LOG_TRIVIAL(warning) << "Warning: Looking for precise position, but no precise ephemerides found for " << Sat.id();
 
@@ -277,7 +277,7 @@ bool pclkMapClk(
 	Trace&		trace,
 	GTime		time,
 	string		id,
-	Navigation&	nav,
+	Navigation&	nav_,
 	double&		clk,
 	double*		varc,
 	TYPE&		pclkMaps)
@@ -362,15 +362,15 @@ bool pephclk(
 	Trace&		trace,
 	GTime		time,
 	string		id,
-	Navigation&	nav,
+	Navigation&	nav_,
 	double&		clk,
 	double*		varc)
 {
 //	BOOST_LOG_TRIVIAL(debug) << "pephclk : time=" << time.to_string(3) << " id=" << id;
 
 	bool pass;
-	pass = pclkMapClk(trace, time, id, nav, clk, varc, nav.pclkMap);		if (pass)	return true;
-	pass = pclkMapClk(trace, time, id, nav, clk, varc, nav.pephMap);		if (pass)	return true;
+	pass = pclkMapClk(trace, time, id, nav_, clk, varc, nav_.pclkMap);		if (pass)	return true;
+	pass = pclkMapClk(trace, time, id, nav_, clk, varc, nav_.pephMap);		if (pass)	return true;
 
 	return false;
 }
@@ -426,7 +426,7 @@ bool satClkPrecise(
 	double&		clk,
 	double&		clkVel,
 	double&		clkVar,
-	Navigation&	nav)
+	Navigation&	nav_)
 {
 	clk		= 0;
 	clkVel	= 0;
@@ -437,8 +437,8 @@ bool satClkPrecise(
 
 	double clk2 = 0;
 
-	bool pass	=	pephclk(trace, time,		Sat, nav,	clk,		&clkVar)
-				&&	pephclk(trace, time + tt,	Sat, nav,	clk2);
+	bool pass	=	pephclk(trace, time,		Sat, nav_,	clk,		&clkVar)
+				&&	pephclk(trace, time + tt,	Sat, nav_,	clk2);
 
 	if 	(  pass	== false
 		|| clk	== INVALID_CLOCK_VALUE)
@@ -464,7 +464,7 @@ bool satPosPrecise(
 	Vector3d&	rSat,
 	Vector3d&	satVel,
 	double&		ephVar,
-	Navigation&	nav)
+	Navigation&	nav_)
 {
 	rSat	= Vector3d::Zero();
 	satVel	= Vector3d::Zero();
@@ -475,8 +475,8 @@ bool satPosPrecise(
 
 	Vector3d rSat2 = Vector3d::Zero();
 
-	bool pass	=	pephpos(trace, time,		Sat, nav, rSat,		&ephVar)
-				&&	pephpos(trace, time + tt,	Sat, nav, rSat2);
+	bool pass	=	pephpos(trace, time,		Sat, nav_, rSat,		&ephVar)
+				&&	pephpos(trace, time + tt,	Sat, nav_, rSat2);
 
 	if 	(pass == false)
 	{
@@ -494,7 +494,7 @@ bool satPosPrecise(
 	Trace&		trace,
 	GTime		time,
 	SatPos&		satPos,
-	Navigation&	nav)
+	Navigation&	nav_)
 {
 	return satPosPrecise(
 		trace,
@@ -503,14 +503,14 @@ bool satPosPrecise(
 		satPos.rSatCom,
 		satPos.satVel,
 		satPos.posVar,
-		nav);
+		nav_);
 }
 
 bool satClkPrecise(
 	Trace&		trace,
 	GTime		time,
 	SatPos&		satPos,
-	Navigation&	nav)
+	Navigation&	nav_)
 {
 	return satClkPrecise(
 		trace,
@@ -519,5 +519,5 @@ bool satClkPrecise(
 		satPos.satClk,
 		satPos.satClkVel,
 		satPos.satClkVar,
-		nav);
+		nav_);
 }

@@ -243,7 +243,7 @@ void setSiteAntCalib()
 		{
 			ant.calibModel = defaultStr;
 			PhaseCenterData* pcd_ptr;
-			bool pass = findAntenna(ant.type, E_Sys::GPS, time, nav, F1, &pcd_ptr);
+			bool pass = findAntenna(ant.type, E_Sys::GPS, time, nav_, F1, &pcd_ptr);
 			if (pass)
 				ant.calibModel = pcd_ptr->calibModel;
 		}

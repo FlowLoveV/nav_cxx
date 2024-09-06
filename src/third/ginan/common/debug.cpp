@@ -60,7 +60,7 @@ void minimumTest(
 		pointMap["G06"] = {+6,	0,	0};
 	}
 
-	ERPValues erpv = getErp(nav.erp, gtime);
+	ERPValues erpv = getErp(nav_.erp, gtime);
 
 	FrameSwapper frameSwapper(gtime, erpv);
 
@@ -92,7 +92,7 @@ void minimumTest(
 			else		a *= 6000000;		// * sqrt(2);
 // 			a += Vector3d(0.0000001,0.0000001,0.0000001);
 
-			auto& satNav	= nav.satNavMap[SatSys(id.c_str())];
+			auto& satNav	= nav_.satNavMap[SatSys(id.c_str())];
 			auto& rec		= receiverMap[id + "S"];
 
 			if (orbit)
@@ -788,7 +788,7 @@ void rotationTest()
 		Matrix3d i2tMatrix	= Matrix3d::Identity();
 
 		//convert to terrestrial
-		ERPValues erpv = getErp(nav.erp, time);
+		ERPValues erpv = getErp(nav_.erp, time);
 		eci2ecef(time, erpv, i2tMatrix);
 
 		MjDateUt1	mjDate	(time, erpv.ut1Utc);
@@ -846,7 +846,7 @@ void debugSSR(GTime t0, GTime targetTime, E_Sys sys, SsrOutMap& ssrOutMap)
 	{
 		GObs obs;
 		obs.Sat = Sat;
-		obs.satNav_ptr = &nav.satNavMap[Sat];
+		obs.satNav_ptr = &nav_.satNavMap[Sat];
 
 		dPos[0] = Vector3d::Zero();
 		dPos[1] = Vector3d::Zero();
@@ -1153,7 +1153,7 @@ void debugAttitude()
 // 	GObs obs;
 // 	obs.Sat = Sat;
 // 	obs.time = ep;
-// 	obs.satNav_ptr = &nav.satNavMap[Sat];
+// 	obs.satNav_ptr = &nav_.satNavMap[Sat];
 	// // SPIRE
 	// SatSys Sat(E_Sys::LEO, 99);
 	// GEpoch ep = {2023, 01, 01, 9, 59, 46};
@@ -1171,7 +1171,7 @@ void debugAttitude()
 	auto& satOpts = acsConfig.getSatOpts(Sat);
 	auto& recOpts = acsConfig.getRecOpts(rec.id);
 
-	auto& satNav = nav.satNavMap[Sat];
+	auto& satNav = nav_.satNavMap[Sat];
 	satNav.antBoresight	= satOpts.antenna_boresight;
 	satNav.antAzimuth	= satOpts.antenna_azimuth;
 	satPos.satNav_ptr	= &satNav;
@@ -1190,7 +1190,7 @@ void debugAttitude()
 
 		// for GNSS satellites
 		satPos.posTime = time;
-		satpos(nullStream, time, time, satPos, satOpts.posModel.sources, E_OffsetType::COM, nav);
+		satpos(nullStream, time, time, satPos, satOpts.posModel.sources, E_OffsetType::COM, nav_);
 		updateSatAtts(satPos);
 		rSat = satPos.rSatCom;
 		attStatus = satPos.satNav_ptr->attStatus;
@@ -1221,7 +1221,7 @@ void debugAttitude()
 
 void debugErp()
 {
-	ERP	erp = nav.erp;
+	ERP	erp = nav_.erp;
 
 	// Output all ERP data
 	std::cout << std::endl << "EOP reading:";
@@ -1381,7 +1381,7 @@ void debugTideOcean()
 			mjdUtc.val = mjdval;
 
 			GTime time = GTime(mjdUtc);
-			ERPValues erpv = getErp(nav.erp, time);
+			ERPValues erpv = getErp(nav_.erp, time);
 			MjDateUt1 mjdUt1(time, erpv.ut1Utc);
 
 			// VectorEnu denu = tideOceanLoad (std::cout, mjdUt1, rec.otlDisplacement);
@@ -1702,7 +1702,7 @@ void debugTideSolid()
 	{
 		GTime time = epoch2time(ep[i].data(), E_TimeSys::UTC);
 
-		ERPValues erpv = getErp(nav.erp, time);
+		ERPValues erpv = getErp(nav_.erp, time);
 		MjDateUt1 mjdUt1(time, erpv.ut1Utc);
 
 		VectorPos pos;
@@ -1782,7 +1782,7 @@ void debugTideSolidPole()
 		mjdUtc.val = mjdval;
 		GTime time = GTime(mjdUtc);
 
-		ERPValues erpv = getErp(nav.erp, time);
+		ERPValues erpv = getErp(nav_.erp, time);
 		MjDateUt1 mjdUt1(time, erpv.ut1Utc);
 
 		VectorEnu denu = tideSolidPole(std::cout, mjdUt1, pos, erpv);
@@ -1846,7 +1846,7 @@ void debugTideOceanPole()
 	// 	mjdUtc.val = 52640;
 	// 	GTime time = GTime(mjdUtc);
 
-	// 	ERPValues erpv = getErp(nav.erp, time);
+	// 	ERPValues erpv = getErp(nav_.erp, time);
 	// 	MjDateUt1 mjdUt1(time, erpv.ut1Utc);
 
 	// 	vector<VectorPos> vecPos;
@@ -1877,7 +1877,7 @@ void debugTideOceanPole()
 		mjdUtc.val = mjdval;
 		GTime time = GTime(mjdUtc);
 
-		ERPValues erpv = getErp(nav.erp, time);
+		ERPValues erpv = getErp(nav_.erp, time);
 		// MjDateUt1 mjdUt1(time, erpv.ut1Utc);
 		MjDateUt1 mjdUt1(time, 0);
 

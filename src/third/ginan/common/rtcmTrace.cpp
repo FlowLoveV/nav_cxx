@@ -556,7 +556,7 @@ void	traceBrdcEphBody(
 	doc.append(kvp("4YearIntervalNumber",	geph.N4			));
 }
 
-/** Writes nav.satNavMap[].ssrOut to a human-readable file
+/** Writes nav_.satNavMap[].ssrOut to a human-readable file
 */
 void writeSsrOutToFile(
 	int						epochNum,

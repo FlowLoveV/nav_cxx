@@ -1235,7 +1235,7 @@ int setbitsInc(
 	return pos + len;
 }
 
-/** set sign-magnitude bits applied in GLO nav messages
+/** set sign-magnitude bits applied in GLO nav_ messages
 */
 void setbitg(
 	unsigned char*	buff,	///< byte data
@@ -1247,7 +1247,7 @@ void setbitg(
     setbitu(buff, pos+1, len-1, value<0?-value:value);
 }
 
-/** increasingly set sign-magnitude bits applied in GLO nav messages
+/** increasingly set sign-magnitude bits applied in GLO nav_ messages
 */
 int setbitgInc(
 	unsigned char*	buff,	///< byte data

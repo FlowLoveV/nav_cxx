@@ -234,7 +234,7 @@ KFState rtsSmoothing(
 	for (auto& [id, rec] : receiverMap)
 		rec.obsList.clear();
 
-	for (auto& [dummy, satNav] : nav.satNavMap)
+	for (auto& [dummy, satNav] : nav_.satNavMap)
 		satNav.attStatus = {};
 
 	MatrixXd transitionMatrix;

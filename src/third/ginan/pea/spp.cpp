@@ -165,7 +165,7 @@ bool ionocorr(
 		E_Sys			sys		= E_Sys::GPS;
 		E_NavMsgType	type	= defNavMsgType[sys];
 
-		auto ion_ptr = seleph<ION>(std::cout, time, sys, type, nav);
+		auto ion_ptr = seleph<ION>(std::cout, time, sys, type, nav_);
 
 		double* vals = nullptr;
 		if (ion_ptr != nullptr)
@@ -184,7 +184,7 @@ bool ionocorr(
 	/* tmp fix : KH
 	if (ionoopt ==  E_IonoMode::TOTAL_ELECTRON_CONTENT)
 	{
-		int res = iontec(time, &nav, pos, azel, 1, dion, var);
+		int res = iontec(time, &nav_, pos, azel, 1, dion, var);
 		if (!res)
 		{
 			dion = 0;
@@ -794,7 +794,7 @@ void SPP(
 
 		auto& satOpts = acsConfig.getSatOpts(obs.Sat);
 
-		satPosClk(trace, obs.time, obs, nav, satOpts.posModel.sources, satOpts.clockModel.sources, kfState_ptr, remote_ptr, E_OffsetType::APC);
+		satPosClk(trace, obs.time, obs, nav_, satOpts.posModel.sources, satOpts.clockModel.sources, kfState_ptr, remote_ptr, E_OffsetType::APC);
 	}
 
 	tracepdeex(3,trace,	"\n%s  : tobs=%s n=%zu", __FUNCTION__, obsList.front()->time.to_string(3).c_str(), obsList.size());

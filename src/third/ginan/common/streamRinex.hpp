@@ -30,7 +30,7 @@ struct RinexParser : Parser, ObsLister
 		while   (  stat <= 0
 				&& inputStream)
 		{
-			stat = readRnx(inputStream, ctype, tempObsList, nav, rnxRec, version, nav_system, time_system, sysCodeTypes);
+			stat = readRnx(inputStream, ctype, tempObsList, nav_, rnxRec, version, nav_system, time_system, sysCodeTypes);
 		}
 
 		if (tempObsList.size() > 0)

@@ -184,7 +184,7 @@ struct OutputOptions
 	string	rtcm_obs_directory			= "<OUTPUTS_ROOT>";
 	string	rtcm_nav_directory			= "<OUTPUTS_ROOT>";
 	string  rtcm_obs_filename			= "<RTCM_OBS_DIRECTORY>/<RECEIVER>-<LOGTIME>-OBS.rtcm";
-	string  rtcm_nav_filename			= "<RTCM_NAV_DIRECTORY>/<STREAM>-<LOGTIME>-NAV.rtcm";
+	string  rtcm_nav_filename			= "<RTCM_NAV_DIRECTORY>/<STREAM>-<LOGTIME>-nav_.rtcm";
 
 	bool	output_log					= false;
 	string	log_directory				= "<OUTPUTS_ROOT>";

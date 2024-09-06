@@ -139,7 +139,7 @@ void sinexPerEpochPerStation(
 		}
 
 		bool found;
-		found = findAntenna(tmpant, E_Sys::GPS, time, nav, F1);
+		found = findAntenna(tmpant, E_Sys::GPS, time, nav_, F1);
 		if (found)
 		{
 			//all good, carry on
@@ -150,7 +150,7 @@ void sinexPerEpochPerStation(
 		// Try searching under the antenna type with DOME => NONE
 		radome2none(tmpant);
 
-		found = findAntenna(tmpant, E_Sys::GPS, time, nav, F1);
+		found = findAntenna(tmpant, E_Sys::GPS, time, nav_, F1);
 		if (found)
 		{
 			trace

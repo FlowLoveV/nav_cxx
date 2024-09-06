@@ -98,14 +98,14 @@ void outputApriori(
 		kfKey.type	= KF::REC_CLOCK;
 
 		double dtRec = 0;
-		int ret = pephclk(std::cout, tsync, id, nav, dtRec);
+		int ret = pephclk(std::cout, tsync, id, nav_, dtRec);
 		if (ret == 1)
 		{
 			aprioriState.addKFState(kfKey, {.x = CLIGHT * dtRec});
 		}
 	}
 
-	for (auto& [Sat, satNav] : nav.satNavMap)
+	for (auto& [Sat, satNav] : nav_.satNavMap)
 	{
 		if (acsConfig.process_sys[Sat.sys] == false)
 		{
@@ -124,7 +124,7 @@ void outputApriori(
 		kfKey.type	= KF::SAT_CLOCK;
 
 		double dtSat = 0;
-		int ret = pephclk(std::cout, tsync, kfKey.Sat.id(), nav, dtSat);
+		int ret = pephclk(std::cout, tsync, kfKey.Sat.id(), nav_, dtSat);
 		if (ret == 1)
 		{
 			aprioriState.addKFState(kfKey, {.x = CLIGHT * dtSat});
@@ -167,7 +167,7 @@ void outputApriori(
 // 	if (recOpts.apriori_pos.isZero() == false)
 // 		snxPos	= recOpts.apriori_pos;
 //
-// 	ERPValues erpv = getErp(nav.erp, kfState.time);
+// 	ERPValues erpv = getErp(nav_.erp, kfState.time);
 //
 // 	FrameSwapper frameSwapper(kfState.time, erpv);
 //
@@ -305,7 +305,7 @@ void selectAprioriSource(
 
 	double	dtRec		= 0;
 	double	dtRecVar	= 0;
-	bool pass = pephclk(trace, time, rec.id, nav, dtRec, &dtRecVar);
+	bool pass = pephclk(trace, time, rec.id, nav_, dtRec, &dtRecVar);
 	if (pass)
 	{
 		rec.aprioriClk		= dtRec		*		CLIGHT;

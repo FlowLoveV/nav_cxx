@@ -390,8 +390,8 @@ void cullOldSSRs(
 struct KFState;
 
 
-template<typename TYPE> TYPE*	seleph(Trace& trace, GTime time, SatSys Sat,	E_NavMsgType type, int iode,	Navigation& nav);
-template<typename TYPE> TYPE*	seleph(Trace& trace, GTime time, E_Sys sys,		E_NavMsgType type, 				Navigation& nav);
+template<typename TYPE> TYPE*	seleph(Trace& trace, GTime time, SatSys Sat,	E_NavMsgType type, int iode,	Navigation& nav_);
+template<typename TYPE> TYPE*	seleph(Trace& trace, GTime time, E_Sys sys,		E_NavMsgType type, 				Navigation& nav_);
 
 
 bool satclk(
@@ -400,7 +400,7 @@ bool satclk(
 	GTime				teph,
 	SatPos&				satPos,
 	vector<E_Source>	ephTypes,
-	Navigation&			nav,
+	Navigation&			nav_,
 	const KFState*		kfState_ptr		= nullptr,
 	const KFState*		remote_ptr		= nullptr);
 
@@ -411,7 +411,7 @@ bool satpos(
 	SatPos&				satPos,
 	vector<E_Source>	ephTypes,
 	E_OffsetType		offsetType,
-	Navigation&			nav,
+	Navigation&			nav_,
 	const KFState*		kfState_ptr		= nullptr,
 	const KFState*		remote_ptr		= nullptr);
 
@@ -419,7 +419,7 @@ bool satPosClk(
 	Trace&				trace,
 	GTime				teph,
 	GObs&				obs,
-	Navigation&			nav,
+	Navigation&			nav_,
 	vector<E_Source>	posSources,
 	vector<E_Source>	clkSources,
 	const KFState*		kfState_ptr		= nullptr,
@@ -429,7 +429,7 @@ bool satPosClk(
 
 void readSp3ToNav(
 	string&		file,
-	Navigation&	nav,
+	Navigation&	nav_,
 	int			opt);
 
 bool readsp3(
@@ -441,7 +441,7 @@ bool readsp3(
 
 void readOrbex(
 	string			filepath,
-	Navigation&		nav);
+	Navigation&		nav_);
 
 
 bool satPosKalman(
@@ -466,7 +466,7 @@ bool satClkBroadcast(
 	double&			ephVar,
 	bool&			ephClkValid,
 	int&			obsIode,
-	Navigation&		nav);
+	Navigation&		nav_);
 
 bool satPosBroadcast(
 	Trace&			trace,
@@ -478,7 +478,7 @@ bool satPosBroadcast(
 	double&			ephVar,
 	bool&			ephPosValid,
 	int&			obsIode,
-	Navigation&		nav);
+	Navigation&		nav_);
 
 
 bool satClkBroadcast(
@@ -486,7 +486,7 @@ bool satClkBroadcast(
 	GTime			time,
 	GTime			teph,
 	SatPos&			satPos,
-	Navigation&		nav,
+	Navigation&		nav_,
 	int				iode = ANY_IODE);
 
 bool satPosBroadcast(
@@ -494,7 +494,7 @@ bool satPosBroadcast(
 	GTime			time,
 	GTime			teph,
 	SatPos&			satPos,
-	Navigation&		nav,
+	Navigation&		nav_,
 	int				iode = ANY_IODE);
 
 
@@ -502,13 +502,13 @@ bool satPosPrecise(
 	Trace&			trace,
 	GTime			time,
 	SatPos&			satPos,
-	Navigation&		nav);
+	Navigation&		nav_);
 
 bool satClkPrecise(
 	Trace&			trace,
 	GTime			time,
 	SatPos&			satPos,
-	Navigation&		nav);
+	Navigation&		nav_);
 
 
 bool satPosSSR(
@@ -516,14 +516,14 @@ bool satPosSSR(
 	GTime			time,
 	GTime			teph,
 	SatPos&			satPos,
-	Navigation&		nav);
+	Navigation&		nav_);
 
 bool satClkSSR(
 	Trace&			trace,
 	GTime			time,
 	GTime			teph,
 	SatPos&			satPos,
-	Navigation&		nav);
+	Navigation&		nav_);
 
 double relativity1(
 	Vector3d&			rSat,

@@ -92,7 +92,7 @@ using std::string;
 #include "slr.hpp"
 #include "api.hpp"
 
-Navigation				nav		= {};
+Navigation				nav_		= {};
 int						epoch	= 1;
 GTime					tsync	= GTime::noTime();
 map<int, SatIdentity>	satIdMap;
@@ -319,7 +319,7 @@ void reloadInputFiles()
 		BOOST_LOG_TRIVIAL(info)
 		<< "Loading ATX file " << atxfile;
 
-		readantexf(atxfile, nav);
+		readantexf(atxfile, nav_);
 	}
 
 	removeInvalidFiles(acsConfig.sp3_files);
@@ -333,7 +333,7 @@ void reloadInputFiles()
 		BOOST_LOG_TRIVIAL(info)
 		<< "Loading SP3 file " << sp3file;
 
-		readSp3ToNav(sp3file, nav, 0);
+		readSp3ToNav(sp3file, nav_, 0);
 	}
 
 	removeInvalidFiles(acsConfig.obx_files);
@@ -347,7 +347,7 @@ void reloadInputFiles()
 		BOOST_LOG_TRIVIAL(info)
 		<< "Loading OBX file " << obxfile;
 
-		readOrbex(obxfile, nav);
+		readOrbex(obxfile, nav_);
 	}
 
 	removeInvalidFiles(acsConfig.nav_files);
@@ -359,7 +359,7 @@ void reloadInputFiles()
 		}
 
 		BOOST_LOG_TRIVIAL(info)
-		<< "Loading NAV file " << navfile;
+		<< "Loading nav_ file " << navfile;
 
 		auto rinexStream = make_unique<StreamParser>(make_unique<FileStream>(navfile), make_unique<RinexParser>());
 
@@ -377,7 +377,7 @@ void reloadInputFiles()
 		BOOST_LOG_TRIVIAL(info)
 		<< "Loading ERP file " << erpfile;
 
-		readErp(erpfile, nav.erp);
+		readErp(erpfile, nav_.erp);
 	}
 
 	removeInvalidFiles(acsConfig.clk_files);
@@ -438,7 +438,7 @@ void reloadInputFiles()
 		BOOST_LOG_TRIVIAL(info)
 		<< "Loading ION file " << ionfile;
 
-		readTec(ionfile, &nav);
+		readTec(ionfile, &nav_);
 	}
 
 	removeInvalidFiles(acsConfig.igrf_files);
@@ -683,7 +683,7 @@ void reloadInputFiles()
 		BOOST_LOG_TRIVIAL(info)
 		<< "Loading planetary ephemeris file " << jplfile;
 
-		nav.jplEph_ptr = (struct jpl_eph_data*) jpl_init_ephemeris(jplfile.c_str(), nullptr, nullptr);          // a Pointer to The jpl_eph_data Structure
+		nav_.jplEph_ptr = (struct jpl_eph_data*) jpl_init_ephemeris(jplfile.c_str(), nullptr, nullptr);          // a Pointer to The jpl_eph_data Structure
 
 		if (jpl_init_error_code())
 		{
@@ -699,8 +699,8 @@ void reloadInputFiles()
 	for (auto& [id, rtcminputs]			: acsConfig.obs_rtcm_inputs)	{	addStationData(id,		rtcminputs,					"RTCM",		"OBS");			}
 	for (auto& [id, pseudosp3inputs]	: acsConfig.pseudo_sp3_inputs)	{	addStationData(id,		pseudosp3inputs,			"SP3",		"PSEUDO");		}
 	for (auto& [id, pseudosnxinputs]	: acsConfig.pseudo_snx_inputs)	{	addStationData(id,		pseudosnxinputs,			"SINEX",	"PSEUDO");		}
-																		{	addStationData("Nav",	acsConfig.nav_rtcm_inputs,	"RTCM",		"NAV");			}
-																		{	addStationData("QZSL6",	acsConfig.qzs_rtcm_inputs,	"RTCM",		"NAV");			}
+																		{	addStationData("nav_",	acsConfig.nav_rtcm_inputs,	"RTCM",		"nav_");			}
+																		{	addStationData("QZSL6",	acsConfig.qzs_rtcm_inputs,	"RTCM",		"nav_");			}
 }
 
 void configureUploadingStreams()
@@ -869,7 +869,7 @@ void createTracefiles(
 
 		bool newTraceFile = false;
 
-		for (auto& [Sat, satNav] : nav.satNavMap)
+		for (auto& [Sat, satNav] : nav_.satNavMap)
 		{
 			if	(  acsConfig.output_satellite_trace
 				&& suff.empty())
@@ -1057,7 +1057,7 @@ void createTracefiles(
 			createNewTraceFile(id, 		logptime,	filename,	rtcmParser.rtcmTraceFilename);
 		}
 
-		for (auto nav : {false, true})
+		for (auto nav_ : {false, true})
 		{
 			bool isNav = true;
 			try
@@ -1068,12 +1068,12 @@ void createTracefiles(
 			}
 			catch(...){}
 
-			if	( (acsConfig.record_rtcm_nav && isNav == true	&& nav == true)
-				||(acsConfig.record_rtcm_obs && isNav == false	&& nav == false))
+			if	( (acsConfig.record_rtcm_nav && isNav == true	&& nav_ == true)
+				||(acsConfig.record_rtcm_obs && isNav == false	&& nav_ == false))
 			{
 				string filename;
 
-				if (nav)	filename = acsConfig.rtcm_nav_filename;
+				if (nav_)	filename = acsConfig.rtcm_nav_filename;
 				else		filename = acsConfig.rtcm_obs_filename;
 
 				replaceString(filename, "<STREAM>",		rtcmParser.rtcmMountpoint);
@@ -1131,7 +1131,7 @@ void avoidCollisions(
 
 		if (recOpts.sat_id.empty() == false)
 		{
-			auto& satNav = nav.satNavMap[recOpts.sat_id.c_str()];
+			auto& satNav = nav_.satNavMap[recOpts.sat_id.c_str()];
 		}
 	}
 }
@@ -1531,7 +1531,7 @@ void mainOncePerEpochPerSatellite(
 	GTime	time,
 	SatSys	Sat)
 {
-	auto& satNav 	= nav.satNavMap[Sat];
+	auto& satNav 	= nav_.satNavMap[Sat];
 	auto& satOpts	= acsConfig.getSatOpts(Sat);
 
 	if (satOpts.exclude)
@@ -1542,8 +1542,8 @@ void mainOncePerEpochPerSatellite(
 	//get svn and block type if possible
 	if (Sat.svn().empty())
 	{
-		auto it = nav.svnMap[Sat].lower_bound(time);
-		if (it == nav.svnMap[Sat].end())
+		auto it = nav_.svnMap[Sat].lower_bound(time);
+		if (it == nav_.svnMap[Sat].end())
 		{
 			BOOST_LOG_TRIVIAL(warning) << "Warning: SVN not found for " << Sat.id();
 
@@ -1560,8 +1560,8 @@ void mainOncePerEpochPerSatellite(
 
 	if (Sat.blockType().empty())
 	{
-		auto it = nav.blocktypeMap.find(Sat.svn());
-		if (it == nav.blocktypeMap.end())
+		auto it = nav_.blocktypeMap.find(Sat.svn());
+		if (it == nav_.blocktypeMap.end())
 		{
 			BOOST_LOG_TRIVIAL(warning) << "Warning: Block type not found for " << Sat.id() << ", attitude modelling etc may be affected, check sinex file";
 
@@ -1586,14 +1586,14 @@ void mainOncePerEpochPerSatellite(
 	satPos0.Sat			= Sat;
 	satPos0.satNav_ptr	= &satNav;
 
-	bool pass =	satpos(nullStream, time, time, satPos0, satOpts.posModel.sources, E_OffsetType::COM, nav);
+	bool pass =	satpos(nullStream, time, time, satPos0, satOpts.posModel.sources, E_OffsetType::COM, nav_);
 	if (pass == false)
 	{
 		BOOST_LOG_TRIVIAL(warning) << "Warning: No sat pos found for " << satPos0.Sat.id() << ".";
 		return;
 	}
 
-	ERPValues erpv = getErp(nav.erp, time);
+	ERPValues erpv = getErp(nav_.erp, time);
 
 	FrameSwapper frameSwapper(time, erpv);
 
@@ -1631,7 +1631,7 @@ void mainOncePerEpoch(
 	predictInertials(pppTrace, pppNet.kfState, time);
 
 	//try to get svns & block types of all used satellites
-	for (auto& [Sat, satNav] : nav.satNavMap)
+	for (auto& [Sat, satNav] : nav_.satNavMap)
 	{
 		if (acsConfig.process_sys[Sat.sys] == false)
 			continue;
@@ -1751,18 +1751,18 @@ void mainPostProcessing(
 		}
 
 		{
-			ERPValues erpv = getErp(nav.erp, pppNet.kfState.time);
+			ERPValues erpv = getErp(nav_.erp, pppNet.kfState.time);
 
 			FrameSwapper frameSwapper(pppNet.kfState.time, erpv);
 
-			for (auto& [Sat, satNav] : nav.satNavMap)
+			for (auto& [Sat, satNav] : nav_.satNavMap)
 			{
 				SatPos satPos;
 
 				satPos.Sat			= Sat;
 				satPos.satNav_ptr	= &satNav;
 
-				bool pass =	satpos(nullStream, pppNet.kfState.time, pppNet.kfState.time, satPos, {E_Source::PRECISE, E_Source::BROADCAST}, E_OffsetType::COM, nav);
+				bool pass =	satpos(nullStream, pppNet.kfState.time, pppNet.kfState.time, satPos, {E_Source::PRECISE, E_Source::BROADCAST}, E_OffsetType::COM, nav_);
 				if (pass == false)
 				{
 					BOOST_LOG_TRIVIAL(warning) << "Warning: No sat pos found for " << satPos.Sat.id() << ".";
@@ -1904,7 +1904,7 @@ int ginan(
 		if (satOpts.exclude)
 			continue;
 
-		nav.satNavMap[Sat].id = Sat.id();
+		nav_.satNavMap[Sat].id = Sat.id();
 	}
 
 	Network pppNet;

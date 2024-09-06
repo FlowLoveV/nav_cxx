@@ -140,7 +140,7 @@ void minOrbitData(
 			constraint = "!";
 		}
 
-		auto& satNav = nav.satNavMap[key.Sat];
+		auto& satNav = nav_.satNavMap[key.Sat];
 
 		Vector3d aprioriPos	= satNav.aprioriPos;
 
@@ -219,7 +219,7 @@ void mincon(
 	bool	hasSatellites	= false;
 
 
-	ERPValues erpv = getErp(nav.erp, kfStateStations.time);
+	ERPValues erpv = getErp(nav_.erp, kfStateStations.time);
 
 	FrameSwapper frameSwapper(kfStateStations.time, erpv);
 
@@ -285,7 +285,7 @@ void mincon(
 		}
 		else if (key.type == +KF::ORBIT)
 		{
-			auto& satNav = nav.satNavMap[key.Sat];
+			auto& satNav = nav_.satNavMap[key.Sat];
 
 			if (satNav.aprioriPos.isZero())
 			{
@@ -741,7 +741,7 @@ void mincon(
 			string		str;
 			Vector3d	aprioriPos;
 			if		(type == KF::REC_POS)	{	auto& rec		= *key.rec_ptr;				aprioriPos = rec.minconApriori;		str = key.str;		}
-			else if	(type == KF::ORBIT)		{	auto& satNav	= nav.satNavMap[key.Sat];	aprioriPos = satNav.aprioriPos;		str = key.Sat.id();	}
+			else if	(type == KF::ORBIT)		{	auto& satNav	= nav_.satNavMap[key.Sat];	aprioriPos = satNav.aprioriPos;		str = key.Sat.id();	}
 
 			Vector3d deltaR = filterPos - aprioriPos;
 
@@ -877,7 +877,7 @@ KFState minconOnly(
 
 	GTime time = kfState.time;
 
-	ERPValues erpv = getErp(nav.erp, time);
+	ERPValues erpv = getErp(nav_.erp, time);
 
 	FrameSwapper frameSwapper(time, erpv);
 
@@ -891,13 +891,13 @@ KFState minconOnly(
 			continue;
 		}
 
-		auto&	satNav = nav.satNavMap[key.Sat];
+		auto&	satNav = nav_.satNavMap[key.Sat];
 
 		SatPos satPos;
 		satPos.Sat			= key.Sat;
 		satPos.satNav_ptr	= &satNav;
 
-		bool pass =	satpos(nullStream, time, time, satPos, {E_Source::PRECISE, E_Source::BROADCAST}, E_OffsetType::COM, nav);
+		bool pass =	satpos(nullStream, time, time, satPos, {E_Source::PRECISE, E_Source::BROADCAST}, E_OffsetType::COM, nav_);
 		if (pass == false)
 		{
 			BOOST_LOG_TRIVIAL(warning) << "Warning: No sat pos found for " << satPos.Sat.id() << ".";

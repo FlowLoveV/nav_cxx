@@ -479,8 +479,8 @@ ERPValues getErpFromFilter(
 	ERPValues erpv;
 
 	ERPValues erpvs[2];
-	erpvs[0] = getErp(nav.erp, kfState.time);
-	erpvs[1] = getErp(nav.erp, kfState.time + 1);
+	erpvs[0] = getErp(nav_.erp, kfState.time);
+	erpvs[1] = getErp(nav_.erp, kfState.time + 1);
 
 	erpv		= erpvs[0];
 	erpv.time	= kfState.time;

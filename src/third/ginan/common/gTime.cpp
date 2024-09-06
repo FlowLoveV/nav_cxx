@@ -357,8 +357,8 @@ GTime timeGet()
 double leapSeconds(
 		GTime time)
 {
-	if (nav.leaps >= 0)
-		return nav.leaps;
+	if (nav_.leaps >= 0)
+		return nav_.leaps;
 
 	if (acsConfig.leap_seconds >= 0)
 		return acsConfig.leap_seconds;

@@ -17,12 +17,12 @@ int checkSSRRegion(
 
 	if (pos[2] < -1000)
 		return -1;
-	if (nav.ssrAtm.atmosRegionsMap.empty())
+	if (nav_.ssrAtm.atmosRegionsMap.empty())
 		return -1;
 
 	// tracepdeex(4,std::cout,"\n    Checking SSR regions %.4f %.4f... ", pos[0]*R2D, pos[1]*R2D);
 
-	for (auto& [regId, regData] : nav.ssrAtm.atmosRegionsMap)
+	for (auto& [regId, regData] : nav_.ssrAtm.atmosRegionsMap)
 	{
 		if (pos[0] > regData.maxLatDeg)	continue;
 		if (pos[0] < regData.minLatDeg)	continue;
@@ -43,11 +43,11 @@ int checkSSRRegion(
 }
 
 /** Initializes local ionosphere maps
-	Parameters are set from files indicated by nav.SSRAtmMap.AtmosRegions
+	Parameters are set from files indicated by nav_.SSRAtmMap.AtmosRegions
 	*/
 bool configAtmosRegion_File()
 {
-	auto& regMaps = nav.ssrAtm.atmosRegionsMap;
+	auto& regMaps = nav_.ssrAtm.atmosRegionsMap;
 
 	regMaps.clear();
 
@@ -270,7 +270,7 @@ bool configAtmosRegions(
 		coordFromRec = true;
 	}
 
-	SSRAtmRegion& atmRegion = nav.ssrAtm.atmosRegionsMap[regionId];
+	SSRAtmRegion& atmRegion = nav_.ssrAtm.atmosRegionsMap[regionId];
 
 	atmRegion.regionDefIOD = acsConfig.ssrOpts.region_iod;
 

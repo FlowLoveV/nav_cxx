@@ -193,7 +193,7 @@ void updateNavSSR()
 {
 	for (auto& [Sat, ssrBlock] : igsSSRStorage)
 	{
-		auto& ssr = nav.satNavMap[Sat].receivedSSR;
+		auto& ssr = nav_.satNavMap[Sat].receivedSSR;
 
 		if (ssrBlock.ephUpdated)
 		if (ssr.ssrEph_map.find(ssrBlock.ssrEph.t0) == ssr.ssrEph_map.end())
@@ -715,7 +715,7 @@ void decodeigsSSR_type8(
 	if (ssrHead.ssrMeta.multipleMessage == 0)
 		updateNavSSR();
 
-	nav.ssrAtm.atmosGlobalMap[ssrAtmGlobal.time] = ssrAtmGlobal;
+	nav_.ssrAtm.atmosGlobalMap[ssrAtmGlobal.time] = ssrAtmGlobal;
 
 	return;
 }

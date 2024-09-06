@@ -2457,7 +2457,7 @@ void parseSatelliteIdentifiers(string& s)
 
 	theSinex.satIdentityMap[sst.svn] = sst;
 
-	nav.blocktypeMap[sst.svn] = sst.blocktype;
+	nav_.blocktypeMap[sst.svn] = sst.blocktype;
 }
 
 void write_snx_satidents(ofstream& out)
@@ -2519,7 +2519,7 @@ void parseSatPrns(string& s)
 		// No need to adjust years since for satellites the year is 4 digits ...
 		theSinex.list_satprns.push_back(spt);
 
-		nav.svnMap[SatSys(spt.prn.c_str())][spt.start] = spt.svn;
+		nav_.svnMap[SatSys(spt.prn.c_str())][spt.start] = spt.svn;
 	}
 }
 

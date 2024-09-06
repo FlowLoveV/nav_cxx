@@ -149,7 +149,7 @@ SatGeom satOrbitGeometry(
 
 	// Beta & mu rates
 	double dt = 1;
-	ERPValues erpv = getErp(nav.erp, time);
+	ERPValues erpv = getErp(nav_.erp, time);
 	FrameSwapper frameSwapper(time, erpv);
 	VectorEci rSatEci;
 	VectorEci vSatEci;
@@ -376,7 +376,7 @@ GTime findEclipseBoundaries(
 	VectorEcef vSat	= satGeom.vSat;
 	VectorEcef rSun	= satGeom.rSun;
 	VectorEcef rMoon	= satGeom.rMoon;
-	ERPValues erpv = getErp(nav.erp, time);
+	ERPValues erpv = getErp(nav_.erp, time);
 	FrameSwapper frameSwapper(time, erpv);
 	VectorEci rSatEci0;
 	VectorEci vSatEci0;
@@ -1312,7 +1312,7 @@ bool preciseAttitude(
 	GTime		time,				///< Solution time
 	AttStatus&	attStatus)			///< Attitude status
 {
-	auto attMapItr = nav.attMapMap.find(id);		if (attMapItr	== nav.attMapMap.end())	return false;
+	auto attMapItr = nav_.attMapMap.find(id);		if (attMapItr	== nav_.attMapMap.end())	return false;
 	auto& [dummy, attMap] = *attMapItr;
 	auto entryItr2	= attMap.lower_bound(time);		if (entryItr2	== attMap	 	.end())	return false;
 
@@ -1355,7 +1355,7 @@ bool preciseAttitude(
 
 		Matrix3d body2Eci = eci2Body.transpose();
 
-		ERPValues erpv = getErp(nav.erp, time);
+		ERPValues erpv = getErp(nav_.erp, time);
 
 		Matrix3d i2tMatrix	= Matrix3d::Identity();
 
@@ -1573,7 +1573,7 @@ void recAtt(
 // 	SatSys Sat(rec.id.c_str());			//todo aaron, this should be the recSatId thing instead
 // 	if (Sat.prn)
 // 	{
-// 		nav.satNavMap[Sat].attStatus = attStatus;
+// 		nav_.satNavMap[Sat].attStatus = attStatus;
 // 	}
 }
 

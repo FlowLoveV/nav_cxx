@@ -67,7 +67,7 @@ void decodeObsH(
 	double							ver,
 	E_TimeSys&						tsys,
 	map<E_Sys, map<int, CodeType>>&	sysCodeTypes,
-	Navigation&						nav,
+	Navigation&						nav_,
 	RinexStation&					rnxRec)
 {
 	double del[3];
@@ -307,7 +307,7 @@ void decodeObsH(
 			if (1 <= prn
 				&&prn <= NSATGLO)
 			{
-				nav.glo_fcn[prn - 1] = fcn + 8;
+				nav_.glo_fcn[prn - 1] = fcn + 8;
 			}
 
 		}
@@ -318,27 +318,27 @@ void decodeObsH(
 		p = buff;
 		for (int i = 0; i < 4; i++, p += 13)
 		{
-			if      (strncmp(p + 1, "C1C", 3)) nav.glo_cpbias[0] = str2num(p, 5, 8);
-			else if (strncmp(p + 1, "C1P", 3)) nav.glo_cpbias[1] = str2num(p, 5, 8);
-			else if (strncmp(p + 1, "C2C", 3)) nav.glo_cpbias[2] = str2num(p, 5, 8);
-			else if (strncmp(p + 1, "C2P", 3)) nav.glo_cpbias[3] = str2num(p, 5, 8);
+			if      (strncmp(p + 1, "C1C", 3)) nav_.glo_cpbias[0] = str2num(p, 5, 8);
+			else if (strncmp(p + 1, "C1P", 3)) nav_.glo_cpbias[1] = str2num(p, 5, 8);
+			else if (strncmp(p + 1, "C2C", 3)) nav_.glo_cpbias[2] = str2num(p, 5, 8);
+			else if (strncmp(p + 1, "C2P", 3)) nav_.glo_cpbias[3] = str2num(p, 5, 8);
 		}
 	}
 	else if (strstr(label, "LEAP SECONDS"        ))
 	{
 		// This would be GPS-UTC, and NOT optional as of RINEX 4
-		nav.leaps = (int)str2num(buff, 0, 6);
+		nav_.leaps = (int)str2num(buff, 0, 6);
 	}
 //     else if (strstr(label, "# OF SALTELLITES"    )) ; // opt
 //     else if (strstr(label, "PRN / # OF OBS"      )) ; // opt
 }
 
-/** Decode nav header
+/** Decode nav_ header
 */
 void decodeNavH(
 	string&		line,	///< Line to decode
 	E_Sys		sys,	///< GNSS system
-	Navigation&	nav)	///< Navigation data
+	Navigation&	nav_)	///< Navigation data
 {
 	char*	buff	= &line[0];
 	char*	label	= buff + 60;
@@ -351,7 +351,7 @@ void decodeNavH(
 		E_NavMsgType type	= defNavMsgType[sys];
 		GTime time 			= {};
 
-		ION& ionEntry		= nav.ionMap[sys][type][time];
+		ION& ionEntry		= nav_.ionMap[sys][type][time];
 
 		ionEntry.type		= type;
 		ionEntry.Sat.sys	= sys;
@@ -366,7 +366,7 @@ void decodeNavH(
 		E_NavMsgType type	= defNavMsgType[sys];
 		GTime time 			= {};
 
-		ION& ionEntry		= nav.ionMap[sys][type][time];
+		ION& ionEntry		= nav_.ionMap[sys][type][time];
 
 		ionEntry.type		= type;
 		ionEntry.Sat.sys	= sys;
@@ -391,7 +391,7 @@ void decodeNavH(
 		GWeek week			= (int)	str2num(buff, 40, 9);
 		GTime time(week, tow);
 
-		STO& stoEntry		= nav.stoMap[code][type][time];
+		STO& stoEntry		= nav_.stoMap[code][type][time];
 
 		stoEntry.type		= type;
 		stoEntry.Sat.sys	= sys;
@@ -411,7 +411,7 @@ void decodeNavH(
 		E_NavMsgType type	= defNavMsgType[sys];
 		GTime time			= {};
 
-		ION& ionEntry		= nav.ionMap[sys][type][time];
+		ION& ionEntry		= nav_.ionMap[sys][type][time];
 
 		ionEntry.type		= type;
 		ionEntry.Sat.sys	= sys;
@@ -465,7 +465,7 @@ void decodeNavH(
 		if (Sat.sys != +E_Sys::BDS)	{	time = GTime(GWeek(week), GTow(sec));	}
 		else						{	time = GTime(BWeek(week), BTow(sec));	}
 
-		STO& stoEntry		= nav.stoMap[code][type][time];
+		STO& stoEntry		= nav_.stoMap[code][type][time];
 
 		stoEntry.type		= type;
 		stoEntry.Sat		= Sat;
@@ -480,14 +480,14 @@ void decodeNavH(
 	else if (strstr(label, "LEAP SECONDS"        ))
 	{
 		// opt
-		nav.leaps=(int)str2num(buff, 0, 6);
+		nav_.leaps=(int)str2num(buff, 0, 6);
 	}
 }
 /** Decode gnav header
 */
 void decodeGnavH(
 	string&		line,
-	Navigation&	nav)
+	Navigation&	nav_)
 {
 	char*	buff	= &line[0];
 	char*	label	= buff + 60;
@@ -498,15 +498,15 @@ void decodeGnavH(
 	else if (strstr(label, "LEAP SECONDS"        ))
 	{
 		// opt
-		nav.leaps=(int)str2num(buff, 0, 6);
+		nav_.leaps=(int)str2num(buff, 0, 6);
 	}
 }
 
-/** Decode geo nav header
+/** Decode geo nav_ header
 */
 void decodeHnavH(
 	string&		line,
-	Navigation&	nav)
+	Navigation&	nav_)
 {
 	char*	buff	= &line[0];
 	char*	label	= buff + 60;
@@ -518,7 +518,7 @@ void decodeHnavH(
 	else if (strstr(label, "LEAP SECONDS"        ))
 	{
 		// opt
-		nav.leaps= (int)str2num(buff, 0, 6);
+		nav_.leaps= (int)str2num(buff, 0, 6);
 	}
 }
 
@@ -531,7 +531,7 @@ int readRnxH(
 	E_Sys&							sys,
 	E_TimeSys&						tsys,
 	map<E_Sys, map<int, CodeType>>&	sysCodeTypes,
-	Navigation&						nav,
+	Navigation&						nav_,
 	RinexStation&					rnxRec)
 {
 	string	line;
@@ -652,13 +652,13 @@ int readRnxH(
 					&&(Sat = SatSys(buff + 3), Sat)
 					&& sscanf(buff+40, "%lf", &bias) == 1)
 				{
-					nav.satNavMap[Sat].wlbias = bias;
+					nav_.satNavMap[Sat].wlbias = bias;
 				}
 				// cnes ppp-wizard clock
 				else if ((Sat = SatSys(buff + 1), Sat)
 						&&sscanf(buff+6, "%lf", &bias) == 1)
 				{
-					nav.satNavMap[Sat].wlbias = bias;
+					nav_.satNavMap[Sat].wlbias = bias;
 				}
 			}
 			continue;
@@ -666,13 +666,13 @@ int readRnxH(
 		// file type
 		switch (type)
 		{
-			case 'O': decodeObsH(inputStream, line, ver, tsys, sysCodeTypes, nav, rnxRec); break;
-			case 'N': decodeNavH			(  line, sys,        nav); break; // GPS (ver.2) or mixed (ver.3)
-			case 'G': decodeGnavH			(  line,             nav); break;
-			case 'H': decodeHnavH			(  line,             nav); break;
-			case 'J': decodeNavH 			(  line, E_Sys::QZS, nav); break; // extension
+			case 'O': decodeObsH(inputStream, line, ver, tsys, sysCodeTypes, nav_, rnxRec); break;
+			case 'N': decodeNavH			(  line, sys,        nav_); break; // GPS (ver.2) or mixed (ver.3)
+			case 'G': decodeGnavH			(  line,             nav_); break;
+			case 'H': decodeHnavH			(  line,             nav_); break;
+			case 'J': decodeNavH 			(  line, E_Sys::QZS, nav_); break; // extension
 			case 'E': //fallthrough
-			case 'L': decodeNavH 			(  line, E_Sys::GAL, nav); break; // extension
+			case 'L': decodeNavH 			(  line, E_Sys::GAL, nav_); break; // extension
 		}
 		if (strstr(label, "END OF HEADER"))
 			return 1;
@@ -1042,9 +1042,9 @@ int decodeEph(
 		eph.ttm		= GTime(GTow(eph.ttms), eph.toc);
 
 		eph.code	=(int)data[20];		// data sources
-										// bit 0 set: I/NAV E1-B
-										// bit 1 set: F/NAV E5a-I
-										// bit 2 set: I/NAV E5b-I
+										// bit 0 set: I/nav_ E1-B
+										// bit 1 set: F/nav_ E5a-I
+										// bit 2 set: I/nav_ E5b-I
 										// bit 8 set: af0-af2 toc are for E5a.E1
 										// bit 9 set: af0-af2 toc are for E5b.E1
 		unsigned short iNavMask = 0x0005;
@@ -1092,14 +1092,14 @@ int decodeEph(
 		||eph.iode > 1023)
 	{
 		BOOST_LOG_TRIVIAL(debug)
-		<< "rinex nav invalid: sat=" << Sat.id() << " iode=" << eph.iode;
+		<< "rinex nav_ invalid: sat=" << Sat.id() << " iode=" << eph.iode;
 	}
 
 	if	( eph.iodc < 0
 		||eph.iodc > 1023)
 	{
 		BOOST_LOG_TRIVIAL(debug)
-		<< "rinex nav invalid: sat=" << Sat.id() << " iodc=" << eph.iodc;
+		<< "rinex nav_ invalid: sat=" << Sat.id() << " iodc=" << eph.iodc;
 	}
 	return 1;
 }
@@ -1371,14 +1371,14 @@ int decodeCeph(
 		||ceph.iode > 1023)
 	{
 		BOOST_LOG_TRIVIAL(debug)
-		<< "rinex nav invalid: sat=" << Sat.id() << " iode=" << ceph.iode;
+		<< "rinex nav_ invalid: sat=" << Sat.id() << " iode=" << ceph.iode;
 	}
 
 	if	( ceph.iodc < 0
 		||ceph.iodc > 1023)
 	{
 		BOOST_LOG_TRIVIAL(debug)
-		<< "rinex nav invalid: sat=" << Sat.id() << " iodc=" << ceph.iodc;
+		<< "rinex nav_ invalid: sat=" << Sat.id() << " iodc=" << ceph.iodc;
 	}
 
 	return 1;
@@ -1625,7 +1625,7 @@ int readRnxNavB(
 			if (error == true)
 			{
 //                 BOOST_LOG_TRIVIAL(debug)
-// 				<< "rinex nav toc error: " << buff;
+// 				<< "rinex nav_ toc error: " << buff;
 
 				return 0;
 			}
@@ -1701,13 +1701,13 @@ int readRnxNavB(
 	return -1;
 }
 
-/** Read rinex nav/gnav/geo nav
+/** Read rinex nav_/gnav/geo nav_
 */
 int readRnxNav(
 	std::istream& 	inputStream,	///< Input stream to read
 	double			ver,			///< RINEX version
 	E_Sys			sys,			///< Satellite system
-	Navigation&		nav)			///< Navigation object
+	Navigation&		nav_)			///< Navigation object
 {
 // 	BOOST_LOG_TRIVIAL(debug) << __FUNCTION__ << ": ver=" << ver << " sys=" << sys;
 
@@ -1736,19 +1736,19 @@ int readRnxNav(
 			// add ephemeris to navigation data
 			switch (type)
 			{
-				case E_EphType::EPH:	nav.ephMap	[eph. Sat]		[eph. type]	[eph. toe]	= eph;	break;
-				case E_EphType::GEPH:	nav.gephMap	[geph.Sat]		[geph.type]	[geph.toe]	= geph;	break;
-				case E_EphType::SEPH:	nav.sephMap	[seph.Sat]		[seph.type]	[seph.t0 ]	= seph;	break;
-				case E_EphType::CEPH:	nav.cephMap	[ceph.Sat]		[ceph.type]	[ceph.toe]	= ceph;	break;
-				case E_EphType::STO:	nav.stoMap	[sto.code]		[sto. type]	[sto. tot]	= sto;	break;
-				case E_EphType::EOP:	nav.eopMap	[eop.Sat.sys]	[eop. type]	[eop.teop]	= eop;	break;
-				case E_EphType::ION:	nav.ionMap	[ion.Sat.sys]	[ion. type]	[ion. ttm]	= ion;	break;
+				case E_EphType::EPH:	nav_.ephMap	[eph. Sat]		[eph. type]	[eph. toe]	= eph;	break;
+				case E_EphType::GEPH:	nav_.gephMap	[geph.Sat]		[geph.type]	[geph.toe]	= geph;	break;
+				case E_EphType::SEPH:	nav_.sephMap	[seph.Sat]		[seph.type]	[seph.t0 ]	= seph;	break;
+				case E_EphType::CEPH:	nav_.cephMap	[ceph.Sat]		[ceph.type]	[ceph.toe]	= ceph;	break;
+				case E_EphType::STO:	nav_.stoMap	[sto.code]		[sto. type]	[sto. tot]	= sto;	break;
+				case E_EphType::EOP:	nav_.eopMap	[eop.Sat.sys]	[eop. type]	[eop.teop]	= eop;	break;
+				case E_EphType::ION:	nav_.ionMap	[ion.Sat.sys]	[ion. type]	[ion. ttm]	= ion;	break;
 				default: continue;
 			}
 		}
 	}
 
-	for (auto& [sys,	eopSysMap]	: nav.eopMap)
+	for (auto& [sys,	eopSysMap]	: nav_.eopMap)
 	for (auto& [type,	eopList]	: eopSysMap)
 	{
 		map<GTime, ERPValues> erpMap;
@@ -1766,16 +1766,16 @@ int readRnxNav(
 		}
 
 		if (!erpMap.empty())
-			nav.erp.erpMaps.push_back(erpMap);
+			nav_.erp.erpMaps.push_back(erpMap);
 	}
 
-	return	( nav. ephMap.empty() == false
-			||nav.gephMap.empty() == false
-			||nav.sephMap.empty() == false
-			||nav.cephMap.empty() == false
-			||nav. stoMap.empty() == false
-			||nav. eopMap.empty() == false
-			||nav. ionMap.empty() == false);
+	return	( nav_. ephMap.empty() == false
+			||nav_.gephMap.empty() == false
+			||nav_.sephMap.empty() == false
+			||nav_.cephMap.empty() == false
+			||nav_. stoMap.empty() == false
+			||nav_. eopMap.empty() == false
+			||nav_. ionMap.empty() == false);
 }
 
 /** Read rinex clock
@@ -1783,7 +1783,7 @@ int readRnxNav(
 int readRnxClk(
 	std::istream& 	inputStream,
 	double			ver,
-	Navigation&		nav)
+	Navigation&		nav_)
 {
 //     trace(3,"readrnxclk: index=%d\n", index);
 
@@ -1838,10 +1838,10 @@ int readRnxClk(
 		preciseClock.clkStd		= str2num(buff, std.offset, std.length);
 		preciseClock.clkIndex	= index;
 
-		nav.pclkMap[idString][time] = preciseClock;
+		nav_.pclkMap[idString][time] = preciseClock;
 	}
 
-	return nav.pclkMap.size() > 0;
+	return nav_.pclkMap.size() > 0;
 }
 
 /** Read rinex file
@@ -1850,7 +1850,7 @@ int readRnx(
 	std::istream& 					inputStream,
 	char&							type,
 	ObsList&						obsList,
-	Navigation&						nav,
+	Navigation&						nav_,
 	RinexStation&					rnxRec,
 	double&							ver,
 	E_Sys&							sys,
@@ -1860,19 +1860,19 @@ int readRnx(
 	if (inputStream.tellg() == 0)
 	{
 		// read rinex header if at beginning of file
-		readRnxH(inputStream, ver, type, sys, tsys, sysCodeTypes, nav, rnxRec);
+		readRnxH(inputStream, ver, type, sys, tsys, sysCodeTypes, nav_, rnxRec);
 	}
 
 	// read rinex body
 	switch (type)
 	{
 		case 'O': return readRnxObs(inputStream, ver, tsys, sysCodeTypes, obsList, rnxRec);
-		case 'N': return readRnxNav(inputStream, ver, sys,			nav);
-		case 'G': return readRnxNav(inputStream, ver, E_Sys::GLO, 	nav);
-		case 'H': return readRnxNav(inputStream, ver, E_Sys::SBS, 	nav);
-		case 'J': return readRnxNav(inputStream, ver, E_Sys::QZS, 	nav); // extension
-		case 'L': return readRnxNav(inputStream, ver, E_Sys::GAL, 	nav); // extension
-		case 'C': return readRnxClk(inputStream, ver,				nav);
+		case 'N': return readRnxNav(inputStream, ver, sys,			nav_);
+		case 'G': return readRnxNav(inputStream, ver, E_Sys::GLO, 	nav_);
+		case 'H': return readRnxNav(inputStream, ver, E_Sys::SBS, 	nav_);
+		case 'J': return readRnxNav(inputStream, ver, E_Sys::QZS, 	nav_); // extension
+		case 'L': return readRnxNav(inputStream, ver, E_Sys::GAL, 	nav_); // extension
+		case 'C': return readRnxClk(inputStream, ver,				nav_);
 	}
 
 	BOOST_LOG_TRIVIAL(debug)

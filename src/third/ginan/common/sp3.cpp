@@ -327,7 +327,7 @@ bool readsp3(
 
 void readSp3ToNav(
 	string&		file,
-	Navigation&	nav,
+	Navigation&	nav_,
 	int			opt)
 {
 	std::ifstream fileStream(file);
@@ -345,7 +345,7 @@ void readSp3ToNav(
 		//keep reading until it fails
 		for (auto& peph : pephList)
 		{
-			nav.pephMap[peph.Sat.id()][peph.time] = peph;
+			nav_.pephMap[peph.Sat.id()][peph.time] = peph;
 		}
 		pephList.clear();
 	}

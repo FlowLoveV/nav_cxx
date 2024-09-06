@@ -151,7 +151,7 @@ int read_biasSINEX_line(
 	}
 
 	int ft1 = code2Freq[Sat.sys][entry.cod1];
-	double lam1 = nav.satNavMap[lamSat].lamMap[ft1];
+	double lam1 = nav_.satNavMap[lamSat].lamMap[ft1];
 
 	/* decoding start/end times */
 	entry.tini = sinex_time_text(startTime,	tsys);

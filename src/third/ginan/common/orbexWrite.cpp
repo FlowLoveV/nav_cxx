@@ -352,7 +352,7 @@ void writeSysSetOrbex(
 {
 	map<int, OrbexEntry> entryList;
 
-	for (auto& [Sat, satNav] : nav.satNavMap)
+	for (auto& [Sat, satNav] : nav_.satNavMap)
 	{
 		if (outSys[Sat.sys] == false)
 			continue;
@@ -364,14 +364,14 @@ void writeSysSetOrbex(
 		GObs obs;
 		obs.Sat			= Sat;
 		obs.time		= time;
-		obs.satNav_ptr	= &nav.satNavMap[Sat];
+		obs.satNav_ptr	= &nav_.satNavMap[Sat];
 
 		GTime teph = time;
 
 		// satellite orbit - position and velocity + satellite clock (for PCS and VCS record only)
 		bool orbPass = true;
-		orbPass &= satclk(nullStream, time, time, obs, clkDataSrcs,						nav, kfState_ptr);
-		orbPass &= satpos(nullStream, time, time, obs, orbDataSrcs, E_OffsetType::COM,	nav, kfState_ptr);
+		orbPass &= satclk(nullStream, time, time, obs, clkDataSrcs,						nav_, kfState_ptr);
+		orbPass &= satpos(nullStream, time, time, obs, orbDataSrcs, E_OffsetType::COM,	nav_, kfState_ptr);
 
 		if (orbPass)
 		{

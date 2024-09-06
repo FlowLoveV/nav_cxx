@@ -21,15 +21,15 @@ struct IcdDecoder
 {
 	map<SatSys, map<int, vector<int>>>	subframeMap;
 	
-	/* decode Galileo I/NAV ephemeris ----------------------------------------------
-	* decode Galileo I/NAV (ref [5] 4.3)
-	* args   : unsigned char *buff I Galileo I/NAV subframe bits
-	*                                  buff[ 0-15]: I/NAV word type 0 (128 bit)
-	*                                  buff[16-31]: I/NAV word type 1
-	*                                  buff[32-47]: I/NAV word type 2
-	*                                  buff[48-63]: I/NAV word type 3
-	*                                  buff[64-79]: I/NAV word type 4
-	*                                  buff[80-95]: I/NAV word type 5
+	/* decode Galileo I/nav_ ephemeris ----------------------------------------------
+	* decode Galileo I/nav_ (ref [5] 4.3)
+	* args   : unsigned char *buff I Galileo I/nav_ subframe bits
+	*                                  buff[ 0-15]: I/nav_ word type 0 (128 bit)
+	*                                  buff[16-31]: I/nav_ word type 1
+	*                                  buff[32-47]: I/nav_ word type 2
+	*                                  buff[48-63]: I/nav_ word type 3
+	*                                  buff[64-79]: I/nav_ word type 4
+	*                                  buff[80-95]: I/nav_ word type 5
 	*          eph_t    *eph    IO  ephemeris structure
 	* return : status (1:ok,0:error)
 	*-----------------------------------------------------------------------------*/
@@ -138,7 +138,7 @@ struct IcdDecoder
 // 		eph->toe = gst2time(week, eph->toes);
 // 		eph->toc = gst2time(week, toc);
 // 		eph->week = week + 1024; /* gal-week = gst-week + 1024 */
-// 		eph->code = 1;       /* data source = I/NAV E1B */
+// 		eph->code = 1;       /* data source = I/nav_ E1B */
 // 
 // 		return 1;
 // 	}

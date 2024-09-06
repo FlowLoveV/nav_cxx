@@ -193,7 +193,7 @@ bool readOrbexSatId(
 */
 bool readOrbexEph(
 	ifstream&	fileStream,						///< Stream to read content from
-	Navigation&	nav,							///< Navigation data
+	Navigation&	nav_,							///< Navigation data
 	E_TimeSys	tsys	= E_TimeSys::GPST,		///< Time system
 	E_ObxFrame	frame	= E_ObxFrame::ECEF)		///< Frame type
 {
@@ -277,7 +277,7 @@ bool readOrbexEph(
 
 				att.q.normalize();
 
-				nav.attMapMap[att.id][att.time] = att;
+				nav_.attMapMap[att.id][att.time] = att;
 			}
 			// other record types to be added here, e.g.
 			/*
@@ -318,7 +318,7 @@ bool readOrbexEph(
 */
 void  readOrbex(
 	string			filepath,	///< File path to output file
-	Navigation&		nav)		///< Navigation data
+	Navigation&		nav_)		///< Navigation data
 {
 	ifstream fileStream(filepath);
 	if (!fileStream)
@@ -361,7 +361,7 @@ void  readOrbex(
 		}
 		else if (line == "+FILE/DESCRIPTION")				pass = readOrbexFileDesc(fileStream,		tsys, frame	);
 		else if (line == "+SATELLITE/ID_AND_DESCRIPTION")	pass = readOrbexSatId	(fileStream						);
-		else if (line == "+EPHEMERIS/DATA")					pass = readOrbexEph		(fileStream, nav,	tsys, frame	);
+		else if (line == "+EPHEMERIS/DATA")					pass = readOrbexEph		(fileStream, nav_,	tsys, frame	);
 		else if (line == "%END_ORBEX")						return; // end of file
 
 		if (pass == false)

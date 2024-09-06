@@ -48,10 +48,10 @@ void compareOrbits(vector<string> files) {
   auto trace = getTraceFile(traceDummy);
 
   for (auto& file : files) {
-    Navigation nav;
-    readSp3ToNav(file, nav, 0);
+    Navigation nav_;
+    readSp3ToNav(file, nav_, 0);
 
-    navVec.push_back(nav);
+    navVec.push_back(nav_);
   }
 
   for (int i = 1; i < navVec.size(); i++) {
@@ -87,7 +87,7 @@ void compareOrbits(vector<string> files) {
 
       KFState kfState;
 
-      ERPValues erpv = getErp(nav.erp, time);
+      ERPValues erpv = getErp(nav_.erp, time);
 
       FrameSwapper frameSwapper(time, erpv);
 
@@ -127,7 +127,7 @@ void compareOrbits(vector<string> files) {
         auto& satOpts = acsConfig.getSatOpts(peph1.Sat);
 
         // set apriori value
-        auto& satNav = nav.satNavMap[peph1.Sat];  // this is the global nav used by mincon
+        auto& satNav = nav_.satNavMap[peph1.Sat];  // this is the global nav_ used by mincon
         satNav.aprioriPos = frameSwapper(peph0.pos);
 
         // set test value
@@ -195,10 +195,10 @@ void compareOrbits(vector<string> files) {
 
 void compareAttitudes(vector<string> files) {
   for (auto& file : files) {
-    Navigation nav;
-    readOrbex(file, nav);
+    Navigation nav_;
+    readOrbex(file, nav_);
 
-    navVec.push_back(nav);
+    navVec.push_back(nav_);
   }
 
   for (int i = 1; i < navVec.size(); i++) {

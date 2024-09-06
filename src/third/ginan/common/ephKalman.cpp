@@ -86,7 +86,7 @@ bool satPosKalman(
 	VectorEci	vSat0;
 	GTime		t0;
 
-	auto& satNav = nav.satNavMap[satPos.Sat];
+	auto& satNav = nav_.satNavMap[satPos.Sat];
 
 	if	( satNav.satPos0.rSatEci0.isZero() == false
 		&&satNav.satPos0.vSatEci0.isZero() == false

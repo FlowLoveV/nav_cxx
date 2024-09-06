@@ -13,7 +13,7 @@
 void satPossSlr(
 	Trace&				trace,				///< Trace to output to
 	ObsList&			slrObsList,			///< List of observations to complete with satellite positions
-	Navigation&			nav,				///< Navigation data
+	Navigation&			nav_,				///< Navigation data
 	vector<E_Source>	ephTypes,			///< Source of ephemeris data
 	E_OffsetType		offsetType,			///< Point of satellite to output position of
 	E_Relativity		applyRelativity,	///< Option to apply relativistic correction to clock
@@ -24,7 +24,7 @@ void satPossSlr(
 		if (obs.exclude)
 			continue;
 
-		satpos(trace, obs.time, obs.time, obs, ephTypes, offsetType, nav, kfState_ptr);
+		satpos(trace, obs.time, obs.time, obs, ephTypes, offsetType, nav_, kfState_ptr);
 		
 		if (obs.ephPosValid == false)
 			BOOST_LOG_TRIVIAL(warning) << "Warning: Invalid position for " << obs.Sat.id() << " in " << __FUNCTION__;

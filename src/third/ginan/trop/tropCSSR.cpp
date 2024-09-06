@@ -32,7 +32,7 @@ double tropCSSR(
 	if (regInd <= 0)
 		return 0;
 
-	auto& navAtm = nav.ssrAtm.atmosRegionsMap[regInd];
+	auto& navAtm = nav_.ssrAtm.atmosRegionsMap[regInd];
 
 	if (navAtm.tropData.empty())
 		return 0;
@@ -72,7 +72,7 @@ double tropCSSR(
 	int		gridIndex	= 0;
 	double	denominator	= 0;
 
-	for (auto& [regID, regData] : nav.ssrAtm.atmosRegionsMap)
+	for (auto& [regID, regData] : nav_.ssrAtm.atmosRegionsMap)
 	{
 		if (regData.intLatDeg <= 0)
 			continue;

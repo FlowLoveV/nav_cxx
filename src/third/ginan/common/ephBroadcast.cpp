@@ -138,11 +138,11 @@ EPHTYPE* selSatEphFromMap(
 }
 
 
-template<>	Eph*	seleph<Eph>	(Trace& trace, GTime time, SatSys Sat,	E_NavMsgType type, int iode,	Navigation& nav){	return selSatEphFromMap(trace, time, Sat, type,	iode,	nav.ephMap);	}
-template<>	Geph*	seleph<Geph>(Trace& trace, GTime time, SatSys Sat,	E_NavMsgType type, int iode,	Navigation& nav){	return selSatEphFromMap(trace, time, Sat, type,	iode,	nav.gephMap);	}
-template<>	Seph*	seleph<Seph>(Trace& trace, GTime time, SatSys Sat,	E_NavMsgType type, int iode,	Navigation& nav){	return selSatEphFromMap(trace, time, Sat, type,	iode,	nav.sephMap);	}
-template<>	ION*	seleph<ION>	(Trace& trace, GTime time, E_Sys sys,	E_NavMsgType type,				Navigation& nav){	return selSysEphFromMap(trace, time, sys, type,			nav.ionMap);	}
-template<>	EOP*	seleph<EOP>	(Trace& trace, GTime time, E_Sys sys,	E_NavMsgType type,				Navigation& nav){	return selSysEphFromMap(trace, time, sys, type,			nav.eopMap);	}
+template<>	Eph*	seleph<Eph>	(Trace& trace, GTime time, SatSys Sat,	E_NavMsgType type, int iode,	Navigation& nav_){	return selSatEphFromMap(trace, time, Sat, type,	iode,	nav_.ephMap);	}
+template<>	Geph*	seleph<Geph>(Trace& trace, GTime time, SatSys Sat,	E_NavMsgType type, int iode,	Navigation& nav_){	return selSatEphFromMap(trace, time, Sat, type,	iode,	nav_.gephMap);	}
+template<>	Seph*	seleph<Seph>(Trace& trace, GTime time, SatSys Sat,	E_NavMsgType type, int iode,	Navigation& nav_){	return selSatEphFromMap(trace, time, Sat, type,	iode,	nav_.sephMap);	}
+template<>	ION*	seleph<ION>	(Trace& trace, GTime time, E_Sys sys,	E_NavMsgType type,				Navigation& nav_){	return selSysEphFromMap(trace, time, sys, type,			nav_.ionMap);	}
+template<>	EOP*	seleph<EOP>	(Trace& trace, GTime time, E_Sys sys,	E_NavMsgType type,				Navigation& nav_){	return selSysEphFromMap(trace, time, sys, type,			nav_.eopMap);	}
 
 
 
@@ -443,7 +443,7 @@ bool satClkBroadcast(
 	double&			ephVar,
 	bool&			ephClkValid,
 	int&			iode,
-	Navigation&		nav)
+	Navigation&		nav_)
 {
 	double		satClk1;
 	double		tt = 1E-3;
@@ -458,7 +458,7 @@ bool satClkBroadcast(
 
 	auto type = acsConfig.used_nav_types[Sat.sys];
 
-	auto eph_ptr = seleph<TYPE>(trace, teph, Sat, type, iode, nav);
+	auto eph_ptr = seleph<TYPE>(trace, teph, Sat, type, iode, nav_);
 
 	if (eph_ptr == nullptr)
 	{
@@ -499,7 +499,7 @@ bool satPosBroadcast(
 	double&			ephVar,
 	bool&			ephPosValid,
 	int&			iode,
-	Navigation&		nav)
+	Navigation&		nav_)
 {
 	Vector3d	rSat_1;
 	double		tt = 1E-3;
@@ -510,7 +510,7 @@ bool satPosBroadcast(
 
 	auto type = acsConfig.used_nav_types[Sat.sys];
 
-	auto eph_ptr = seleph<TYPE>(trace, teph, Sat, type, iode, nav);
+	auto eph_ptr = seleph<TYPE>(trace, teph, Sat, type, iode, nav_);
 
 	if (eph_ptr == nullptr)
 	{
@@ -548,7 +548,7 @@ bool satClkBroadcast(
 	double&			ephVar,
 	bool&			ephClkValid,
 	int&			iode,
-	Navigation&		nav)
+	Navigation&		nav_)
 {
 	int sys = Sat.sys;
 
@@ -557,9 +557,9 @@ bool satClkBroadcast(
 	if		(  sys == +E_Sys::GPS
 			|| sys == +E_Sys::GAL
 			|| sys == +E_Sys::QZS
-			|| sys == +E_Sys::BDS)	{	return satClkBroadcast<Eph>		(trace, time, teph, Sat, satClk,	satClkVel,	ephVar, ephClkValid, iode, nav);	}
-	else if (  sys == +E_Sys::GLO)	{	return satClkBroadcast<Geph>	(trace, time, teph, Sat, satClk,	satClkVel,	ephVar, ephClkValid, iode, nav);	}
-	else if (  sys == +E_Sys::SBS)	{	return satClkBroadcast<Seph>	(trace, time, teph, Sat, satClk,	satClkVel,	ephVar, ephClkValid, iode, nav);	}
+			|| sys == +E_Sys::BDS)	{	return satClkBroadcast<Eph>		(trace, time, teph, Sat, satClk,	satClkVel,	ephVar, ephClkValid, iode, nav_);	}
+	else if (  sys == +E_Sys::GLO)	{	return satClkBroadcast<Geph>	(trace, time, teph, Sat, satClk,	satClkVel,	ephVar, ephClkValid, iode, nav_);	}
+	else if (  sys == +E_Sys::SBS)	{	return satClkBroadcast<Seph>	(trace, time, teph, Sat, satClk,	satClkVel,	ephVar, ephClkValid, iode, nav_);	}
 	else							{	return false;																										}
 }
 
@@ -576,7 +576,7 @@ bool satPosBroadcast(
 	double&			ephVar,
 	bool&			ephPosValid,
 	int&			iode,
-	Navigation&		nav)
+	Navigation&		nav_)
 {
 	int sys = Sat.sys;
 
@@ -585,9 +585,9 @@ bool satPosBroadcast(
 	if		(  sys == +E_Sys::GPS
 			|| sys == +E_Sys::GAL
 			|| sys == +E_Sys::QZS
-			|| sys == +E_Sys::BDS)	{	return satPosBroadcast<Eph>		(trace, time, teph, Sat, rSat,		satVel,		ephVar, ephPosValid, iode, nav);	}
-	else if (  sys == +E_Sys::GLO)	{	return satPosBroadcast<Geph>	(trace, time, teph, Sat, rSat,		satVel,		ephVar, ephPosValid, iode, nav);	}
-	else if (  sys == +E_Sys::SBS)	{	return satPosBroadcast<Seph>	(trace, time, teph, Sat, rSat,		satVel,		ephVar, ephPosValid, iode, nav);	}
+			|| sys == +E_Sys::BDS)	{	return satPosBroadcast<Eph>		(trace, time, teph, Sat, rSat,		satVel,		ephVar, ephPosValid, iode, nav_);	}
+	else if (  sys == +E_Sys::GLO)	{	return satPosBroadcast<Geph>	(trace, time, teph, Sat, rSat,		satVel,		ephVar, ephPosValid, iode, nav_);	}
+	else if (  sys == +E_Sys::SBS)	{	return satPosBroadcast<Seph>	(trace, time, teph, Sat, rSat,		satVel,		ephVar, ephPosValid, iode, nav_);	}
 	else							{	return false;																										}
 
 }
@@ -597,7 +597,7 @@ bool satClkBroadcast(
 	GTime			time,
 	GTime			teph,
 	SatPos&			satPos,
-	Navigation&		nav,
+	Navigation&		nav_,
 	int				iode)
 {
 	satPos.iodeClk = iode;
@@ -612,7 +612,7 @@ bool satClkBroadcast(
 		satPos.satClkVar,
 		satPos.ephClkValid,
 		satPos.iodeClk,
-		nav);
+		nav_);
 }
 
 bool satPosBroadcast(
@@ -620,7 +620,7 @@ bool satPosBroadcast(
 	GTime			time,
 	GTime			teph,
 	SatPos&			satPos,
-	Navigation&		nav,
+	Navigation&		nav_,
 	int				iode)
 {
 	satPos.iodePos = iode;
@@ -635,5 +635,5 @@ bool satPosBroadcast(
 		satPos.posVar,
 		satPos.ephPosValid,
 		satPos.iodePos,
-		nav);
+		nav_);
 }

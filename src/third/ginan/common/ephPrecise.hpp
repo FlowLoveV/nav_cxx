@@ -20,7 +20,7 @@ int readdcb(string file);
 
 void readSp3ToNav(
 	string&		file,
-	Navigation&	nav,
+	Navigation&	nav_,
 	int			opt);
 
 bool readsp3(
@@ -53,7 +53,7 @@ bool pephclk(
 	Trace&		trace,
 	GTime		time,
 	string		id,
-	Navigation&	nav,
+	Navigation&	nav_,
 	double&		dtSat,
 	double*		varc = nullptr);
 
@@ -61,6 +61,6 @@ bool pephpos(
 	Trace&		trace,
 	GTime		time,
 	SatSys		Sat,
-	Navigation&	nav,
+	Navigation&	nav_,
 	Vector3d&	rSat,
 	double*		vare = nullptr);

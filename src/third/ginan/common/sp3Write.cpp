@@ -333,12 +333,12 @@ void writeSysSetSp3(
 		filterErpv = getErpFromFilter(*kfState_ptr);
 	}
 
-	ERPValues erpv = getErp(nav.erp, time);
+	ERPValues erpv = getErp(nav_.erp, time);
 
 	FrameSwapper frameSwapperUndo(time, erpv);
 	FrameSwapper frameSwapperRedo(time, filterErpv);
 
-	for (auto& [Sat, satNav] : nav.satNavMap)
+	for (auto& [Sat, satNav] : nav_.satNavMap)
 	{
 		if (outSys[Sat.sys] == false)
 			continue;
@@ -346,10 +346,10 @@ void writeSysSetSp3(
 		// Create a dummy observation
 		GObs obs;
 		obs.Sat			= Sat;
-		obs.satNav_ptr	= &nav.satNavMap[Sat];
+		obs.satNav_ptr	= &nav_.satNavMap[Sat];
 
-		bool clkPass = satclk(nullStream, time, time, obs, sp3ClockSrcs,					nav, kfState_ptr);
-		bool posPass = satpos(nullStream, time, time, obs, sp3OrbitSrcs, E_OffsetType::COM,	nav, kfState_ptr);
+		bool clkPass = satclk(nullStream, time, time, obs, sp3ClockSrcs,					nav_, kfState_ptr);
+		bool posPass = satpos(nullStream, time, time, obs, sp3OrbitSrcs, E_OffsetType::COM,	nav_, kfState_ptr);
 
 		if (posPass == false)
 		{
@@ -443,7 +443,7 @@ void outputMongoOrbits()
 		for (auto& [Sat,	timeMap]	: orbitMapMap)
 		for (auto& [time,	state]		: timeMap)
 		{
-			ERPValues erpv = getErp(nav.erp, time);
+			ERPValues erpv = getErp(nav_.erp, time);
 
 			FrameSwapper frameSwapper(time, erpv);
 

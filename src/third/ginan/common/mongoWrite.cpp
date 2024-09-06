@@ -839,7 +839,7 @@ void	prepareSsrStates(
 			GObs obs;
 			obs.Sat = Sat;
 
-			auto& satNav = nav.satNavMap[obs.Sat];
+			auto& satNav = nav_.satNavMap[obs.Sat];
 			SatStat satStatDummy;
 
 			obs.satStat_ptr	= &satStatDummy;
@@ -854,8 +854,8 @@ void	prepareSsrStates(
 				bool	pass	= true;
 
 				pass = true;
-				pass &= satclk(nullStream, pTime, pTime, obs, acsConfig.ssrOpts.clock_sources,							nav, &kfState);
-				pass &= satpos(nullStream, pTime, pTime, obs, acsConfig.ssrOpts.ephemeris_sources, E_OffsetType::APC,	nav, &kfState);			//todo aaron, ssra streams expect common_sat_pco to be true
+				pass &= satclk(nullStream, pTime, pTime, obs, acsConfig.ssrOpts.clock_sources,							nav_, &kfState);
+				pass &= satpos(nullStream, pTime, pTime, obs, acsConfig.ssrOpts.ephemeris_sources, E_OffsetType::APC,	nav_, &kfState);			//todo aaron, ssra streams expect common_sat_pco to be true
 				if (obs.satClk == INVALID_CLOCK_VALUE)
 				{
 					pass = false;
@@ -884,8 +884,8 @@ void	prepareSsrStates(
 				double		posVar	= obs.posVar;
 
 				//broadcast values, must come after precise values to associate the correct IODE (when SSR in use)
-				pass &= satClkBroadcast(nullStream, pTime, pTime, obs, nav, obs.iodeClk);
-				pass &= satPosBroadcast(nullStream, pTime, pTime, obs, nav, obs.iodePos);
+				pass &= satClkBroadcast(nullStream, pTime, pTime, obs, nav_, obs.iodeClk);
+				pass &= satPosBroadcast(nullStream, pTime, pTime, obs, nav_, obs.iodePos);
 				if (pass == false)
 				{
 					BOOST_LOG_TRIVIAL(info)
@@ -1141,8 +1141,8 @@ void	prepareSsrStates(
 		{
 			// IGS SSR Ionosphere
 			bool igsIonoDetected = false;
-			auto it = nav.ssrAtm.atmosGlobalMap.lower_bound(time);
-			if (it != nav.ssrAtm.atmosGlobalMap.end())
+			auto it = nav_.ssrAtm.atmosGlobalMap.lower_bound(time);
+			if (it != nav_.ssrAtm.atmosGlobalMap.end())
 			{
 				auto& [t0, atmGlob] = *it;
 
@@ -1157,7 +1157,7 @@ void	prepareSsrStates(
 
 			if (igsIonoDetected)
 			{
-				auto it = nav.ssrAtm.atmosGlobalMap.lower_bound(time);
+				auto it = nav_.ssrAtm.atmosGlobalMap.lower_bound(time);
 				auto& [t0, atmGlob] = *it;
 				int nbasis = 0;
 				for (auto& [hind, laydata]: atmGlob.layers)
@@ -1195,7 +1195,7 @@ void	prepareSsrStates(
 			}
 
 			// CMP SSR Atmosphere
-			for (auto& [regInd, regData] : nav.ssrAtm.atmosRegionsMap)
+			for (auto& [regInd, regData] : nav_.ssrAtm.atmosRegionsMap)
 			{
 				GTime stecTime = regData.stecUpdateTime;
 				map<int, SatSys> stecFound;

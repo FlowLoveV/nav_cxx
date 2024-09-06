@@ -188,7 +188,7 @@ void getPreciseRecClks(
 	{
 		double dt;
 		double variance;
-		int ret = pephclk(std::cout, time, rec.id, nav, dt, &variance);
+		int ret = pephclk(std::cout, time, rec.id, nav_, dt, &variance);
 		if (ret != 1)
 		{
 			BOOST_LOG_TRIVIAL(warning)
@@ -216,7 +216,7 @@ void getSatClksFromEph(
 	map<E_Sys, bool>&	outSys,
 	vector<E_Source>	ephType)
 {
-	for (auto& [Sat, satNav] : nav.satNavMap)
+	for (auto& [Sat, satNav] : nav_.satNavMap)
 	{
 		if (outSys[Sat.sys] == false)
 			continue;
@@ -224,11 +224,11 @@ void getSatClksFromEph(
 		// Create a dummy observation
 		GObs obs;
 		obs.Sat			= Sat;
-		obs.satNav_ptr	= &nav.satNavMap[Sat]; // for satpos_ssr()
+		obs.satNav_ptr	= &nav_.satNavMap[Sat]; // for satpos_ssr()
 
 		bool pass = true;
-		pass &= satclk(nullStream, time, time, obs, ephType,					nav);
-		pass &= satpos(nullStream, time, time, obs, ephType, E_OffsetType::COM,	nav);	//use both for now to get ssr clocks if required
+		pass &= satclk(nullStream, time, time, obs, ephType,					nav_);
+		pass &= satpos(nullStream, time, time, obs, ephType, E_OffsetType::COM,	nav_);	//use both for now to get ssr clocks if required
 		if (pass == false)
 		{
 			BOOST_LOG_TRIVIAL(warning)

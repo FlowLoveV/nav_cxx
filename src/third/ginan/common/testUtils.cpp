@@ -117,23 +117,23 @@ void plumber()
 	string v;
 
 	printf("Checking plumbing:\n");
-	for (auto& [id, satNav] : nav.satNavMap)
+	for (auto& [id, satNav] : nav_.satNavMap)
 	{
 		v = id.id();			New = plumberTest(satNav						);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
 	}
 
 	v = "biasMaps";				New = plumberTest(biasMaps						);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
 	v = "receiverMap";			New = plumberTest(receiverMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
-	v = "nav";					New = plumberTest(nav							);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
-// 	v = "ephMap";				New = plumberTest(nav.ephMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
-// 	v = "gephMap";				New = plumberTest(nav.gephMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
-// 	v = "sephMap";				New = plumberTest(nav.sephMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
-// 	v = "pephMap";				New = plumberTest(nav.pephMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
-// 	v = "pclkMap";				New = plumberTest(nav.pclkMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
-// 	v = "satNavMap";			New = plumberTest(nav.satNavMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
-// 	v = "tecMap";				New = plumberTest(nav.tecMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
-// 	v = "pcoMap";				New = plumberTest(nav.pcoMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
-// 	v = "pcoMap";				New = plumberTest(nav.pcoMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
+	v = "nav_";					New = plumberTest(nav_							);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
+// 	v = "ephMap";				New = plumberTest(nav_.ephMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
+// 	v = "gephMap";				New = plumberTest(nav_.gephMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
+// 	v = "sephMap";				New = plumberTest(nav_.sephMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
+// 	v = "pephMap";				New = plumberTest(nav_.pephMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
+// 	v = "pclkMap";				New = plumberTest(nav_.pclkMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
+// 	v = "satNavMap";			New = plumberTest(nav_.satNavMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
+// 	v = "tecMap";				New = plumberTest(nav_.tecMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
+// 	v = "pcoMap";				New = plumberTest(nav_.pcoMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
+// 	v = "pcoMap";				New = plumberTest(nav_.pcoMap					);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
 
 	v = "satOptsMap";			New = plumberTest(acsConfig.satOptsMap			);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;
 	v = "recOptsMap";			New = plumberTest(acsConfig.recOptsMap			);	printf("%15s has %15ld drops added, %15ld in bucket\n", v.c_str(), (New - plumberMap[v]), New); 	plumberMap[v] = New;

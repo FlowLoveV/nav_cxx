@@ -446,7 +446,7 @@ BETTER_ENUM(E_SlrRangeType, short int,  // from crd_v2.01.pdf p7
             MIXED = 3)  // mixed (for real-time data recording, and combination of one- and two-way
                         // ranging, e.g., T2L2)
 
-BETTER_ENUM(E_UBXClass, short int, NAV = 0x01, RXM = 0x02, INF = 0x04, ACK = 0x05, CFG = 0x06,
+BETTER_ENUM(E_UBXClass, short int, nav_ = 0x01, RXM = 0x02, INF = 0x04, ACK = 0x05, CFG = 0x06,
             MON = 0x0A, AID = 0x0B, TIM = 0x0D, ESF = 0x10)
 
 BETTER_ENUM(E_RXMId, short int, SFRBX = 0x13, MEASX = 0x14, RAWX = 0x15)

@@ -623,11 +623,11 @@ void outputNavRinexBody(
 		{
 			E_NavMsgType type = defNavMsgType[sys];
 
-			auto* ion_ptr = seleph<ION>(std::cout, tsync, sys, type, nav);	if (ion_ptr != nullptr)	outputNavRinexION(*ion_ptr, rinexStream, rnxver);
-			auto* eop_ptr = seleph<EOP>(std::cout, tsync, sys, type, nav);	if (eop_ptr != nullptr)	outputNavRinexEOP(*eop_ptr, rinexStream, rnxver);
+			auto* ion_ptr = seleph<ION>(std::cout, tsync, sys, type, nav_);	if (ion_ptr != nullptr)	outputNavRinexION(*ion_ptr, rinexStream, rnxver);
+			auto* eop_ptr = seleph<EOP>(std::cout, tsync, sys, type, nav_);	if (eop_ptr != nullptr)	outputNavRinexEOP(*eop_ptr, rinexStream, rnxver);
 		}
 
-		for (auto& [Sat, satNav] : nav.satNavMap)
+		for (auto& [Sat, satNav] : nav_.satNavMap)
 		{
 			if (Sat.sys != sys)
 				continue;
@@ -636,7 +636,7 @@ void outputNavRinexBody(
 			
 			if (sys == +E_Sys::GLO)
 			{
-				auto geph_ptr = seleph<Geph>(std::cout, tsync, Sat, nvtyp, ANY_IODE, nav);
+				auto geph_ptr = seleph<Geph>(std::cout, tsync, Sat, nvtyp, ANY_IODE, nav_);
 
 				if (geph_ptr == nullptr)
 					continue;
@@ -655,7 +655,7 @@ void outputNavRinexBody(
 			else if (sys == +E_Sys::SBS)
 			{
 				//optional to do (probably not useful): Seph writing
-				// Seph* seph_ptr = seleph<Seph>(std::cout, tsync, sat, ANY_IODE, nav);
+				// Seph* seph_ptr = seleph<Seph>(std::cout, tsync, sat, ANY_IODE, nav_);
 
 				// if (seph_ptr == nullptr)
 				// 	continue;
@@ -671,7 +671,7 @@ void outputNavRinexBody(
 			}
 			else
 			{
-				auto eph_ptr = seleph<Eph>(std::cout, tsync, Sat, nvtyp, ANY_IODE, nav);
+				auto eph_ptr = seleph<Eph>(std::cout, tsync, Sat, nvtyp, ANY_IODE, nav_);
 			
 				if (eph_ptr == nullptr)
 					continue;
@@ -713,7 +713,7 @@ void rinexNavHeader(
 	tracepdeex(0, rinexStream, "%9.2f%-11s%-20s%-20s%-20s\n",
 		rnxver,
 		"",
-		"N: GNSS NAV DATA",
+		"N: GNSS nav_ DATA",
 		sysDesc.c_str(),
 		"RINEX VERSION / TYPE");
 
@@ -739,7 +739,7 @@ void rinexNavHeader(
 
 			E_NavMsgType type = defNavMsgType[sys];
 
-			auto& ionList = nav.ionMap[sys][type];
+			auto& ionList = nav_.ionMap[sys][type];
 
 			for (auto& [dummy, ion] : ionList)
 			{
@@ -795,7 +795,7 @@ void rinexNavHeader(
 
 			for (auto& code : {code1, code2})
 			{
-				auto& stoList = nav.stoMap[code][type];
+				auto& stoList = nav_.stoMap[code][type];
 
 				for (auto& [dummy, sto] : stoList)
 				{
@@ -815,7 +815,7 @@ void rinexNavHeader(
 		}
 	}
 
-	tracepdeex(0, rinexStream, "%6d%54s%-20s\n", nav.leaps, "", 	"LEAP SECONDS");
+	tracepdeex(0, rinexStream, "%6d%54s%-20s\n", nav_.leaps, "", 	"LEAP SECONDS");
 	tracepdeex(0, rinexStream, "%60s%-20s\n", "",					"END OF HEADER");
 }
 
@@ -830,7 +830,7 @@ void writeRinexNav(const double rnxver)
 		std::ofstream rinexStream(filename, std::ofstream::app);
 		if (!rinexStream)
 		{
-			BOOST_LOG_TRIVIAL(error) << "Error opening " << filename << " for writing rinex nav";
+			BOOST_LOG_TRIVIAL(error) << "Error opening " << filename << " for writing rinex nav_";
 			return;
 		}
 		
@@ -849,7 +849,7 @@ void outputNavRinexBodyAll(
 {
 	if (rnxver >= 4)
 	{
-		for (auto& [code,	stoCodeMap]	: nav.stoMap)
+		for (auto& [code,	stoCodeMap]	: nav_.stoMap)
 		for (auto& [type,	stoList]	: stoCodeMap)
 		for (auto it = stoList.rbegin(); it != stoList.rend(); it++)
 		{
@@ -858,7 +858,7 @@ void outputNavRinexBodyAll(
 			outputNavRinexSTO(value, rinexStream, rnxver);
 		}
 
-		for (auto& [sys,	eopSysMap]	: nav.eopMap)
+		for (auto& [sys,	eopSysMap]	: nav_.eopMap)
 		for (auto& [type,	eopList]	: eopSysMap)
 		for (auto it = eopList.rbegin(); it != eopList.rend(); it++)
 		{
@@ -867,7 +867,7 @@ void outputNavRinexBodyAll(
 			outputNavRinexEOP(value, rinexStream, rnxver);
 		}
 
-		for (auto& [sys,	ionSysMap]	: nav.ionMap)
+		for (auto& [sys,	ionSysMap]	: nav_.ionMap)
 		for (auto& [type,	ionList]	: ionSysMap)
 		for (auto it = ionList.rbegin(); it != ionList.rend(); it++)
 		{
@@ -877,7 +877,7 @@ void outputNavRinexBodyAll(
 		}
 	}
 
-	for (auto& [satId,	navList]	: nav.ephMap)
+	for (auto& [satId,	navList]	: nav_.ephMap)
 	for (auto& [nvtyp,	ephList]	: navList)
 	for (auto it = ephList.rbegin(); it != ephList.rend(); it++)
 	{
@@ -886,7 +886,7 @@ void outputNavRinexBodyAll(
 		outputNavRinexEph(value, rinexStream, rnxver);
 	}
 
-	for (auto& [satId,	navList]	: nav.gephMap)
+	for (auto& [satId,	navList]	: nav_.gephMap)
 	for (auto& [nvtyp,	gephList]	: navList)
 	for (auto it = gephList.rbegin(); it != gephList.rend(); it++)
 	{
@@ -895,7 +895,7 @@ void outputNavRinexBodyAll(
 		outputNavRinexGeph(value, rinexStream, rnxver);
 	}
 
-	// for (auto& [satId,	sephList]	: nav.sephMap)
+	// for (auto& [satId,	sephList]	: nav_.sephMap)
 	// for (auto it = sephList.rbegin(); it != sephList.rend(); it++)
 	// {
 // 			auto& [key, value] = *it;
@@ -903,7 +903,7 @@ void outputNavRinexBodyAll(
 	// 	outputNavRinexSeph(ritSeph->second, rinexStream, rnxver);
 	// }
 
-	for (auto& [satId,	cephSatMap]	: nav.cephMap)
+	for (auto& [satId,	cephSatMap]	: nav_.cephMap)
 	for (auto& [type,	cephList]	: cephSatMap)
 	for (auto it = cephList.rbegin(); it != cephList.rend(); it++)
 	{
@@ -928,7 +928,7 @@ void writeRinexNavAll(string filename, const double rnxver)
 	std::ofstream rinexStream(filename, std::ofstream::app);
 	if (!rinexStream)
 	{
-		BOOST_LOG_TRIVIAL(error) << "Error opening " << filename << " for writing rinex nav";
+		BOOST_LOG_TRIVIAL(error) << "Error opening " << filename << " for writing rinex nav_";
 		return;
 	}
 	

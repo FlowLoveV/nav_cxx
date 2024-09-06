@@ -175,7 +175,7 @@ void copySSRBlock (
 	SatSys Sat,
 	SSROut ssrBlock)
 {
-	auto& ssr = nav.satNavMap[Sat].receivedSSR;
+	auto& ssr = nav_.satNavMap[Sat].receivedSSR;
 
 	if	(ssrBlock.ephUpdated)
 	{
@@ -314,7 +314,7 @@ void copySSRCorrections(
 		GTime tAtm = compactSsrAtmStorage.ssrMeta.receivedTime;
 		for (auto& [regInd,regData] : compactSsrAtmStorage.atmosRegionsMap)
 		{
-			auto& navAtm = nav.ssrAtm.atmosRegionsMap[regInd];
+			auto& navAtm = nav_.ssrAtm.atmosRegionsMap[regInd];
 
 			if (regData.regionDefIOD > 0
 			 && navAtm.regionDefIOD != regData.regionDefIOD)
@@ -405,7 +405,7 @@ void decodeGridInfo(
 			partID			+= 32*getbituInc(data,i,4);
 		int		gridType	= getbituInc(data,i,2);
 
-		SSRAtmRegion& atmRegion = nav.ssrAtm.atmosRegionsMap[partID];
+		SSRAtmRegion& atmRegion = nav_.ssrAtm.atmosRegionsMap[partID];
 
 		if (atmRegion.regionDefIOD != servIOD)
 		{

@@ -1321,7 +1321,7 @@ void receiverPPP(
 
 		auto& satOpts = acsConfig.getSatOpts(obs.Sat);
 
-		satPosClk(trace, time, obs, nav, satOpts.posModel.sources, satOpts.clockModel.sources, &kfState, nullptr, E_OffsetType::COM, E_Relativity::OFF);
+		satPosClk(trace, time, obs, nav_, satOpts.posModel.sources, satOpts.clockModel.sources, &kfState, nullptr, E_OffsetType::COM, E_Relativity::OFF);
 
 		traceJson(1, jsonTrace, time,
 		{
@@ -1337,7 +1337,7 @@ void receiverPPP(
 		});
 	}
 
-	ERPValues erpv = getErp(nav.erp, time);
+	ERPValues erpv = getErp(nav_.erp, time);
 
 	FrameSwapper frameSwapper(time, erpv);
 
@@ -1598,7 +1598,7 @@ void receiverPPP(
 				SatPos satPos0 = obs;
 
 				//use this to avoid adding the dt component of position
-				bool pass = satpos(trace, time, time, satPos0, satOpts.posModel.sources, E_OffsetType::COM, nav, &kfState);
+				bool pass = satpos(trace, time, time, satPos0, satOpts.posModel.sources, E_OffsetType::COM, nav_, &kfState);
 
 				obs.rSatEci0 = frameSwapper(satPos0.rSatCom, &satPos0.satVel, &obs.vSatEci0);
 			}

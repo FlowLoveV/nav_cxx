@@ -157,7 +157,7 @@ void CustomDecoder::decodeEphFrames(
 		std::cout << std::endl << "*";
 		eph.Sat		= Sat;
 		eph.type	= E_NavMsgType::LNAV;
-		nav.ephMap[eph.Sat][eph.type][eph.toe] = eph;
+		nav_.ephMap[eph.Sat][eph.type][eph.toe] = eph;
 
 
 // 		if (acsConfig.output_decoded_rtcm_json)

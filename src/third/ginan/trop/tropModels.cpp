@@ -26,7 +26,7 @@ void defineLocalTropBasis()
 {
 	tropBasisVec.clear();
 
-	for (auto& [iatm, atmReg] : nav.ssrAtm.atmosRegionsMap)
+	for (auto& [iatm, atmReg] : nav_.ssrAtm.atmosRegionsMap)
 	{
 		for (int i = 0; i < atmReg.tropPolySize; i++)
 		{
@@ -62,7 +62,7 @@ double tropModelCoef(
 
 	auto& basis = tropBasisVec[ind];
 
-	auto& atmReg = nav.ssrAtm.atmosRegionsMap[basis.regionID];
+	auto& atmReg = nav_.ssrAtm.atmosRegionsMap[basis.regionID];
 
 	double recLatDeg = pos.latDeg();
 	double recLonDeg = pos.lonDeg();

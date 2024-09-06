@@ -43,7 +43,7 @@ double IrregGridCoef(
 			if (basis.type != +E_BasisType::GRIDPOINT)
 				continue;
 
-			auto& atmReg = nav.ssrAtm.atmosRegionsMap[basis.regionID];
+			auto& atmReg = nav_.ssrAtm.atmosRegionsMap[basis.regionID];
 
 			double dlat = fabs(recLatDeg - atmReg.gridLatDeg[basis.index]);
 			double dlon = fabs(recLonDeg - atmReg.gridLonDeg[basis.index]);
@@ -84,8 +84,8 @@ int configIonModelLocal_(
 
 	int ind = 0;
 
-	for (auto& [Sat, satNav]	: nav.satNavMap)
-	for (auto& [iatm, atmReg]	: nav.ssrAtm.atmosRegionsMap)
+	for (auto& [Sat, satNav]	: nav_.satNavMap)
+	for (auto& [iatm, atmReg]	: nav_.ssrAtm.atmosRegionsMap)
 	{
 		if	(  atmReg.gridType >= 0
 			&& atmReg.ionoGrid)
@@ -137,7 +137,7 @@ bool ippCheckLocal(
 	GTime		time, 			///< time of observations (not used)
 	VectorPos&	ionPP)			///< Ionospheric piercing point to be updated
 {
-	auto& RegMaps = nav.ssrAtm.atmosRegionsMap;
+	auto& RegMaps = nav_.ssrAtm.atmosRegionsMap;
 
 	for (auto& [iatm,atmReg] : RegMaps)
 	{
@@ -209,7 +209,7 @@ double ionCoefLocal(
 
 	if (obs.ionoSat != basis.Sat)							return 0;
 
-	auto& atmReg = nav.ssrAtm.atmosRegionsMap[basis.regionID];
+	auto& atmReg = nav_.ssrAtm.atmosRegionsMap[basis.regionID];
 
 	double recLatDeg = obs.ippMap[0].latDeg;
 	double recLonDeg = obs.ippMap[0].lonDeg;
@@ -244,7 +244,7 @@ void ionOutputLocal(
 	KFState&	kfState)
 {
 	//Discard old data
-	for (auto& [regID,regData] : nav.ssrAtm.atmosRegionsMap)
+	for (auto& [regID,regData] : nav_.ssrAtm.atmosRegionsMap)
 	for (auto& [sat  ,satData] : regData.stecData)
 	for (auto it = satData.begin(); it != satData.end();)
 	{
@@ -262,7 +262,7 @@ void ionOutputLocal(
 			continue;
 
 		auto& basis				= localBasisVec[key.num];
-		auto& atmReg			= nav.ssrAtm.atmosRegionsMap[basis.regionID];
+		auto& atmReg			= nav_.ssrAtm.atmosRegionsMap[basis.regionID];
 		atmReg.stecUpdateTime	= kfState.time;
 		auto& stecRecord		= atmReg.stecData[basis.Sat][kfState.time];
 
@@ -322,7 +322,7 @@ void ionOutputLocal(
 	}
 
 	// Divide between gridmap and polynomial, if necessary
-	for (auto& [regID, regData] : nav.ssrAtm.atmosRegionsMap)
+	for (auto& [regID, regData] : nav_.ssrAtm.atmosRegionsMap)
 	{
 		if (regData.gridType < 0)		continue;
 		if (!regData.ionoGrid)			continue;

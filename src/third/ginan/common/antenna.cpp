@@ -55,15 +55,15 @@ bool findAntenna(
 	string				code,
 	E_Sys				sys,
 	GTime				time,
-	Navigation&			nav,
+	Navigation&			nav_,
 	E_FType				ft,
 	PhaseCenterData**	pcd_ptr_ptr)
 {
 // 	BOOST_LOG_TRIVIAL(debug)
 // 	<< "Searching for " << type << ", " << code;
 
-	auto it0 = nav.pcvMap.find(code);
-	if (it0 == nav.pcvMap.end())
+	auto it0 = nav_.pcvMap.find(code);
+	if (it0 == nav_.pcvMap.end())
 	{
 		return false;
 	}
@@ -125,7 +125,7 @@ Vector3d makeAntPco(
 	double&		var,
 	E_Radio		radio)
 {
-	auto& pcoFreqMap = nav.pcoMap[id][sys];
+	auto& pcoFreqMap = nav_.pcoMap[id][sys];
 
 	if (pcoFreqMap.empty())
 		return Vector3d::Zero();
@@ -195,8 +195,8 @@ Vector3d antPco(
 	E_Radio		radio,
 	bool		interp)
 {
-	auto it0 = nav.pcoMap.find(id);
-	if (it0 == nav.pcoMap.end())
+	auto it0 = nav_.pcoMap.find(id);
+	if (it0 == nav_.pcoMap.end())
 	{
 		BOOST_LOG_TRIVIAL(warning) << "Warning: No PCO found for '" << id << "'";
 
@@ -316,8 +316,8 @@ double antPcv(
 	if (az_ptr)			*az_ptr		= az;
 	if (zen_ptr)		*zen_ptr	= zen;
 
-	auto it0 = nav.pcvMap.find(id);
-	if (it0 == nav.pcvMap.end())
+	auto it0 = nav_.pcvMap.find(id);
+	if (it0 == nav_.pcvMap.end())
 	{
 		BOOST_LOG_TRIVIAL(warning) << "Warning: No PCV found for '" << id << "'";
 		return 0;
@@ -473,7 +473,7 @@ map<string, E_FType> antexCodes =
  */
 void readantexf(
 	string		filepath,
-	Navigation&	nav)
+	Navigation&	nav_)
 {
 	bool	noazi_flag		= false;
 	int		num_azi_rd		= 0;
@@ -690,14 +690,14 @@ void readantexf(
 		{
 			noazi_flag	= false;
 
-			nav.pcvMap[id][sys][ft][time]			= freqPcv;
-			nav.pcoMap[id][sys][ft][time].recPco	= recPco;
-			nav.pcoMap[id][sys][ft][time].satPco	= satPco;
+			nav_.pcvMap[id][sys][ft][time]			= freqPcv;
+			nav_.pcoMap[id][sys][ft][time].recPco	= recPco;
+			nav_.pcoMap[id][sys][ft][time].satPco	= satPco;
 
 			if (id.size() <= 3) // filters out non-PRNS e.g. "3S-02-TSADM     NONE"
 			{
-				nav.svnMap[SatSys(id.c_str())][time]	= recPcv.svn;
-				nav.blocktypeMap[recPcv.svn]			= recPcv.type;
+				nav_.svnMap[SatSys(id.c_str())][time]	= recPcv.svn;
+				nav_.blocktypeMap[recPcv.svn]			= recPcv.type;
 			}
 
 			continue;

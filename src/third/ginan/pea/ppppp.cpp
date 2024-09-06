@@ -568,7 +568,7 @@ void updateAvgIonosphere(
 		auto& rec = *key.rec_ptr;
 
 		auto& satStat	= rec.satStatMap[key.Sat];
-		auto& satNav	= nav.satNavMap[key.Sat];
+		auto& satNav	= nav_.satNavMap[key.Sat];
 		auto& recOpts	= acsConfig.getRecOpts(rec.id);
 
 		double diono	= 0;
@@ -611,9 +611,9 @@ void updateAvgClocks(
 
 		SatPos satPos;
 		satPos.Sat			= key.Sat;
-		satPos.satNav_ptr	= &nav.satNavMap[key.Sat];
+		satPos.satNav_ptr	= &nav_.satNavMap[key.Sat];
 
-		bool pass = satClkBroadcast(trace, time, time, satPos, nav);
+		bool pass = satClkBroadcast(trace, time, time, satPos, nav_);
 		if (pass == false)
 		{
 			continue;

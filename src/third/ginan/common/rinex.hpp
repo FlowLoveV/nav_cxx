@@ -19,7 +19,7 @@ int readRnx(
 	std::istream& 					inputStream,
 	char&							type,
 	ObsList&						obsList,
-	Navigation&						nav,
+	Navigation&						nav_,
 	RinexStation&					rnxRec,
 	double&							ver,
 	E_Sys&							sys,

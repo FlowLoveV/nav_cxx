@@ -34,7 +34,7 @@ void initPseudoObs(
 		return;
 	}
 
-	for (auto& [Sat, satNav] : nav.satNavMap)
+	for (auto& [Sat, satNav] : nav_.satNavMap)
 	{
 		if (acsConfig.process_sys[Sat.sys] == false)
 		{
@@ -95,7 +95,7 @@ void orbitPseudoObs(
 {
 	GTime time = rec.obsList.front()->time;
 
-	ERPValues erpv = getErp(nav.erp, time);
+	ERPValues erpv = getErp(nav_.erp, time);
 
 	FrameSwapper frameSwapper(time, erpv);
 
@@ -131,7 +131,7 @@ void orbitPseudoObs(
 				SatPos satPos;
 				satPos.Sat = obs.Sat;
 
-				satpos(trace, time, time, satPos, {E_Source::PRECISE}, E_OffsetType::COM, nav);
+				satpos(trace, time, time, satPos, {E_Source::PRECISE}, E_OffsetType::COM, nav_);
 
 				obs.vel = satPos.satVel;
 			}

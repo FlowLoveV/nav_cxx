@@ -55,7 +55,7 @@ void applyBiases(
 void satPossSlr(
 	Trace&				trace,
 	ObsList&			slrObsList,
-	Navigation&			nav,
+	Navigation&			nav_,
 	vector<E_Source>	ephTypes,
 	E_OffsetType		offsetType,
 	E_Relativity		applyRelativity,

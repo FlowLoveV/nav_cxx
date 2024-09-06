@@ -74,10 +74,10 @@ void cullEphMap(
 void cullOldEphs(
 	GTime	time)
 {
-	cullEphMap(time, nav.ephMap);
-	cullEphMap(time, nav.gephMap);
-	cullEphMap(time, nav.sephMap);
-	cullEphMap(time, nav.cephMap);
+	cullEphMap(time, nav_.ephMap);
+	cullEphMap(time, nav_.gephMap);
+	cullEphMap(time, nav_.sephMap);
+	cullEphMap(time, nav_.cephMap);
 }
 
 bool satclk(
@@ -86,7 +86,7 @@ bool satclk(
 	GTime				teph,
 	SatPos&				satPos,
 	vector<E_Source>	ephTypes,
-	Navigation&			nav,
+	Navigation&			nav_,
 	const KFState*		kfState_ptr,
 	const KFState*		remote_ptr)
 {
@@ -101,8 +101,8 @@ bool satclk(
 		switch (ephType)
 		{
 			case E_Source::SSR:			//fallthrough
- 			case E_Source::BROADCAST:	returnValue = satClkBroadcast	(trace, time, teph,		satPos, nav			);	break;
-			case E_Source::PRECISE:		returnValue = satClkPrecise		(trace, time, 			satPos,	nav			);	break;
+ 			case E_Source::BROADCAST:	returnValue = satClkBroadcast	(trace, time, teph,		satPos, nav_			);	break;
+			case E_Source::PRECISE:		returnValue = satClkPrecise		(trace, time, 			satPos,	nav_			);	break;
 			case E_Source::KALMAN:		returnValue = satClkKalman		(trace, time, 			satPos,	kfState_ptr	);	break;
 			case E_Source::REMOTE:		returnValue = satClkKalman		(trace, time, 			satPos,	remote_ptr	);	break;
 			default:					continue;
@@ -132,7 +132,7 @@ bool satpos(
 	SatPos&				satPos,				///< Data required for determining and storing satellite positions/clocks
 	vector<E_Source>	ephTypes,			///< Source of ephemeris
 	E_OffsetType		offsetType,			///< Type of antenna offset to apply		//todo aaron, remove entirely?
-	Navigation&			nav,				///< navigation data
+	Navigation&			nav_,				///< navigation data
 	const KFState*		kfState_ptr,		///< Optional pointer to a kalman filter to take values from
 	const KFState*		remote_ptr)			///< Optional pointer to a kalman filter to take values from
 {
@@ -153,9 +153,9 @@ bool satpos(
 		if (returnValue == false)
 		switch (ephType)
 		{
-			case E_Source::BROADCAST:	returnValue = satPosBroadcast	(trace, time, teph,		satPos, nav				);	break;
-			case E_Source::SSR:			returnValue = satPosSSR			(trace, time, teph,		satPos, nav				);	break;
-			case E_Source::PRECISE:		returnValue = satPosPrecise		(trace, time, 			satPos, nav				);	break;
+			case E_Source::BROADCAST:	returnValue = satPosBroadcast	(trace, time, teph,		satPos, nav_				);	break;
+			case E_Source::SSR:			returnValue = satPosSSR			(trace, time, teph,		satPos, nav_				);	break;
+			case E_Source::PRECISE:		returnValue = satPosPrecise		(trace, time, 			satPos, nav_				);	break;
 			case E_Source::KALMAN:		returnValue = satPosKalman		(trace, time, 			satPos,	kfState_ptr		);	break;
 			case E_Source::REMOTE:		returnValue = satPosKalman		(trace, time, 			satPos,	remote_ptr		);	break;
 			default:					satPos.ephPosValid = false;	return false;
@@ -205,7 +205,7 @@ bool satpos(
 	{
 		if (satPos.satNav_ptr == nullptr)
 		{
-			BOOST_LOG_TRIVIAL(debug) << "Sat nav pointer undefined";
+			BOOST_LOG_TRIVIAL(debug) << "Sat nav_ pointer undefined";
 			return returnValue;
 		}
 
@@ -244,7 +244,7 @@ bool satpos(
 		}
 		else
 		{
-			dAnt = satAntOff(trace, time, attStatus, satPos.Sat, nav.satNavMap[satPos.Sat].lamMap);
+			dAnt = satAntOff(trace, time, attStatus, satPos.Sat, nav_.satNavMap[satPos.Sat].lamMap);
 		}
 
 		if (antennaScalar > 0)		satPos.rSatApc = satPos.rSatCom + dAnt;
@@ -285,7 +285,7 @@ bool satPosClk(
 	Trace&				trace,				///< Trace to output to
 	GTime				teph,				///< time to select ephemeris (gpst)
 	GObs&				obs,				///< observations to complete with satellite positions
-	Navigation&			nav,				///< Navigation data
+	Navigation&			nav_,				///< Navigation data
 	vector<E_Source>	posSources,			///< Source of ephemeris data
 	vector<E_Source>	clkSources,			///< Source of ephemeris data
 	const KFState*		kfState_ptr,		///< Optional pointer to a kalman filter to take values from
@@ -331,7 +331,7 @@ bool satPosClk(
 
 	bool pass;
 
-	pass = satclk(trace, time, teph, obs, clkSources,				nav,	kfState_ptr, remote_ptr);
+	pass = satclk(trace, time, teph, obs, clkSources,				nav_,	kfState_ptr, remote_ptr);
 
 	if (pass == false)
 	{
@@ -346,7 +346,7 @@ bool satPosClk(
 	time -= obs.satClk;	// Eugene: what if using ssr?
 
 	// satellite position and clock at transmission time
-	pass = satpos(trace, time, teph, obs, posSources, offsetType,	nav,	kfState_ptr, remote_ptr);
+	pass = satpos(trace, time, teph, obs, posSources, offsetType,	nav_,	kfState_ptr, remote_ptr);
 
 	if (pass == false)
 	{

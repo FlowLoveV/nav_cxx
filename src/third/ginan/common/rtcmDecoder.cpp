@@ -40,7 +40,7 @@ GTime RtcmDecoder::rtcmTime()
 
 	if		(rtcmTimestampTime	!= GTime::noTime())		time = rtcmTimestampTime;
 	else if (tsync				!= GTime::noTime())		time = tsync;
-	// todo Eugene: gps nav
+	// todo Eugene: gps nav_
 	else 												time = timeGet();
 
 	return time;
@@ -262,7 +262,7 @@ void RtcmDecoder::decodeSSR(
 
 		SatSys Sat(sys, satId);
 
-		auto& ssr = nav.satNavMap[Sat].receivedSSR;
+		auto& ssr = nav_.satNavMap[Sat].receivedSSR;
 
 		if	( messTypeStr == "ORB_CORR"
 			||messTypeStr == "COMB_CORR")
@@ -814,7 +814,7 @@ void RtcmDecoder::decodeEphemeris(
 			int svh		= (eph.e5a_hs	<< 4)
 						+ (eph.e5a_dvs	<< 3);
 			eph.svh		= (E_Svh)svh;
-			eph.code	= (1<<1)+(1<<8); // data source = F/NAV+E5a
+			eph.code	= (1<<1)+(1<<8); // data source = F/nav_+E5a
 		}
 		else if (messageNumber == RtcmMessageType::GAL_INAV_EPHEMERIS)
 		{
@@ -829,7 +829,7 @@ void RtcmDecoder::decodeEphemeris(
 						+ (eph.e1_hs	<< 1)
 						+ (eph.e1_dvs	<< 0);
 			eph.svh		= (E_Svh)svh;
-			eph.code	= (1<<0)+(1<<2)+(1<<9); // data source = I/NAV+E1+E5b
+			eph.code	= (1<<0)+(1<<2)+(1<<9); // data source = I/nav_+E1+E5b
 
 			if (acsConfig.use_tgd_bias)
 				decomposeBGDBias(eph.Sat, eph.tgd[0], eph.tgd[1]);
@@ -854,7 +854,7 @@ void RtcmDecoder::decodeEphemeris(
 		||sys == +E_Sys::BDS
 		||sys == +E_Sys::QZS)
 	{
-		nav.ephMap[eph.Sat][eph.type][eph.toe] = eph;
+		nav_.ephMap[eph.Sat][eph.type][eph.toe] = eph;
 
 		tracepdeex(6,std::cout, "\n#RTCM_BRD EPHEMR %s %s %d", eph.Sat.id().c_str(),eph.toe.to_string(2).c_str(), eph.iode);
 
@@ -863,7 +863,7 @@ void RtcmDecoder::decodeEphemeris(
 	}
 	else if (sys == +E_Sys::GLO)
 	{
-		nav.gephMap[geph.Sat][geph.type][geph.toe] = geph;
+		nav_.gephMap[geph.Sat][geph.type][geph.toe] = geph;
 
 		tracepdeex(6,std::cout, "\n#RTCM_BRD EPHEMR %s %s %d", geph.Sat.id().c_str(), geph.toe.to_string(2).c_str(), geph.iode);
 
@@ -1708,7 +1708,7 @@ double getbituIncScale(
 	return scale * getbituInc(buff.data(), pos, len);
 }
 
-/** extract sign-magnitude bits applied in GLO nav messages from byte data
+/** extract sign-magnitude bits applied in GLO nav_ messages from byte data
 */
 int getbitg(
 	const unsigned char*	buff,	///< byte data
@@ -1719,7 +1719,7 @@ int getbitg(
     return getbitu(buff, pos, 1) ? -value : value;
 }
 
-/** increasingly extract sign-magnitude bits applied in GLO nav messages from byte data
+/** increasingly extract sign-magnitude bits applied in GLO nav_ messages from byte data
 */
 int getbitgInc(
 	const unsigned char*	buff,	///< byte data
@@ -1731,7 +1731,7 @@ int getbitgInc(
 	return ans;
 }
 
-/** increasingly extract sign-magnitude bits applied in GLO nav messages from RTCM messages
+/** increasingly extract sign-magnitude bits applied in GLO nav_ messages from RTCM messages
 */
 int getbitgInc(
 	vector<unsigned char>&	buff,	///< byte data

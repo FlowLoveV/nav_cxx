@@ -319,7 +319,7 @@ void ionOutputSphcal(
 			double bias = 0;
 			kfState.getKFValue(key, bias);
 
-			auto& ssr = nav.satNavMap[key.Sat].receivedSSR;
+			auto& ssr = nav_.satNavMap[key.Sat].receivedSSR;
 			auto itCod = ssr.ssrCodeBias_map.begin();
 			if (itCod != ssr.ssrCodeBias_map.end())
 				itCod->second.ionDCBOffset[key.num] = bias;
@@ -334,8 +334,8 @@ void ionOutputSphcal(
 
 	atmGlob.time = kfState.time;
 
-	nav.ssrAtm.atmosGlobalMap.clear();
-	nav.ssrAtm.atmosGlobalMap[kfState.time] = atmGlob;
+	nav_.ssrAtm.atmosGlobalMap.clear();
+	nav_.ssrAtm.atmosGlobalMap[kfState.time] = atmGlob;
 }
 
 bool getEpcSsrIono(

@@ -582,8 +582,8 @@ vector<uint8_t>  encodeIGS_ATM(
 
 	vector<uint8_t> buffer;
 
-	auto it = nav.ssrAtm.atmosGlobalMap.begin();
-	if (it == nav.ssrAtm.atmosGlobalMap.end())
+	auto it = nav_.ssrAtm.atmosGlobalMap.begin();
+	if (it == nav_.ssrAtm.atmosGlobalMap.end())
 		return buffer;
 
 	auto& [time, ssrGlobAtm] = *it;

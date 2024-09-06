@@ -115,11 +115,11 @@ struct Navigation {
 
 namespace boost::serialization {
 template <class ARCHIVE>
-void serialize(ARCHIVE& ar, Navigation& nav) {
-  // 		ar & nav.ephMap;
+void serialize(ARCHIVE& ar, Navigation& nav_) {
+  // 		ar & nav_.ephMap;
 }
 }  // namespace boost::serialization
 
 extern map<E_Sys, E_NavMsgType> defNavMsgType;
 
-extern Navigation nav;
+extern Navigation nav_;

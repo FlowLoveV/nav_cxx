@@ -148,7 +148,7 @@ void filterIonosphere(
 	if (acsConfig.ionModelOpts.model == +E_IonoModel::LOCAL)
 	{
 		nStateTot = 0;
-		for (auto& [regId,regData] : nav.ssrAtm.atmosRegionsMap)
+		for (auto& [regId,regData] : nav_.ssrAtm.atmosRegionsMap)
 		{
 			if		(regData.ionoGrid)				nStateTot += nSatTot * (regData.gridLatDeg.size()	- 1);
 			else if (regData.ionoPolySize > 0)		nStateTot += nSatTot * (regData.ionoPolySize		- 1);
@@ -324,8 +324,8 @@ double getSSRIono(
 {
 	double ionoDelay = 0;
 
-	if (getCmpSSRIono (trace, time, nav.ssrAtm, rRec,		ionoDelay, variance, Sat))		return ionoDelay;
-	if (getIGSSSRIono (trace, time, nav.ssrAtm, rRec, azel,	ionoDelay, variance))			return ionoDelay;
+	if (getCmpSSRIono (trace, time, nav_.ssrAtm, rRec,		ionoDelay, variance, Sat))		return ionoDelay;
+	if (getIGSSSRIono (trace, time, nav_.ssrAtm, rRec, azel,	ionoDelay, variance))			return ionoDelay;
 
 	variance = -1;
 
@@ -372,7 +372,7 @@ bool queryBiasDCB(
 	double&		var)		///< Output bias variance
 {
 	E_FType ftyp = code2Freq[Sat.sys][code];
-	double lamb = nav.satNavMap[Sat].lamMap[ftyp];
+	double lamb = nav_.satNavMap[Sat].lamMap[ftyp];
 	if (lamb == 0)
 		return false;
 

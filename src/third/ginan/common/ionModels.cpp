@@ -300,7 +300,7 @@ bool ionDelay(
 */
 bool iontec(
 	GTime				time,			///< time (gpst)
-	const Navigation*	nav,			///< navigation data
+	const Navigation*	nav_,			///< navigation data
 	const VectorPos&	pos,			///< receiver position {lat,lon,h} (rad,m)
 	const AzEl&			azel,			///< azimuth/elevation angle {az,el} (rad)
 	E_IonoMapFn			mapFn,			///< model of mapping function
@@ -310,7 +310,7 @@ bool iontec(
 	double&				var)			///< ionospheric dealy (L1) variance (m^2)
 {
 	// if (fdebug)
-	// 	fprintf(fdebug, "iontec  : time=%s pos=%.1f %.1f azel=%.1f %.1f nt=%ld\n", time.to_string(0).c_str(), pos[0]*R2D, pos[1]*R2D, azel[0]*R2D, azel[1]*R2D, nav->tecList.size());
+	// 	fprintf(fdebug, "iontec  : time=%s pos=%.1f %.1f azel=%.1f %.1f nt=%ld\n", time.to_string(0).c_str(), pos[0]*R2D, pos[1]*R2D, azel[0]*R2D, azel[1]*R2D, nav_->tecList.size());
 
 	delay	= 0;
 	var		= VAR_NOTEC;
@@ -321,8 +321,8 @@ bool iontec(
 		return true;
 	}
 
-	auto it = nav->tecMap.lower_bound(time);
-	if (it == nav->tecMap.end())
+	auto it = nav_->tecMap.lower_bound(time);
+	if (it == nav_->tecMap.end())
 	{
 		// if (fdebug)
 		// 	fprintf(fdebug, "%s: tec grid out of period\n", time.to_string(0).c_str());
@@ -337,7 +337,7 @@ bool iontec(
 	auto& [t0, tec0] = *it;
 	pass[0] = ionDelay(time, tec0, pos, azel, mapFn, layerHeight, frame, dels[0], vars[0]);
 
-	if (it == nav->tecMap.begin())
+	if (it == nav_->tecMap.begin())
 	{
 		delay	= dels[0];
 		var		= vars[0];
@@ -403,7 +403,7 @@ bool ionoModel(
 	{
 		case E_IonoMode::TOTAL_ELECTRON_CONTENT:
 		{
-			int pass = iontec(time, &nav, pos, azel, mapFn, layerHeight, E_IonoFrame::SUN_FIXED, dion, var);
+			int pass = iontec(time, &nav_, pos, azel, mapFn, layerHeight, E_IonoFrame::SUN_FIXED, dion, var);
 			if (pass)	var +=	VAR_IONEX;			// adding some extra errors to reflect modelling errors
 			else		var =	VAR_IONO;
 
@@ -414,7 +414,7 @@ bool ionoModel(
 			E_Sys			sys		= E_Sys::GPS;
 			E_NavMsgType	type	= defNavMsgType[sys];
 
-			auto ion_ptr = seleph<ION>(nullStream, time, sys, type, nav);
+			auto ion_ptr = seleph<ION>(nullStream, time, sys, type, nav_);
 
 			double* vals = nullptr;
 			if (ion_ptr != nullptr)

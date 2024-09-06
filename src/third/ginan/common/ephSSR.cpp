@@ -55,7 +55,7 @@ void cullSSRMap(
 void cullOldSSRs(
 	GTime	time)
 {
-	for (auto& [Sat, satNav] : nav.satNavMap)
+	for (auto& [Sat, satNav] : nav_.satNavMap)
 	{
 		cullSSRMap(time, satNav.receivedSSR.ssrCodeBias_map);
 		cullSSRMap(time, satNav.receivedSSR.ssrPhasBias_map);
@@ -214,7 +214,7 @@ bool satPosSSR(
 	GTime			time,
 	GTime			teph,
 	SatPos&			satPos,
-	Navigation&		nav)
+	Navigation&		nav_)
 {
 	SSRMaps&		ssrMaps		= satPos.satNav_ptr->receivedSSR;
 	SatSys&			Sat			= satPos.Sat;
@@ -289,8 +289,8 @@ bool satPosSSR(
 		iodeClk = iodEph;
 		
 		bool pass = true;
-		pass &= satPosBroadcast(trace, time, teph, Sat, rSat0,		satVel,		posVar, ephPosValid, iodePos, nav);
-		pass &= satClkBroadcast(trace, time, teph, Sat, satClk0,	satClkVel,	clkVar, ephClkValid, iodeClk, nav);
+		pass &= satPosBroadcast(trace, time, teph, Sat, rSat0,		satVel,		posVar, ephPosValid, iodePos, nav_);
+		pass &= satClkBroadcast(trace, time, teph, Sat, satClk0,	satClkVel,	clkVar, ephClkValid, iodeClk, nav_);
 		
 		if (pass == false)
 		{

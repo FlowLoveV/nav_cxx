@@ -75,7 +75,7 @@ bool planetPosEcef(
 {
 	VectorEci rBodyEci;
 	
-	bool pass = jplEphPos(nav.jplEph_ptr, time, thirdBody, rBodyEci);
+	bool pass = jplEphPos(nav_.jplEph_ptr, time, thirdBody, rBodyEci);
 	if (pass == false)
 	{
 		double pvh[2][3];
