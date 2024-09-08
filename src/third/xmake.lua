@@ -65,7 +65,7 @@ add_requires("stringzilla",{
         cppstd = "c++23",
     }
 })
-add_requires("boost")
+add_requires("boost", {configs = {shared = true}})
 
 -- Define a recursive function to traverse all directories and add them to includedirs
 function recursive_add_includedirs(dir, is_public)
@@ -117,6 +117,25 @@ target("exprtk")
     add_includedirs("exprtk",{public = true})
     add_linkdirs("exprtk",{public = true})
 target_end()
+
+package("ginan")
+    add_deps("cmake")
+    local project_dir = path.join(os.scriptdir(),"ginan")
+    set_sourcedir(project_dir)
+    on_install(function (package)
+        local configs = {}
+        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
+        table.insert(configs, "-DBUILD_SHARED_LIBS=" .. (package:config("shared") and "ON" or "OFF"))
+        import("package.tools.cmake").install(package, configs)
+    end)
+package_end()
+
+-- add_requires("ginan")
+
+function add_ginan_header(target)
+    local ginan_path = path.join(os.scriptdir(),"ginan/cpp/")
+    recursive_add_includedirs(ginan_path,true)
+end
 
 
 

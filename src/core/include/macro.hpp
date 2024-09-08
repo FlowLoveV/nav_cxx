@@ -9,7 +9,7 @@
 #define NAV_EXPORT export
 #define NAV_MODULE module
 #define STD_MODULE std
-#define NAV_MODULE_NAME(name) nav##_##name
+#define NAV_MODULE_NAME(name) navp##_##name
 #define NAV_SUFFIX ixx
 #else
 #define NAV_IMPORT

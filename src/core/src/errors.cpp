@@ -6,7 +6,7 @@
 #include "logger.hpp"
 #include "spdlog/common.h"
 
-namespace nav {
+namespace navp {
 
 std::string_view ErrorMessage(ErrorId id) noexcept {
   switch (id.code) {
@@ -37,4 +37,4 @@ uint16_t NavError::crash(std::source_location location) {
   return static_cast<uint16_t>(error_id.code);
 }
 
-}  // namespace nav
+}  // namespace navp

@@ -2,7 +2,7 @@
 
 #include "types.hpp"
 
-namespace nav::rinex {
+namespace navp::rinex {
 
 using std::string;
 using std::string_view;
@@ -52,4 +52,4 @@ class RinexHeader {
   std::optional<Leap> leap;
 };
 
-}  // namespace nav::rinex
+}  // namespace navp::rinex

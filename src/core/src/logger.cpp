@@ -10,7 +10,7 @@
 #define _normal_logger_pattern "[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t] %v"
 #define _data_logger_pattern "%v"
 
-namespace nav {
+namespace navp {
 
 std::shared_ptr<spdlog::logger> createCommonSpdlogger(const std::string& loggerFileName,
                                                       const std::string& loggerName,
@@ -104,4 +104,4 @@ std::shared_ptr<spdlog::logger> globalDataLogger = createDataSpdlogger("data.txt
 
 }  // namespace details
 
-}  // namespace nav
+}  // namespace navp

@@ -3,7 +3,7 @@
 #include "space_time/time.hpp"
 #include "types.hpp"
 
-namespace nav::sensor::gnss {
+namespace navp::sensor::gnss {
 
 class RecordGnssObs;
 
@@ -23,4 +23,4 @@ class RecordGnssObs {
   RecordType record_;
 };
 
-}  // namespace nav::sensor::gnss
+}  // namespace navp::sensor::gnss

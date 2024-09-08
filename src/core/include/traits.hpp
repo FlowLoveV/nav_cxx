@@ -1,3 +1,3 @@
 #pragma once
 
-namespace nav::traits {}  // namespace nav::traits
+namespace navp::traits {}  // namespace navp::traits

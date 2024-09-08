@@ -11,9 +11,8 @@
 #include "constants/carrier_table.hpp"
 #include "errors.hpp"
 #include "logger.hpp"
-#include "macro.hpp"
 
-namespace nav {
+namespace navp {
 
 template <typename T>
 using Ref = const T&;
@@ -99,7 +98,7 @@ enum class EpochFlagEnum : u8 {
 };
 
 enum class EphemerisTypeFlag : u8 {
-  /// Legacy NAV message
+  /// Legacy navp message
   LNAV,
   /// Glonass FDMA message
   FDMA,
@@ -109,15 +108,15 @@ enum class EphemerisTypeFlag : u8 {
   INAV,
   /// IFNV,
   IFNV,
-  /// BeiDou D1 NAV message
+  /// BeiDou D1 navp message
   D1,
-  /// BeiDou D2 NAV message
+  /// BeiDou D2 navp message
   D2,
   /// D1D2
   D1D2,
-  /// SBAS NAV message
+  /// SBAS navp message
   SBAS,
-  /// GPS / QZSS Civilian NAV message
+  /// GPS / QZSS Civilian navp message
   CNAV,
   /// BeiDou CNV1 message
   CNV1,
@@ -140,8 +139,8 @@ struct Carrier {
     /*
      * GPS, Galieo
      */
-    auto it = nav::constants::CARRIER_TABLE.left.find(s);
-    if (it != nav::constants::CARRIER_TABLE.left.end()) {
+    auto it = navp::constants::CARRIER_TABLE.left.find(s);
+    if (it != navp::constants::CARRIER_TABLE.left.end()) {
       return it->second;
     } else {
       auto error_msg = std::format("Unable to parse string \"{}\" to Carrier", str);
@@ -329,18 +328,18 @@ struct Sv {
   Constellation constellation;
 };
 
-}  // namespace nav
+}  // namespace navp
 
 template <>
-struct std::formatter<nav::Constellation, char> {
+struct std::formatter<navp::Constellation, char> {
   template <class ParseContext>
   constexpr auto parse(ParseContext& ctx) {
     return ctx.begin();
   }
 
   template <class FmtContext>
-  FmtContext::iterator format(nav::Constellation cons, FmtContext& ctx) const {
-    using nav::ConstellationEnum;
+  FmtContext::iterator format(navp::Constellation cons, FmtContext& ctx) const {
+    using navp::ConstellationEnum;
     switch (cons.id) {
       case ConstellationEnum::GPS:
         return std::format_to(ctx.out(), "G");
@@ -360,7 +359,7 @@ struct std::formatter<nav::Constellation, char> {
         } else if (cons.is_mixed()) {
           return std::format_to(ctx.out(), "M");
         } else {
-          throw std::format("Format Constellation {} error", static_cast<nav::u8>(cons.id));
+          throw std::format("Format Constellation {} error", static_cast<navp::u8>(cons.id));
         }
       }
     }
@@ -368,28 +367,28 @@ struct std::formatter<nav::Constellation, char> {
 };
 
 template <>
-struct std::formatter<nav::Sv, char> {
+struct std::formatter<navp::Sv, char> {
   template <class ParseContext>
   constexpr auto parse(ParseContext& ctx) {
     return ctx.begin();
   }
   template <class FormatContext>
-  auto format(nav::Sv sv, FormatContext& ctx) const {
+  auto format(navp::Sv sv, FormatContext& ctx) const {
     return std::format_to(ctx.out(), "{}{:02}", sv.constellation, sv.prn);
   }
 };
 
 template <>
-struct std::formatter<nav::Carrier, char> {
+struct std::formatter<navp::Carrier, char> {
   template <class ParseContext>
   constexpr auto parse(ParseContext& ctx) {
     return ctx.begin();
   }
 
   template <class FormatContext>
-  auto format(nav::Carrier carrier, FormatContext& ctx) const {
+  auto format(navp::Carrier carrier, FormatContext& ctx) const {
     try {
-      const std::string& carrier_str = nav::constants::CARRIER_TABLE.right.at(carrier.id);
+      const std::string& carrier_str = navp::constants::CARRIER_TABLE.right.at(carrier.id);
       return std::format_to(ctx.out(), "{}", carrier_str);
     } catch (const std::out_of_range&) {
       return std::format_to(ctx.out(), "Unknown Carrier");

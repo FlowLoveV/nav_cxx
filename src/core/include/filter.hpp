@@ -9,7 +9,7 @@
 #include "logger.hpp"
 #include "rtklib.h"
 
-namespace nav::filter {
+namespace navp::filter {
 
 struct Filter;
 template <typename Item>
@@ -111,4 +111,4 @@ struct FilterItem : Filter {
   bool _op_status_error() const noexcept { return !this->op; }
 };
 
-}  // namespace nav::filter
+}  // namespace navp::filter

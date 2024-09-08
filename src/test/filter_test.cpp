@@ -4,8 +4,8 @@
 #include "doctest.h"
 #include "filter.hpp"
 
-using namespace nav;
-using namespace nav::filter;
+using namespace navp;
+using namespace navp::filter;
 
 TEST_CASE("filter") {
   Sv lhs1{ConstellationEnum::Galileo}, lhs2{ConstellationEnum::GPS};

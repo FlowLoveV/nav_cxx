@@ -2,7 +2,7 @@
 
 #include "rtklib.h"
 
-namespace nav {
+namespace navp {
 
 auto Coordinate<XYZ>::to_blh() const noexcept -> Coordinate<BLH> {
   Coordinate<BLH> blh;
@@ -120,4 +120,4 @@ extern Matrix3d conv_xyz(const Coordinate<XYZ>& xyz, const Matrix3d& conv_enu) {
   return e.transpose() * conv_enu * e;
 }
 
-}  // namespace nav
+}  // namespace navp

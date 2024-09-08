@@ -7,7 +7,7 @@
 #include "rtklib.h"
 #include "types.hpp"
 
-namespace nav::sensor {
+namespace navp::sensor {
 
 class Record;
 
@@ -67,4 +67,4 @@ class LocationRecord {
   RecordType velocity;
 };
 
-}  // namespace nav::sensor
+}  // namespace navp::sensor

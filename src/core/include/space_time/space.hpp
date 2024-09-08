@@ -6,7 +6,7 @@
 
 #include "types.hpp"
 
-namespace nav {
+namespace navp {
 using coordinate_t = Eigen::Matrix<f64, 3, 1>;
 using Eigen::Matrix3d;
 using Eigen::Vector3d;
@@ -99,4 +99,4 @@ extern Matrix3d conv_xyz(const Coordinate<BLH>&, const Matrix3d&);
 // convariance of enu to convariance xyz
 extern Matrix3d conv_xyz(const Coordinate<XYZ>&, const Matrix3d&);
 
-}  // namespace nav
+}  // namespace navp

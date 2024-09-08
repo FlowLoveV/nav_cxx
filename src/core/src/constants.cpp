@@ -1,6 +1,6 @@
 #include "constants/carrier_table.hpp"
 
-namespace nav::constants {
+namespace navp::constants {
 
 const boost::bimap<std::string, CarrierEnum> CARRIER_TABLE = []() {
   boost::bimap<std::string, CarrierEnum> bimap;
@@ -28,4 +28,4 @@ const boost::bimap<std::string, CarrierEnum> CARRIER_TABLE = []() {
   return bimap;
 }();
 
-}  // namespace nav::constants
+}  // namespace navp::constants

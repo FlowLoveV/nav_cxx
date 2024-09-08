@@ -5,7 +5,7 @@
 #include <numbers>
 #include <type_traits>
 
-namespace nav {
+namespace navp {
 
 template <std::floating_point T>
 T to_radians(T val) {
@@ -48,4 +48,4 @@ concept array_type = std::is_array_v<T>;
 template <typename T>
 concept pointer_type = std::is_pointer_v<T>;
 
-}  // namespace nav
+}  // namespace navp

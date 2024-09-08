@@ -12,15 +12,15 @@
 #include <type_traits>
 #include <utility>
 
+#include "ginan/cpp/common/gTime.hpp"
 #include "logger.hpp"
-#include "macro.hpp"
 #include "types.hpp"
 
 // [formatter-doc](https://zh.cppreference.com/w/cpp/chrono/system_clock/formatter)
 // [parse-doc](https://zh.cppreference.com/w/cpp/chrono/parse)
 // [doc](https://zh.cppreference.com/w/cpp/chrono#.E6.97.A5.E5.8E.86)
 
-namespace nav::details {
+namespace navp::details {
 using namespace std;
 using namespace std::chrono;
 
@@ -43,39 +43,35 @@ class bds_clock {
   [[nodiscard]] static time_point now() { return from_utc(utc_clock::now()); }
 
   template <typename _Duration>
-  [[nodiscard]] static utc_time<common_type_t<_Duration, seconds>> to_utc(
-      const bds_time<_Duration>& __t) {
+  [[nodiscard]] static utc_time<common_type_t<_Duration, seconds>> to_utc(const bds_time<_Duration>& __t) {
     using _CDur = common_type_t<_Duration, seconds>;
     return utc_time<_CDur>{__t.time_since_epoch()} + 1136073623s;
   }
 
   template <typename _Duration>
-  [[nodiscard]] static bds_time<common_type_t<_Duration, seconds>> from_utc(
-      const utc_time<_Duration>& __t) {
+  [[nodiscard]] static bds_time<common_type_t<_Duration, seconds>> from_utc(const utc_time<_Duration>& __t) {
     using _CDur = common_type_t<_Duration, seconds>;
     return bds_time<_CDur>{__t.time_since_epoch()} - 1136073623s;
   }
 };
-}  // namespace nav::details
+}  // namespace navp::details
 
 namespace std::chrono {
 template <>
-struct is_clock<nav::details::bds_clock> : true_type {};
+struct is_clock<navp::details::bds_clock> : true_type {};
 template <>
-inline constexpr bool is_clock_v<nav::details::bds_clock> = true;
+inline constexpr bool is_clock_v<navp::details::bds_clock> = true;
 }  // namespace std::chrono
 
 template <typename _Duration, typename _CharT>
-struct std::formatter<nav::details::bds_time<_Duration>, _CharT>
-    : __format::__formatter_chrono<_CharT> {
+struct std::formatter<navp::details::bds_time<_Duration>, _CharT> : __format::__formatter_chrono<_CharT> {
   template <typename _ParseContext>
   constexpr typename _ParseContext::iterator parse(_ParseContext& __pc) {
     return _M_f._M_parse(__pc, __format::_ZonedDateTime);
   }
 
   template <typename _FormatContext>
-  typename _FormatContext::iterator format(const nav::details::bds_time<_Duration>& __t,
-                                           _FormatContext& __fc) const {
+  typename _FormatContext::iterator format(const navp::details::bds_time<_Duration>& __t, _FormatContext& __fc) const {
     constexpr chrono::days __bds_offset = chrono::days(3657 + 9492);
     using _CDur = common_type_t<_Duration, chrono::days>;
     chrono::local_time<_CDur> __lt(__t.time_since_epoch() + __bds_offset);
@@ -89,7 +85,7 @@ struct std::formatter<nav::details::bds_time<_Duration>, _CharT>
   __format::__formatter_chrono<_CharT> _M_f;
 };
 
-namespace nav {
+namespace navp {
 
 // template <typename T>
 // requires std::chrono::__is_time_point_v<T>
@@ -132,6 +128,12 @@ bool is_leap_year(i32 year);
 
 template <typename T>
 struct EpochPayload {
+  // to long double seconds
+  operator long double() const noexcept {
+    return static_cast<long double>(this->time_point().time_since_epoch().count());
+  }
+  // to long nanos
+  operator long() const noexcept { return this->time_point().time_since_epoch().count(); }
   // plus / minus opearator
   template <class Dur>
   constexpr T& operator+=(const Dur& dur) {
@@ -175,6 +177,7 @@ struct EpochPayload {
     return T{time_point_t::min()};
   }
 
+  constexpr auto time_point() const { return static_cast<const T*>(this)->tp; }
   constexpr auto time_point() { return static_cast<T*>(this)->tp; }
 
   // from string
@@ -183,39 +186,50 @@ struct EpochPayload {
     istringstream ss(ctx);
     ss >> std::chrono::parse(fmt, static_cast<T*>(this)->tp);
     if (ss.fail()) {
-      nav_error("Failed to parse datetime string : Can't format string \"{}\" with fmt \"{}\".",
-                ctx, fmt);
+      nav_error("Failed to parse datetime string : Can't format string \"{}\" with fmt \"{}\".", ctx, fmt);
     }
   }
   // construct from utc time string
   constexpr static T from_str(const char* fmt, const char* ctx) {
-    std::chrono::time_point<utc_clock, std::chrono::duration<long, std::ratio<1, 1000000000>>>
-        base_tp;
+    std::chrono::time_point<utc_clock, std::chrono::duration<long, std::ratio<1, 1000000000>>> base_tp;
     istringstream ss(ctx);
     ss >> std::chrono::parse(fmt, base_tp);
     if (ss.fail()) {
-      nav_error("Failed to parse datetime string : Can't format string \"{}\" with fmt \"{}\".",
-                ctx, fmt);
+      nav_error("Failed to parse datetime string : Can't format string \"{}\" with fmt \"{}\".", ctx, fmt);
     }
     return T{clock_cast<typename T::clock_type>(base_tp)};
   }
 
+  // from nanos
+  constexpr static T from_nanos(long nanos) noexcept {
+    return T{typename T::time_point_type{typename T::duration_type{nanos}}};
+  }
+
+  // from seconds
+  constexpr static T from_seconds(long double seconds) noexcept {
+    auto f = seconds * 1e9;
+    long nanos = static_cast<long>(f);
+    if ((f - nanos) != 0.0) {
+      nav_warn("There is a loss of precision when converting long double seconds to long nanoseconds");
+    }
+    return EpochPayload::from_nanos(nanos);
+  }
+
   // from gps time
   template <typename U = T>
-  constexpr static enable_if_t<
-      std::disjunction_v<std::is_same<U, Epoch<nav::GPST>>, std::is_same<U, Epoch<nav::BDT>>>, U>
+  constexpr static enable_if_t<std::disjunction_v<std::is_same<U, Epoch<navp::GPST>>, std::is_same<U, Epoch<navp::BDT>>>,
+                               U>
   from_gps_time(const u16 weeks, u32 seconds, long nanos) {
     auto sec = convert_seconds(seconds, nanos);
     if (!check_gps_time(weeks, sec)) {
       throw "Incorrect use of gps time constructor";
     }
-    auto duration =
-        std::chrono::weeks(weeks) + std::chrono::seconds(seconds) + std::chrono::nanoseconds(nanos);
+    auto duration = std::chrono::weeks(weeks) + std::chrono::seconds(seconds) + std::chrono::nanoseconds(nanos);
     return T{duration};
   }
   template <typename U = T>
-  constexpr static enable_if_t<
-      std::disjunction_v<std::is_same<U, Epoch<nav::GPST>>, std::is_same<U, Epoch<nav::BDT>>>, U>
+  constexpr static enable_if_t<std::disjunction_v<std::is_same<U, Epoch<navp::GPST>>, std::is_same<U, Epoch<navp::BDT>>>,
+                               U>
   from_gps_time(const u16 weeks, f64 seconds) {
     if (!check_gps_time(weeks, seconds)) {
       throw "Incorrect use of gps time constructor";
@@ -227,9 +241,9 @@ struct EpochPayload {
 
   // from local date
   template <typename U = T>
-  constexpr static enable_if_t<std::disjunction_v<std::is_same<U, Epoch<nav::UTC>>>, U>
-  from_local_date(const u16 year, const u8 month, const u16 day, const u8 hour, const u8 minute,
-                  const u8 seconds, const long nanos) {
+  constexpr static enable_if_t<std::disjunction_v<std::is_same<U, Epoch<navp::UTC>>>, U> from_local_date(
+      const u16 year, const u8 month, const u16 day, const u8 hour, const u8 minute, const u8 seconds,
+      const long nanos) {
     if (!(check_ymd(year, month, day) && check_ymd_range(year, month, day) &&
           check_hms(hour, minute, seconds, nanos))) {
       throw "Incorrect use of date time constructor";
@@ -239,8 +253,8 @@ struct EpochPayload {
     auto d = std::chrono::day(day);
     auto ymd = std::chrono::year_month_day(y, m, d);
     const auto days = std::chrono::sys_days{ymd}.time_since_epoch();
-    auto duration = days + std::chrono::hours(hour) + std::chrono::minutes(minute) +
-                    std::chrono::seconds(seconds) + std::chrono::nanoseconds(nanos);
+    auto duration = days + std::chrono::hours(hour) + std::chrono::minutes(minute) + std::chrono::seconds(seconds) +
+                    std::chrono::nanoseconds(nanos);
     std::chrono::time_point<std::chrono::local_t, typename T::duration_type> local_time(duration);
     // to target clock
     auto sys_time = std::chrono::current_zone()->to_sys(local_time);
@@ -250,17 +264,16 @@ struct EpochPayload {
 
   // from local date
   template <typename U = T>
-  constexpr static enable_if_t<std::disjunction_v<std::is_same<U, Epoch<nav::UTC>>>, U>
-  from_local_date(const u16 year, const u8 month, const u16 day, const u8 hour, const u8 minute,
-                  const f64 seconds) {
+  constexpr static enable_if_t<std::disjunction_v<std::is_same<U, Epoch<navp::UTC>>>, U> from_local_date(
+      const u16 year, const u8 month, const u16 day, const u8 hour, const u8 minute, const f64 seconds) {
     auto [secs, nanos] = convert_seconds(seconds);
     return EpochPayload::from_local_date(year, month, day, hour, minute, secs, nanos);
   }
 
   template <typename U = T>
-  constexpr static enable_if_t<std::disjunction_v<std::is_same<U, Epoch<nav::UTC>>>, U>
-  from_utc_date(const u16 year, const u8 month, const u16 day, const u8 hour, const u8 minute,
-                const u8 seconds, const long nanos) {
+  constexpr static enable_if_t<std::disjunction_v<std::is_same<U, Epoch<navp::UTC>>>, U> from_utc_date(
+      const u16 year, const u8 month, const u16 day, const u8 hour, const u8 minute, const u8 seconds,
+      const long nanos) {
     if (!(check_ymd(year, month, day) && check_ymd_range(year, month, day) &&
           check_hms(hour, minute, seconds, nanos))) {
       throw "Incorrect use of date time constructor";
@@ -270,8 +283,8 @@ struct EpochPayload {
     auto d = std::chrono::day(day);
     auto ymd = std::chrono::year_month_day(y, m, d);
     const auto days = std::chrono::sys_days{ymd}.time_since_epoch();
-    auto duration = days + std::chrono::hours(hour) + std::chrono::minutes(minute) +
-                    std::chrono::seconds(seconds) + std::chrono::nanoseconds(nanos);
+    auto duration = days + std::chrono::hours(hour) + std::chrono::minutes(minute) + std::chrono::seconds(seconds) +
+                    std::chrono::nanoseconds(nanos);
     std::chrono::time_point<system_clock> system_time(duration);
     // to target clock
     auto time = std::chrono::clock_cast<typename T::clock_type>(system_time);
@@ -280,18 +293,16 @@ struct EpochPayload {
 
   // from local date
   template <typename U = T>
-  constexpr static enable_if_t<std::disjunction_v<std::is_same<U, Epoch<nav::UTC>>>, U>
-  from_utc_date(const u16 year, const u8 month, const u16 day, const u8 hour, const u8 minute,
-                const f64 seconds) {
+  constexpr static enable_if_t<std::disjunction_v<std::is_same<U, Epoch<navp::UTC>>>, U> from_utc_date(
+      const u16 year, const u8 month, const u16 day, const u8 hour, const u8 minute, const f64 seconds) {
     auto [secs, nanos] = convert_seconds(seconds);
     return EpochPayload::from_utc_date(year, month, day, hour, minute, secs, nanos);
   }
   // from
   // get gps time information
   template <typename U = T>
-  constexpr enable_if_t<
-      std::disjunction_v<std::is_same<U, Epoch<nav::GPST>>, std::is_same<U, Epoch<nav::BDT>>>,
-      std::tuple<u16, f64>>
+  constexpr enable_if_t<std::disjunction_v<std::is_same<U, Epoch<navp::GPST>>, std::is_same<U, Epoch<navp::BDT>>>,
+                        std::tuple<u16, f64>>
   gps_time() {
     auto nanoseconds = this->time_point().time_since_epoch();
     auto seconds = std::chrono::duration_cast<std::chrono::seconds>(nanoseconds).count();
@@ -300,16 +311,11 @@ struct EpochPayload {
     return std::make_tuple(weeks, tow);
   }
   // get date information
-  constexpr auto days_since_epoch() {
-    return this->time_point_of_days_since_epoch().time_since_epoch().count();
-  }
-  constexpr auto nanoseconds_within_day() {
-    return this->duration_of_nanoseconds_within_day().count();
-  }
+  constexpr auto days_since_epoch() { return this->time_point_of_days_since_epoch().time_since_epoch().count(); }
+  constexpr auto nanoseconds_within_day() { return this->duration_of_nanoseconds_within_day().count(); }
   constexpr auto seconds_within_day() { return this->duration_of_seconds_within_day().count(); }
 
-  constexpr static auto ymd_of(const T& t, bool is_local = false)
-      -> std::tuple<int, unsigned, unsigned> {
+  constexpr static auto ymd_of(const T& t, bool is_local = false) -> std::tuple<int, unsigned, unsigned> {
     auto tp = t.tp;
     // Considering that the starting points of different time scales are inconsistent, overflow may
     // occur during conversion, so it is necessary to unify the starting points of the time scales
@@ -335,8 +341,7 @@ struct EpochPayload {
     return std::make_tuple(int(ymd.year()), unsigned(ymd.month()), unsigned(ymd.day()));
   }
 
-  constexpr static auto hms_of(const T& t, bool is_local = false)
-      -> std::tuple<long, long, long, long> {
+  constexpr static auto hms_of(const T& t, bool is_local = false) -> std::tuple<long, long, long, long> {
     const auto sys_tp = std::chrono::clock_cast<system_clock>(t.tp);
     if (is_local) {
       auto local_tp = std::chrono::current_zone()->to_local(sys_tp);
@@ -345,12 +350,11 @@ struct EpochPayload {
                              hms.subseconds().count());
     }
     auto hms = std::chrono::hh_mm_ss{sys_tp.time_since_epoch() % std::chrono::days(1)};
-    return std::make_tuple(hms.hours().count(), hms.minutes().count(), hms.seconds().count(),
-                           hms.subseconds().count());
+    return std::make_tuple(hms.hours().count(), hms.minutes().count(), hms.seconds().count(), hms.subseconds().count());
   }
 
-  constexpr static auto date_of(const T& t, bool is_local = false)
-      -> std::tuple<int, unsigned, unsigned, long, long, long, long> {
+  constexpr static auto date_of(const T& t,
+                                bool is_local = false) -> std::tuple<int, unsigned, unsigned, long, long, long, long> {
     auto [y, m, d] = EpochPayload::ymd_of(t, is_local);
     auto [H, M, S, N] = EpochPayload::hms_of(t, is_local);
     return std::make_tuple(y, m, d, H, M, S, N);
@@ -385,49 +389,39 @@ struct EpochPayload {
   }
   constexpr static bool check_ymd_range(const u16 year, const u8 month, const u16 day) {
     if constexpr (std::same_as<T, Epoch<UTC>>) {
-      constexpr auto max_ymd =
-          chrono::year_month_day(chrono::year(2262), chrono::month(4), chrono::day(10));
-      constexpr auto min_ymd =
-          chrono::year_month_day(chrono::year(1677), chrono::month(9), chrono::day(21));
+      constexpr auto max_ymd = chrono::year_month_day(chrono::year(2262), chrono::month(4), chrono::day(10));
+      constexpr auto min_ymd = chrono::year_month_day(chrono::year(1677), chrono::month(9), chrono::day(21));
       std::chrono::year_month_day ymd{chrono::year(year), chrono::month(month), chrono::day(day)};
       if (min_ymd <= ymd && max_ymd >= ymd) {
         return true;
       } else {
-        nav_error("Year/month/day out of range : The Date {}-{}-{} exceeds range.", year, month,
-                  day);
+        nav_error("Year/month/day out of range : The Date {}-{}-{} exceeds range.", year, month, day);
         return false;
       }
     } else if constexpr (std::same_as<T, Epoch<GPST>>) {
-      constexpr auto max_ymd =
-          chrono::year_month_day(chrono::year(2272), chrono::month(4), chrono::day(14));
-      constexpr auto min_ymd =
-          chrono::year_month_day(chrono::year(1687), chrono::month(9), chrono::day(27));
+      constexpr auto max_ymd = chrono::year_month_day(chrono::year(2272), chrono::month(4), chrono::day(14));
+      constexpr auto min_ymd = chrono::year_month_day(chrono::year(1687), chrono::month(9), chrono::day(27));
       std::chrono::year_month_day ymd{chrono::year(year), chrono::month(month), chrono::day(day)};
       if (min_ymd <= ymd && max_ymd >= ymd) {
         return true;
       } else {
-        nav_error("Year/month/day out of range : The Date {}-{}-{} exceeds range.", year, month,
-                  day);
+        nav_error("Year/month/day out of range : The Date {}-{}-{} exceeds range.", year, month, day);
         return false;
       }
     } else if constexpr (std::same_as<T, Epoch<BDT>>) {
-      constexpr auto max_ymd =
-          chrono::year_month_day(chrono::year(2272), chrono::month(4), chrono::day(14));
-      constexpr auto min_ymd =
-          chrono::year_month_day(chrono::year(1687), chrono::month(9), chrono::day(27));
+      constexpr auto max_ymd = chrono::year_month_day(chrono::year(2272), chrono::month(4), chrono::day(14));
+      constexpr auto min_ymd = chrono::year_month_day(chrono::year(1687), chrono::month(9), chrono::day(27));
       std::chrono::year_month_day ymd{chrono::year(year), chrono::month(month), chrono::day(day)};
       if (min_ymd <= ymd && max_ymd >= ymd) {
         return true;
       } else {
-        nav_error("Year/month/day out of range : The Date {}-{}-{} exceeds range.", year, month,
-                  day);
+        nav_error("Year/month/day out of range : The Date {}-{}-{} exceeds range.", year, month, day);
         return false;
       }
     }
     return true;
   }
-  constexpr static bool check_hms(const u8 hour, const u8 minute, const u8 seconds,
-                                  const long nanos) {
+  constexpr static bool check_hms(const u8 hour, const u8 minute, const u8 seconds, const long nanos) {
     if (hour >= 24 || minute >= 60 || seconds >= 60 || nanos < 0 || nanos >= 1000000000) {
       nav_error("Invalid hh:mm:ss : The {}:{}:{}:{} is not vaild.", hour, minute, seconds, nanos);
       return false;
@@ -462,6 +456,7 @@ struct Epoch<UTC> : public details::EpochPayload<Epoch<UTC>> {
 
   // default constructor
   constexpr Epoch() = default;
+  constexpr Epoch(long t) noexcept : tp(duration_type(t)) {}
   constexpr Epoch(const time_point_type& _tp) : tp(_tp) {}
   constexpr Epoch(time_point_type&& _tp) : tp(std::move(_tp)) {}
   constexpr Epoch& operator=(const time_point_type& _tp) {
@@ -482,6 +477,10 @@ struct Epoch<UTC> : public details::EpochPayload<Epoch<UTC>> {
   }
   ~Epoch() = default;
   constexpr explicit Epoch(const duration_type& dur) : tp(dur) {}
+
+  // Interacting with the ginan library's gTime type
+  Epoch(GTime gtime) noexcept;
+  operator GTime() const noexcept;
 };
 
 template <>
@@ -494,6 +493,7 @@ struct Epoch<GPST> : public details::EpochPayload<Epoch<GPST>> {
 
   // default constructor
   constexpr Epoch() = default;
+  constexpr Epoch(long t) noexcept : tp(duration_type(t)) {}
   constexpr Epoch(const time_point_type& _tp) : tp(_tp) {}
   constexpr Epoch(time_point_type&& _tp) : tp(std::move(_tp)) {}
   constexpr Epoch& operator=(const time_point_type& _tp) {
@@ -514,6 +514,10 @@ struct Epoch<GPST> : public details::EpochPayload<Epoch<GPST>> {
   }
   ~Epoch() = default;
   constexpr explicit Epoch(const duration_type& dur) : tp(dur) {}
+
+  // Interacting with the ginan library's gTime type
+  Epoch(GTime gtime) noexcept;
+  operator GTime() const noexcept;
 };
 
 template <>
@@ -526,6 +530,7 @@ struct Epoch<BDT> : public details::EpochPayload<Epoch<BDT>> {
 
   // default constructor
   constexpr Epoch() = default;
+  constexpr Epoch(long t) noexcept : tp(duration_type(t)) {}
   constexpr Epoch(const time_point_type& _tp) : tp(_tp) {}
   constexpr Epoch(time_point_type&& _tp) : tp(std::move(_tp)) {}
   constexpr Epoch& operator=(const time_point_type& _tp) {
@@ -546,6 +551,10 @@ struct Epoch<BDT> : public details::EpochPayload<Epoch<BDT>> {
   }
   ~Epoch() = default;
   constexpr explicit Epoch(const duration_type& dur) : tp(dur) {}
+
+  // Interacting with the ginan library's gTime type
+  Epoch(GTime gtime) noexcept;
+  operator GTime() const noexcept;
 };
 
 // epoch_cast
@@ -568,20 +577,18 @@ constexpr auto operator<=>(const Epoch<T>& lhs, const Epoch<T>& rhs) {
   return lhs.tp <=> rhs.tp;
 }
 
-}  // namespace nav
+}  // namespace navp
 
 // std::hash
-template <nav::TimeScale T>
-struct std::hash<nav::Epoch<T>> {
-  std::size_t operator()(const nav::Epoch<T>& d) const noexcept {
-    return d.tp.time_since_epoch().count();
-  }
+template <navp::TimeScale T>
+struct std::hash<navp::Epoch<T>> {
+  std::size_t operator()(const navp::Epoch<T>& d) const noexcept { return d.tp.time_since_epoch().count(); }
 };
 
 // std::formatter
 template <typename CharT>
-struct std::formatter<nav::Epoch<nav::GPST>, CharT> : __format::__formatter_chrono<CharT> {
-  using _Duration = nav::Epoch<nav::GPST>::duration_type;
+struct std::formatter<navp::Epoch<navp::GPST>, CharT> : __format::__formatter_chrono<CharT> {
+  using _Duration = navp::Epoch<navp::GPST>::duration_type;
 
   template <typename _ParseContext>
   constexpr typename _ParseContext::iterator parse(_ParseContext& __pc) {
@@ -589,8 +596,7 @@ struct std::formatter<nav::Epoch<nav::GPST>, CharT> : __format::__formatter_chro
   }
 
   template <typename _FormatContext>
-  typename _FormatContext::iterator format(const nav::Epoch<nav::GPST>& epoch,
-                                           _FormatContext& __fc) const {
+  typename _FormatContext::iterator format(const navp::Epoch<navp::GPST>& epoch, _FormatContext& __fc) const {
     // Convert to __local_time_fmt with abbrev "GPS" and offset 0s.
     // Offset is 1980y/January/Sunday[1] - 1970y/January/1
     constexpr chrono::days __gps_offset = chrono::days(3657);
@@ -606,8 +612,8 @@ struct std::formatter<nav::Epoch<nav::GPST>, CharT> : __format::__formatter_chro
   __format::__formatter_chrono<CharT> _M_f;
 };
 template <typename CharT>
-struct std::formatter<nav::Epoch<nav::UTC>, CharT> : __format::__formatter_chrono<CharT> {
-  using _Duration = nav::Epoch<nav::UTC>::duration_type;
+struct std::formatter<navp::Epoch<navp::UTC>, CharT> : __format::__formatter_chrono<CharT> {
+  using _Duration = navp::Epoch<navp::UTC>::duration_type;
 
   template <typename _ParseContext>
   constexpr typename _ParseContext::iterator parse(_ParseContext& __pc) {
@@ -615,8 +621,7 @@ struct std::formatter<nav::Epoch<nav::UTC>, CharT> : __format::__formatter_chron
   }
 
   template <typename _FormatContext>
-  typename _FormatContext::iterator format(const nav::Epoch<nav::UTC>& epoch,
-                                           _FormatContext& __fc) const {
+  typename _FormatContext::iterator format(const navp::Epoch<navp::UTC>& epoch, _FormatContext& __fc) const {
     // Adjust by removing leap seconds to get equivalent sys_time.
     // We can't just use clock_cast because we want to know if the time
     // falls within a leap second insertion, and format seconds as "60".
@@ -637,8 +642,8 @@ struct std::formatter<nav::Epoch<nav::UTC>, CharT> : __format::__formatter_chron
   __format::__formatter_chrono<CharT> _M_f;
 };
 template <typename CharT>
-struct std::formatter<nav::Epoch<nav::BDT>, CharT> : __format::__formatter_chrono<CharT> {
-  using _Duration = nav::Epoch<nav::BDT>::duration_type;
+struct std::formatter<navp::Epoch<navp::BDT>, CharT> : __format::__formatter_chrono<CharT> {
+  using _Duration = navp::Epoch<navp::BDT>::duration_type;
 
   template <typename _ParseContext>
   constexpr typename _ParseContext::iterator parse(_ParseContext& __pc) {
@@ -646,8 +651,7 @@ struct std::formatter<nav::Epoch<nav::BDT>, CharT> : __format::__formatter_chron
   }
 
   template <typename _FormatContext>
-  typename _FormatContext::iterator format(const nav::Epoch<nav::BDT>& __t,
-                                           _FormatContext& __fc) const {
+  typename _FormatContext::iterator format(const navp::Epoch<navp::BDT>& __t, _FormatContext& __fc) const {
     constexpr chrono::days __bds_offset = chrono::days(3657 + 9492);
     using _CDur = common_type_t<_Duration, chrono::days>;
     chrono::local_time<_CDur> __lt(__t.tp.time_since_epoch() + __bds_offset);

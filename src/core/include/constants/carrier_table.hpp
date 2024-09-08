@@ -2,7 +2,7 @@
 
 #include <boost/bimap.hpp>
 
-namespace nav {
+namespace navp {
 
 enum class CarrierEnum : uint8_t {
   /// L1 (GPS, SBAS, QZSS)
@@ -65,4 +65,4 @@ extern const boost::bimap<std::string, CarrierEnum> CARRIER_TABLE;
 
 }
 
-}  // namespace nav
+}  // namespace navp

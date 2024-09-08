@@ -34,7 +34,7 @@ TEST_CASE("test logger") {
 }
 
 TEST_CASE("test errors") {
-  using namespace nav;
+  using namespace navp;
   NavError(ErrorId::DividZero).warn();
   NavError(ErrorId::DividZero).crash();
 }

@@ -7,9 +7,9 @@
 #include "doctest.h"
 #include "space_time/time.hpp"
 
-using namespace nav;
+using namespace navp;
 using namespace std::chrono;
-using namespace nav::details;
+using namespace navp::details;
 typedef Epoch<UTC> Utc;
 typedef Epoch<GPST> Gpst;
 typedef Epoch<BDT> Bdt;

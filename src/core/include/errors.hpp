@@ -4,7 +4,7 @@
 #include <source_location>
 #include <string_view>
 
-namespace nav {
+namespace navp {
 
 struct ErrorId;
 struct ErrorBase;
@@ -57,4 +57,4 @@ class NavError : public ErrorBase {
   ErrorId error_id;
 };
 
-}  // namespace nav
+}  // namespace navp

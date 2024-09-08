@@ -7,8 +7,8 @@
 #include "space_time/space.hpp"
 #include "utils.hpp"
 
-using namespace nav;
-using namespace nav::details;
+using namespace navp;
+using namespace navp::details;
 
 TEST_CASE("crs2crs") {
   Coordinate<BLH> blh{to_radians(30.13145), to_radians(114.13145), 20};

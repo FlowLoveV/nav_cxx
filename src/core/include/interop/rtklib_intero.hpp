@@ -1,3 +1,3 @@
 #pragma once
 
-namespace nav::interop {}
+namespace navp::interop {}
