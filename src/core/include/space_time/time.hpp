@@ -1,17 +1,5 @@
 #pragma once
 
-#include <cassert>
-#include <chrono>
-#include <concepts>
-#include <format>
-#include <functional>
-#include <limits>
-#include <ratio>
-#include <sstream>
-#include <tuple>
-#include <type_traits>
-#include <utility>
-
 #include "ginan/cpp/common/gTime.hpp"
 #include "logger.hpp"
 #include "types.hpp"
@@ -217,8 +205,8 @@ struct EpochPayload {
 
   // from gps time
   template <typename U = T>
-  constexpr static enable_if_t<std::disjunction_v<std::is_same<U, Epoch<navp::GPST>>, std::is_same<U, Epoch<navp::BDT>>>,
-                               U>
+  constexpr static enable_if_t<
+      std::disjunction_v<std::is_same<U, Epoch<navp::GPST>>, std::is_same<U, Epoch<navp::BDT>>>, U>
   from_gps_time(const u16 weeks, u32 seconds, long nanos) {
     auto sec = convert_seconds(seconds, nanos);
     if (!check_gps_time(weeks, sec)) {
@@ -228,8 +216,8 @@ struct EpochPayload {
     return T{duration};
   }
   template <typename U = T>
-  constexpr static enable_if_t<std::disjunction_v<std::is_same<U, Epoch<navp::GPST>>, std::is_same<U, Epoch<navp::BDT>>>,
-                               U>
+  constexpr static enable_if_t<
+      std::disjunction_v<std::is_same<U, Epoch<navp::GPST>>, std::is_same<U, Epoch<navp::BDT>>>, U>
   from_gps_time(const u16 weeks, f64 seconds) {
     if (!check_gps_time(weeks, seconds)) {
       throw "Incorrect use of gps time constructor";

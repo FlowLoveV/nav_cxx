@@ -24,8 +24,7 @@ auto Coordinate<XYZ>::to_enu(const Coordinate& xyz) const noexcept -> Coordinate
   return e * r;
 }
 
-auto Coordinate<XYZ>::to_enu(const std::span<Coordinate>& span) const noexcept
-    -> std::vector<Coordinate<ENU>> {
+auto Coordinate<XYZ>::to_enu(const std::span<Coordinate>& span) const noexcept -> std::vector<Coordinate<ENU>> {
   auto e = this->to_enu_matrix();
   std::vector<Coordinate<ENU>> res(span.size());
   for (const auto& xyz : span) {
@@ -39,8 +38,7 @@ auto Coordinate<XYZ>::to_enu(const Coordinate<BLH>& blh) const noexcept -> Coord
   return this->to_enu(blh.to_xyz());
 }
 
-auto Coordinate<XYZ>::to_enu(const std::span<Coordinate<BLH>>& span) const noexcept
-    -> std::vector<Coordinate<ENU>> {
+auto Coordinate<XYZ>::to_enu(const std::span<Coordinate<BLH>>& span) const noexcept -> std::vector<Coordinate<ENU>> {
   auto e = this->to_enu_matrix();
   std::vector<Coordinate<ENU>> res(span.size());
   for (const auto& blh : span) {
@@ -73,8 +71,7 @@ auto Coordinate<BLH>::to_enu(const Coordinate& blh) const noexcept -> Coordinate
   return e * r;
 }
 
-auto Coordinate<BLH>::to_enu(const std::span<Coordinate>& span) const noexcept
-    -> std::vector<Coordinate<ENU>> {
+auto Coordinate<BLH>::to_enu(const std::span<Coordinate>& span) const noexcept -> std::vector<Coordinate<ENU>> {
   Matrix3d e = this->to_enu_matrix();
   auto xyz0 = this->to_xyz();
   std::vector<Coordinate<ENU>> res(span.size());
@@ -91,8 +88,7 @@ auto Coordinate<BLH>::to_enu(const Coordinate<XYZ>& xyz) const noexcept -> Coord
   return e * r;
 }
 
-auto Coordinate<BLH>::to_enu(const std::span<Coordinate<XYZ>>& span) const noexcept
-    -> std::vector<Coordinate<ENU>> {
+auto Coordinate<BLH>::to_enu(const std::span<Coordinate<XYZ>>& span) const noexcept -> std::vector<Coordinate<ENU>> {
   Matrix3d e = this->to_enu_matrix();
   auto xyz0 = this->to_xyz();
   std::vector<Coordinate<ENU>> res(span.size());

@@ -44,9 +44,7 @@ class NavError : public ErrorBase {
  private:
  public:
   using ErrorBase::ErrorBase;
-  NavError(ErrorId id, std::string_view addi_msg = "") : ErrorBase(ErrorMessage(id), addi_msg) {
-    error_id = id;
-  }
+  NavError(ErrorId id, std::string_view addi_msg = "") : ErrorBase(ErrorMessage(id), addi_msg) { error_id = id; }
   ~NavError() = default;
 
   uint16_t warn(std::source_location location = std::source_location::current());

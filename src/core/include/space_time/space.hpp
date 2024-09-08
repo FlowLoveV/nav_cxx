@@ -27,9 +27,7 @@ struct CoordinatePayload : public coordinate_t {
   coordinate_t& coord() & { return *static_cast<coordinate_t*>(this); }
   const coordinate_t& coord() const& { return *static_cast<const coordinate_t*>(this); }
   coordinate_t&& coord() && { return std::move(*static_cast<coordinate_t*>(this)); }
-  const coordinate_t&& coord() const&& {
-    return std::move(*static_cast<const coordinate_t*>(this));
-  }
+  const coordinate_t&& coord() const&& { return std::move(*static_cast<const coordinate_t*>(this)); }
 
   template <CoordSystem T>
   coordinate_t operator-(const Coordinate<T>& rhs) const noexcept {

@@ -1,26 +1,11 @@
 #pragma once
 
-#include "space_time/time.hpp"
-#include "types.hpp"
+#include "ginan/cpp/common/observations.hpp"
 
-namespace navp::sensor::gnss {
+namespace navp::sensors::gnss {
 
 class RecordGnssObs;
 
-/// `gnss record`
-class RecordGnssObs {
- public:
-  struct Record {
-    f32 doppler, snr;
-    f64 phase, pseudorange;
-    LliFlagEnum lli;
-    Carrier carrier;
-  };
-  typedef std::map<Epoch<UTC>, std::map<Sv, std::tuple<EpochFlagEnum, std::vector<Record>>>>
-      RecordType;
+class RecordGnssObs : public ObsList {};
 
- private:
-  RecordType record_;
-};
-
-}  // namespace navp::sensor::gnss
+}  // namespace navp::sensors::gnss

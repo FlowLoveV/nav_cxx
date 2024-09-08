@@ -1,32 +1,33 @@
 #include "io/rinex.hpp"
 
-namespace ginan {
+namespace navp::io::rinex {
 
 Rinex::Rinex(std::istream& inputstream) {
   allocate_all_members();
-  readRnx(inputstream, this->info->type, *obs, *nav, this->info->header, this->info->version, this->info->sys,
-          this->info->tsys, sys_code_types);
+  readRnx(inputstream, this->cmn_info->type, *obs, *nav, this->obs_info->header, this->cmn_info->version,
+          this->cmn_info->sys, this->obs_info->tsys, sys_code_types);
 }
 
 Rinex::Rinex(const char* path) {
   std::ifstream inputstream(path);
   allocate_all_members();
-  readRnx(inputstream, this->info->type, *obs, *nav, this->info->header, this->info->version, this->info->sys,
-          this->info->tsys, sys_code_types);
+  readRnx(inputstream, this->cmn_info->type, *obs, *nav, this->obs_info->header, this->cmn_info->version,
+          this->cmn_info->sys, this->obs_info->tsys, sys_code_types);
 }
 
 Rinex::operator GnssObs() && noexcept {
   return GnssObs{
       std::move(this->obs),
       std::move(this->sys_code_types),
-      std::move(this->info),
+      std::move(this->cmn_info),
+      std::move(this->obs_info),
   };
 }
 
 Rinex::operator GnssNav() && noexcept {
   return GnssNav{
       std::move(this->nav),
-      std::move(this->info),
+      std::move(this->cmn_info),
   };
 }
 
@@ -34,20 +35,24 @@ Rinex::operator std::unique_ptr<GnssObs>() && noexcept {
   return static_cast<std::unique_ptr<GnssObs>>(GnssObs{
       std::move(this->obs),
       std::move(this->sys_code_types),
-      std::move(this->info),
+      std::move(this->cmn_info),
+      std::move(this->obs_info),
   });
 }
 
 Rinex::operator std::unique_ptr<GnssNav>() && noexcept {
   return static_cast<std::unique_ptr<GnssNav>>(GnssNav{
       std::move(this->nav),
-      std::move(this->info),
+      std::move(this->cmn_info),
   });
 }
 
 GnssObs::GnssObs(std::unique_ptr<ObsList>&& obs_list, std::map<E_Sys, std::map<int, CodeType>>&& sys_code_types,
-                 std::unique_ptr<RinexCommonInfo>&& info)
-    : obs_list(std::move(obs_list)), sys_code_types(std::move(sys_code_types)), info(std::move(info)) {}
+                 std::unique_ptr<RinexCommonInfo>&& cmn_info, std::unique_ptr<RinexObsInfo>&& obs_info)
+    : obs_list(std::move(obs_list)),
+      sys_code_types(std::move(sys_code_types)),
+      cmn_info(std::move(cmn_info)),
+      obs_info(std::move(obs_info)) {}
 
 GnssObs::GnssObs(std::istream& inputstream) {
   auto rinex = Rinex(inputstream);
@@ -76,4 +81,4 @@ GnssNav::GnssNav(const char* path) {
 
 GnssNav::operator std::unique_ptr<GnssNav>() && noexcept { return std::make_unique<GnssNav>(std::move(*this)); }
 
-}  // namespace ginan
+}  // namespace navp::io::rinex

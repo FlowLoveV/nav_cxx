@@ -7,7 +7,7 @@
 #include "ginan/cpp/common/receiver.hpp"
 #include "ginan/cpp/common/rinex.hpp"
 
-namespace ginan {
+namespace navp::io::rinex {
 
 struct RinexCommonInfo;
 struct RinexObsInfo;
@@ -18,8 +18,6 @@ class GnssNav;
 struct RinexCommonInfo {
   double version;
   E_Sys sys;
-  E_TimeSys tsys;
-  RinexStation header;
   char type;
 };
 
@@ -44,12 +42,14 @@ class Rinex {
 
  private:
   void allocate_all_members() {
-    this->info = std::make_unique<RinexCommonInfo>();
+    this->cmn_info = std::make_unique<RinexCommonInfo>();
+    this->obs_info = std::make_unique<RinexObsInfo>();
     this->obs = std::make_unique<ObsList>();
     this->nav = std::make_unique<Navigation>();
   }
 
-  std::unique_ptr<RinexCommonInfo> info;
+  std::unique_ptr<RinexCommonInfo> cmn_info;
+  std::unique_ptr<RinexObsInfo> obs_info;
   std::map<E_Sys, std::map<int, CodeType>> sys_code_types;
   std::unique_ptr<ObsList> obs;
   std::unique_ptr<Navigation> nav;
@@ -58,7 +58,7 @@ class Rinex {
 class GnssObs {
  public:
   GnssObs(std::unique_ptr<ObsList>&& obs_list, std::map<E_Sys, std::map<int, CodeType>>&& sys_code_types,
-          std::unique_ptr<RinexCommonInfo>&& info);
+          std::unique_ptr<RinexCommonInfo>&& cmn_info, std::unique_ptr<RinexObsInfo>&& obs_info);
 
   GnssObs(std::istream& inputstream);
 
@@ -67,9 +67,10 @@ class GnssObs {
   operator std::unique_ptr<GnssObs>() && noexcept;
 
  public:
+  std::shared_ptr<RinexCommonInfo> cmn_info;
+  std::shared_ptr<RinexObsInfo> obs_info;
   std::shared_ptr<ObsList> obs_list;
   std::map<E_Sys, std::map<int, CodeType>> sys_code_types;
-  std::shared_ptr<RinexCommonInfo> info;
 };
 
 class GnssNav {
@@ -87,4 +88,4 @@ class GnssNav {
   std::shared_ptr<RinexCommonInfo> info;
 };
 
-}  // namespace ginan
+}  // namespace navp::io::rinex

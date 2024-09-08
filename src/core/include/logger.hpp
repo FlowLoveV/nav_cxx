@@ -17,12 +17,9 @@ constexpr std::string logDirection = "../log/nav/";
 constexpr std::string dataDirection = "../log/data/";
 }  // namespace constants
 
-#define _normal_logger_pattern "[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t] %v"
-#define _data_logger_pattern "%v"
-
 std::string sourceInformation(std::source_location location = std::source_location::current());
 
-#define nav_log(level, ...)                                                        \
+#define nav_log(level, ...)                                                          \
   navp::details::globalFormattedLogger->log(level, "{}", navp::sourceInformation()); \
   navp::details::globalPureLogger->log(level, __VA_ARGS__);
 #define nav_trace(...) nav_log(spdlog::level::trace, __VA_ARGS__)

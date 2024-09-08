@@ -1,6 +1,8 @@
-#include "constants/carrier_table.hpp"
+#include "sensors/gnss/carrier.hpp"
 
 namespace navp::constants {
+
+using navp::sensors::gnss::CarrierEnum;
 
 const boost::bimap<std::string, CarrierEnum> CARRIER_TABLE = []() {
   boost::bimap<std::string, CarrierEnum> bimap;

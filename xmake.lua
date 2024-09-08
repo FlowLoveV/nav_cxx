@@ -40,8 +40,9 @@ target("main")
     set_kind("binary")
     set_languages("c++23")
     add_cxxflags("-fpie")
+    add_deps("nav_core",{public = true})
+    add_deps("reflect-cpp")
     add_files("src/main.cpp")
-    add_deps("nav_core")
 target_end()
 
 

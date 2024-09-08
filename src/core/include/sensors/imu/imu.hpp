@@ -1,3 +1,3 @@
 #pragma once
 
-namespace navp::sensor::imu {}
+namespace navp::sensors::imu {}

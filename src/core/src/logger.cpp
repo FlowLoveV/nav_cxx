@@ -12,15 +12,13 @@
 
 namespace navp {
 
-std::shared_ptr<spdlog::logger> createCommonSpdlogger(const std::string& loggerFileName,
-                                                      const std::string& loggerName,
+std::shared_ptr<spdlog::logger> createCommonSpdlogger(const std::string& loggerFileName, const std::string& loggerName,
                                                       const std::string& direction) {
   // 查找loggerName,如果已经存在，则直接返回
   if (auto ptr = spdlog::get(loggerName); ptr) {
     return ptr;
   }
-  auto dailySink =
-      std::make_shared<spdlog::sinks::daily_file_sink_mt>(direction + loggerFileName, 2, 0);
+  auto dailySink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(direction + loggerFileName, 2, 0);
   auto console = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
   // dailysink为debug等级
   dailySink->set_level(spdlog::level::debug);
@@ -37,15 +35,13 @@ std::shared_ptr<spdlog::logger> createCommonSpdlogger(const std::string& loggerF
   return navLogger;
 }
 
-std::shared_ptr<spdlog::logger> createPureSpdlogger(const std::string& loggerFileName,
-                                                    const std::string& loggerName,
+std::shared_ptr<spdlog::logger> createPureSpdlogger(const std::string& loggerFileName, const std::string& loggerName,
                                                     const std::string& direction) {
   // 查找loggerName,如果已经存在，则直接返回
   if (auto ptr = spdlog::get(loggerName); ptr) {
     return ptr;
   }
-  auto dailySink =
-      std::make_shared<spdlog::sinks::daily_file_sink_mt>(direction + loggerFileName, 2, 0);
+  auto dailySink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(direction + loggerFileName, 2, 0);
   auto console = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
   // dailysink为debug等级
   dailySink->set_level(spdlog::level::debug);
@@ -62,15 +58,13 @@ std::shared_ptr<spdlog::logger> createPureSpdlogger(const std::string& loggerFil
   return navLogger;
 }
 
-std::shared_ptr<spdlog::logger> createDataSpdlogger(const std::string& loggerFileName,
-                                                    const std::string& loggerName,
+std::shared_ptr<spdlog::logger> createDataSpdlogger(const std::string& loggerFileName, const std::string& loggerName,
                                                     const std::string& direction) {
   // 查找loggerName,如果已经存在，则直接返回
   if (auto ptr = spdlog::get(loggerName); ptr) {
     return ptr;
   }
-  auto dailySink =
-      std::make_shared<spdlog::sinks::daily_file_sink_mt>(direction + loggerFileName, 2, 0);
+  auto dailySink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(direction + loggerFileName, 2, 0);
   // dailysink为debug等级
   dailySink->set_level(spdlog::level::debug);
   // 设置console为debug等级
@@ -94,11 +88,9 @@ std::string sourceInformation(std::source_location location) {
 namespace details {
 // SPDLOG_LOGGER_CALL(globalLogger, spdlog::level::debug, "this is a debug
 // message");
-std::shared_ptr<spdlog::logger> globalFormattedLogger =
-    createCommonSpdlogger("navlogger.log", "nav_info_logger");
+std::shared_ptr<spdlog::logger> globalFormattedLogger = createCommonSpdlogger("navlogger.log", "nav_info_logger");
 
-std::shared_ptr<spdlog::logger> globalPureLogger =
-    createPureSpdlogger("navlogger.log", "nav_msg_logger");
+std::shared_ptr<spdlog::logger> globalPureLogger = createPureSpdlogger("navlogger.log", "nav_msg_logger");
 
 std::shared_ptr<spdlog::logger> globalDataLogger = createDataSpdlogger("data.txt", "datalogger");
 

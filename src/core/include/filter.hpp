@@ -27,9 +27,7 @@ enum class CompareOperator : uint8_t {
 enum class LogicOperator : uint8_t { Or, And };
 
 struct Filter {
-  virtual constexpr bool call_filter(obs_t* obs, bool logic_or = true) const noexcept {
-    return true;
-  }
+  virtual constexpr bool call_filter(obs_t* obs, bool logic_or = true) const noexcept { return true; }
 };
 
 template <typename Item>

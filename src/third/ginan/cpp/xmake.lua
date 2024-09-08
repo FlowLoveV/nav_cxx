@@ -273,7 +273,6 @@ target("ginan_core_shared")
     end
     add_defines("EIGEN_USE_BLAS=1")
     add_deps("sofa_lib",{public = true})
-    add_packages("boost")
     add_syslinks("m", "pthread", "dl","crypto","curses", {public = true})
     -- linking boost, linking static libraries
     -- add_syslinks(
@@ -500,7 +499,6 @@ target("ginan_core_static")
     end
     add_defines("EIGEN_USE_BLAS=1")
     add_deps("sofa_lib",{public = true})
-    add_packages("boost")
     add_syslinks("m", "pthread", "dl","crypto","curses", {public = true})
     -- linking boost, linking static libraries
     -- add_syslinks(
