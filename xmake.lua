@@ -7,25 +7,8 @@ set_targetdir("$(projectdir)/bin")
 set_objectdir("$(projectdir)/libs")
 set_languages("c++23", "c11")
 set_toolchains("gcc")
-
--- option("cc")
---     set_default("gcc")
--- option_end()
-
--- if has_config("cc") then 
---     local cc = get_config("cc")
---     if cc == "clang" then   
---         set_toolchains("clang")
---         add_cxxflags("-stdlib=libc++")
---         add_ldflags("-lc++")
---     elseif cc == "gcc" then
---         set_toolchains("gcc")
---     elseif cc == "msvc" then 
---         if is_os("linux","macos") then 
---             raise("MSVC is not supported on this operating system")
---         end
---     end
--- end
+set_toolset("cc", "gcc-14")
+set_toolset("cxx", "g++-14")
 
 -- sub modules
 includes("src/rtklib/xmake.lua")
@@ -46,4 +29,4 @@ target("main")
 target_end()
 
 
-
+ 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <rfl.hpp>
+
 #include "ginan/cpp/common/gTime.hpp"
 #include "logger.hpp"
 #include "types.hpp"
@@ -96,19 +98,35 @@ namespace navp {
 //   return std::make_tuple(hms.hours().count(), hms.minutes().count(), hms.seconds().count());
 // }
 
-enum TimeScale : u8 {
+enum TimeScaleEnum : u8 {
   UTC,
   GPST,
   BDT,
 };
 
-template <TimeScale T>
+template <TimeScaleEnum T>
 struct Epoch;
+
+// epoch_cast
+template <TimeScaleEnum Dst, TimeScaleEnum Src>
+Epoch<Dst> epoch_cast(const Epoch<Src>& src) {
+  if constexpr (Dst == Src) {
+    return src;
+  } else {
+    return std::chrono::clock_cast<typename Epoch<Dst>::clock_type>(src.tp);
+  }
+}
 
 namespace details {
 
+// reflect epoch helper class
+struct EpochReflectHelper {
+  rfl::Field<"time", rfl::Timestamp<"%Y-%m-%d %H:%M:%S">> time;
+};
+
 // convert a f64 second to [long second,long nanosecond]
 std::tuple<long, long> convert_seconds(f64 seconds);
+
 // convert [u8 second,long nanosecond] to a f64 second
 f64 convert_seconds(long second, long nanos);
 
@@ -116,6 +134,15 @@ bool is_leap_year(i32 year);
 
 template <typename T>
 struct EpochPayload {
+  // reflect helper
+  using ReflectionType = EpochReflectHelper;
+  ReflectionType reflection() const {
+    const auto sys_time_point = std::chrono::clock_cast<std::chrono::system_clock>(this->time_point());
+    const std::time_t t = std::chrono::system_clock::to_time_t(sys_time_point);
+    const auto tm = std::gmtime(&t);
+    return ReflectionType{.time = *tm};
+  }
+
   // to long double seconds
   operator long double() const noexcept {
     return static_cast<long double>(this->time_point().time_since_epoch().count());
@@ -432,6 +459,7 @@ struct EpochPayload {
     return true;
   }
 };
+
 };  // namespace details
 
 template <>
@@ -441,7 +469,7 @@ struct Epoch<UTC> : public details::EpochPayload<Epoch<UTC>> {
   typedef std::chrono::time_point<clock_type, duration_type> time_point_type;
 
   time_point_type tp;
-
+  using details::EpochPayload<Epoch<UTC>>::EpochPayload;
   // default constructor
   constexpr Epoch() = default;
   constexpr Epoch(long t) noexcept : tp(duration_type(t)) {}
@@ -469,6 +497,14 @@ struct Epoch<UTC> : public details::EpochPayload<Epoch<UTC>> {
   // Interacting with the ginan library's gTime type
   Epoch(GTime gtime) noexcept;
   operator GTime() const noexcept;
+
+  // reflect constructor
+  Epoch(const ReflectionType& _impl) {
+    auto tm = _impl.time.get().tm();
+    auto utc =
+        Epoch<UTC>::from_utc_date(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    this->tp = utc.tp;
+  }
 };
 
 template <>
@@ -506,6 +542,15 @@ struct Epoch<GPST> : public details::EpochPayload<Epoch<GPST>> {
   // Interacting with the ginan library's gTime type
   Epoch(GTime gtime) noexcept;
   operator GTime() const noexcept;
+
+  // reflect constructor
+  Epoch(const ReflectionType& _impl) {
+    auto tm = _impl.time.get().tm();
+    auto utc =
+        Epoch<UTC>::from_utc_date(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    auto gpst = epoch_cast<GPST>(utc);
+    this->tp = gpst.tp;
+  }
 };
 
 template <>
@@ -543,24 +588,32 @@ struct Epoch<BDT> : public details::EpochPayload<Epoch<BDT>> {
   // Interacting with the ginan library's gTime type
   Epoch(GTime gtime) noexcept;
   operator GTime() const noexcept;
+
+  // reflect constructor
+  Epoch(const ReflectionType& _impl) {
+    auto tm = _impl.time.get().tm();
+    auto utc =
+        Epoch<UTC>::from_utc_date(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    auto bdt = epoch_cast<BDT>(utc);
+    this->tp = bdt.tp;
+  }
 };
 
-// epoch_cast
-template <TimeScale Dst, TimeScale Src>
-Epoch<Dst> epoch_cast(const Epoch<Src>& src) {
-  if constexpr (Dst == Src) {
-    return src;
-  } else {
-    return std::chrono::clock_cast<typename Epoch<Dst>::clock_type>(src.tp);
-  }
-}
+// template <TimeScaleEnum Dst, TimeScaleEnum Src>
+// Epoch<Dst> epoch_cast(const Epoch<Src>& src) {
+//   if constexpr (Dst == Src) {
+//     return src;
+//   } else {
+//     return std::chrono::clock_cast<typename Epoch<Dst>::clock_type>(src.tp);
+//   }
+// }
 
 // operators
-template <TimeScale T>
+template <TimeScaleEnum T>
 constexpr auto operator==(const Epoch<T>& lhs, const Epoch<T>& rhs) {
   return lhs.tp == rhs.tp;
 }
-template <TimeScale T>
+template <TimeScaleEnum T>
 constexpr auto operator<=>(const Epoch<T>& lhs, const Epoch<T>& rhs) {
   return lhs.tp <=> rhs.tp;
 }
@@ -568,7 +621,7 @@ constexpr auto operator<=>(const Epoch<T>& lhs, const Epoch<T>& rhs) {
 }  // namespace navp
 
 // std::hash
-template <navp::TimeScale T>
+template <navp::TimeScaleEnum T>
 struct std::hash<navp::Epoch<T>> {
   std::size_t operator()(const navp::Epoch<T>& d) const noexcept { return d.tp.time_since_epoch().count(); }
 };

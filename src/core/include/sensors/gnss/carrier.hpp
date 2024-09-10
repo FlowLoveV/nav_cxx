@@ -4,8 +4,8 @@
 #include <boost/bimap.hpp>
 #include <format>
 
-#include "logger.hpp"
-#include "types.hpp"
+#include "utils/logger.hpp"
+#include "utils/types.hpp"
 
 namespace navp::sensors::gnss {
 enum class CarrierEnum : u8;
@@ -73,8 +73,8 @@ enum class CarrierEnum : u8 {
 };
 
 struct Carrier {
-  Carrier() : id(CarrierEnum::L1) {}
-  Carrier(CarrierEnum carrier) : id(carrier) {}
+  // Carrier() : id(CarrierEnum::L1) {}
+  // Carrier(CarrierEnum carrier) : id(carrier) {}
   // from_str
   static Carrier from_str(std::string_view str) {
     std::string s(str);
@@ -85,7 +85,7 @@ struct Carrier {
      */
     auto it = nav::constants::CARRIER_TABLE.left.find(s);
     if (it != nav::constants::CARRIER_TABLE.left.end()) {
-      return it->second;
+      return Carrier{it->second};
     } else {
       auto error_msg = std::format("Unable to parse string \"{}\" to Carrier", str);
       nav_error(error_msg);

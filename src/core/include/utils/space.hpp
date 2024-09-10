@@ -11,13 +11,13 @@ using coordinate_t = Eigen::Matrix<f64, 3, 1>;
 using Eigen::Matrix3d;
 using Eigen::Vector3d;
 
-enum CoordSystem : u8 {
+enum CoordSystemEnum : u8 {
   XYZ,
   BLH,
   ENU,
 };
 
-template <CoordSystem T>
+template <CoordSystemEnum T>
 class Coordinate;
 
 namespace details {
@@ -29,7 +29,7 @@ struct CoordinatePayload : public coordinate_t {
   coordinate_t&& coord() && { return std::move(*static_cast<coordinate_t*>(this)); }
   const coordinate_t&& coord() const&& { return std::move(*static_cast<const coordinate_t*>(this)); }
 
-  template <CoordSystem T>
+  template <CoordSystemEnum T>
   coordinate_t operator-(const Coordinate<T>& rhs) const noexcept {
     return this->coord() - rhs.coord();
   }

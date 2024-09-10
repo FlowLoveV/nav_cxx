@@ -2,10 +2,11 @@
 #include <map>
 #include <print>
 
-#include "macro.hpp"
+#include "utils/macro.hpp"
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
-#include "space_time/time.hpp"
+#include "utils/time.hpp"
+#include "rfl/json.hpp"
 
 using namespace navp;
 using namespace std::chrono;
@@ -93,4 +94,10 @@ TEST_CASE("hash") {
 TEST_CASE("formatter") {
   Gpst gpst0;
   NAV_PRINT("{:%Y-%m-%d %H:%M:%S}\n", gpst0);
+}
+
+TEST_CASE("reflect") {
+  auto utc = Epoch<UTC>::now();
+  auto json = rfl::json::write(utc);
+  std::println("{}",json);
 }

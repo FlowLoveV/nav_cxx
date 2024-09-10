@@ -44,13 +44,13 @@ add_requires("fast_float",{
         cppstd = "c++23"
     }
 })
-add_requires("date",{
-    version = "3.0.1",
-    configs = {
-        shared = true,
-        cppstd = "c++23"
-    }
-})
+-- add_requires("date",{
+--     version = "3.0.1",
+--     configs = {
+--         shared = true,
+--         cppstd = "c++23"
+--     }
+-- })
 add_requires("proj",{
     -- version = "9.4.1",
     configs = {
@@ -65,7 +65,14 @@ add_requires("stringzilla",{
         cppstd = "c++23",
     }
 })
-add_requires("boost", {configs = {shared = true}})
+-- add_requires("boost", {configs = {shared = true}})
+add_requires("cpptrace",{
+    configs = {
+        shared = true,
+        cppstd = "c++23",
+    }
+})
+
 
 -- Define a recursive function to traverse all directories and add them to includedirs
 function recursive_add_includedirs(dir, is_public)

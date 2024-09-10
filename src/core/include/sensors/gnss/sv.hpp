@@ -4,9 +4,9 @@
 #include <string>
 #include <string_view>
 
-#include "logger.hpp"
+#include "utils/logger.hpp"
 #include "magic_enum.hpp"
-#include "types.hpp"
+#include "utils/types.hpp"
 
 namespace navp::sensors::gnss {
 

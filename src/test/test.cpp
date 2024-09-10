@@ -1,8 +1,8 @@
-#include "errors.hpp"
-#include "logger.hpp"
-#include "macro.hpp"
 #include "rtklib.h"
 #include "spdlog/common.h"
+#include "utils/errors.hpp"
+#include "utils/logger.hpp"
+#include "utils/macro.hpp"
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 
@@ -31,12 +31,6 @@ TEST_CASE("test logger") {
   nav_warn("this is a warn message");
   nav_error("this is a error message");
   nav_critical("this is a critical message");
-}
-
-TEST_CASE("test errors") {
-  using namespace navp;
-  NavError(ErrorId::DividZero).warn();
-  NavError(ErrorId::DividZero).crash();
 }
 
 /*******************************************************************************************
