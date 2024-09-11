@@ -6,7 +6,7 @@ set_project("nav_cxx")
 set_targetdir("$(projectdir)/bin")
 set_objectdir("$(projectdir)/libs")
 set_languages("c++23", "c11")
-set_toolchains("gcc")
+set_toolchains("clang")
 set_toolset("cc", "gcc-14")
 set_toolset("cxx", "g++-14")
 
