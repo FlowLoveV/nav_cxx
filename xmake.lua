@@ -7,8 +7,8 @@ set_targetdir("$(projectdir)/bin")
 set_objectdir("$(projectdir)/libs")
 set_languages("c++23", "c11")
 set_toolchains("clang")
-set_toolset("cc", "gcc-14")
-set_toolset("cxx", "g++-14")
+set_toolset("cc", "clang-18")
+set_toolset("cxx", "clang++-18")
 
 -- sub modules
 includes("src/rtklib/xmake.lua")
