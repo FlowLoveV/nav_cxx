@@ -17,7 +17,7 @@ add_requires("spdlog",{
     }
 })
 add_requires("magic_enum", {
-    version = "0.9.5",
+    version = "0.9.6",
     configs = {
         shared = true,
         cppstd = "c++23"

@@ -4,7 +4,7 @@
 #include <boost/bimap.hpp>
 #include <format>
 
-#include "utils/logger.hpp"
+#include "utils/errors.hpp"
 #include "utils/types.hpp"
 
 namespace navp::sensors::gnss {
@@ -72,11 +72,15 @@ enum class CarrierEnum : u8 {
   U2,
 };
 
+struct CarrierError {
+  constexpr static auto parse_error = "Unable to parse string \"{}\" to Carrier";
+};
+
 struct Carrier {
   // Carrier() : id(CarrierEnum::L1) {}
   // Carrier(CarrierEnum carrier) : id(carrier) {}
   // from_str
-  static Carrier from_str(std::string_view str) {
+  static Result<Carrier> from_str(std::string_view str) {
     std::string s(str);
     boost::algorithm::to_upper(s);
     boost::algorithm::trim(s);
@@ -85,13 +89,16 @@ struct Carrier {
      */
     auto it = nav::constants::CARRIER_TABLE.left.find(s);
     if (it != nav::constants::CARRIER_TABLE.left.end()) {
-      return Carrier{it->second};
+      return Result<Carrier>{Carrier{it->second}};
     } else {
-      auto error_msg = std::format("Unable to parse string \"{}\" to Carrier", str);
-      nav_error(error_msg);
-      throw std::runtime_error(error_msg);
+      // make_error(CarrierError::parse_error, str)
+      // return make_error<Carrier>(CarrierError::parse_error, str);
+      // auto error_msg = std::format("Unable to parse string \"{}\" to Carrier", str);
+      // nav_error(error_msg);
+      // throw std::runtime_error(error_msg);
     }
   }
+
   CarrierEnum id;
 };
 

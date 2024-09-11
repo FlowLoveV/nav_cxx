@@ -26,3 +26,6 @@ Doxyfile
 
 test_resources
 
+# cpp modules
+gcm.cache
+

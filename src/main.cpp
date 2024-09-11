@@ -1,3 +1,4 @@
+
 #include <print>
 
 #include "cpptrace/cpptrace.hpp"
@@ -6,9 +7,10 @@
 #include "rfl/toml.hpp"
 #include "solution/spp.hpp"
 
-void test_trace() { 
-    const auto raw_trace = cpptrace::generate_raw_trace();
-    cpptrace::generate_trace().print(); }
+void test_trace() {
+  //   const auto raw_trace = cpptrace::generate_raw_trace();
+  cpptrace::generate_trace().print();
+}
 
 int main(int argc, char *argv[]) {
   using namespace navp;
