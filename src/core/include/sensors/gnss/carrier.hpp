@@ -4,7 +4,7 @@
 #include <boost/bimap.hpp>
 #include <format>
 
-#include "utils/errors.hpp"
+#include "utils/result.hpp"
 #include "utils/types.hpp"
 
 namespace navp::sensors::gnss {
@@ -89,7 +89,7 @@ struct Carrier {
      */
     auto it = nav::constants::CARRIER_TABLE.left.find(s);
     if (it != nav::constants::CARRIER_TABLE.left.end()) {
-      return Result<Carrier>{Carrier{it->second}};
+      return Carrier{it->second};
     } else {
       // make_error(CarrierError::parse_error, str)
       // return make_error<Carrier>(CarrierError::parse_error, str);

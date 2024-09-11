@@ -1,35 +1,36 @@
 
+#include <cassert>
 #include <print>
 
-#include "cpptrace/cpptrace.hpp"
-#include "rfl.hpp"
-#include "rfl/json.hpp"
-#include "rfl/toml.hpp"
-#include "solution/spp.hpp"
+#include "utils/option.hpp"
 
-void test_trace() {
-  //   const auto raw_trace = cpptrace::generate_raw_trace();
-  cpptrace::generate_trace().print();
-}
+struct empty {};
 
+struct big {
+  int a;
+  float b;
+  double c;
+  std::string d[20];
+};
 int main(int argc, char *argv[]) {
   using namespace navp;
+  Option<int> op1 = Some(10);
+  Option<int> op2 = None;
+  std::println("{}", sizeof(empty));
+  std::println("{}", sizeof(std::in_place_t));
+  assert(op1.is_some());
+  assert(!op2.is_some());
 
-  auto config = solution::SppConfig{.nav_path =
-                                        std::vector<std::string>{
-                                            "/root/project/nav_cxx/test_resources/SPP/NovatelOEM20211114-01.nav",
-                                            "/root/project/nav_cxx/test_resources/SPP/NovatelOEM20211114-01.21N",
-                                        },
-                                    .obs_path = "/root/project/nav_cxx/test_resources/SPP/NovatelOEM20211114-01.obs",
-                                    .out_path = "/root/project/nav_cxx/test_resources/SPP/res.txt",
-                                    .min_e = 10,
-                                    .min_s = 30,
-                                    .filter = {std::vector<std::string>{
-                                        "=GPS",
-                                        ">=2023-10-11 20:08:03",
-                                    }}};
-  rfl::toml::save("/root/project/nav_cxx/config/spp_config.toml", config);
-  rfl::json::save("/root/project/nav_cxx/config/spp_config.json", config);
-  test_trace();
+  auto f = [](int x) { return x > 5; };
+  assert(op1.is_some_and(f));
+  assert(op2.is_none_or(f));
+
+  op1.insert(5);
+  op2.insert(20);
+  assert(op1 == Some(5));
+  assert(op2 == Some(20));
+
+  auto f1 = [](const int& x) {std::println("{}",x);};
+  auto m = op1.inspect(f1);
   return 0;
 }
