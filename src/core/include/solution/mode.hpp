@@ -1,9 +1,9 @@
 #pragma once
 
-#include "utils/types.hpp"
 #include "utils/attitude.hpp"
 #include "utils/space.hpp"
 #include "utils/time.hpp"
+#include "utils/types.hpp"
 
 namespace navp::solution {
 

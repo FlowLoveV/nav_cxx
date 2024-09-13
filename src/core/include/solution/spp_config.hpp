@@ -1,7 +1,7 @@
 #pragma once
 
-#include <rfl.hpp>
 #include <any>
+#include <rfl.hpp>
 
 #include "utils/types.hpp"
 
@@ -13,7 +13,7 @@ struct SppConfig {
   rfl::Rename<"output_path", std::string> out_path;
   rfl::Rename<"minimum_elevation", f64> min_e;
   rfl::Rename<"minimum_snr", f64> min_s;
-  rfl::Rename<"filters", std::vector<std::string>> filter; 
+  rfl::Rename<"filters", std::vector<std::string>> filter;
 };
 
 }  // namespace navp::solution

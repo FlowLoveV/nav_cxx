@@ -1,9 +1,9 @@
 #pragma once
 
 #include <cpptrace/cpptrace.hpp>
+#include <optional>
 #include <string>
 #include <variant>
-#include <optional>
 
 #include "logger.hpp"
 namespace navp {
@@ -33,7 +33,7 @@ class Result : public std::variant<T, E> {
   constexpr inline bool is_ok() noexcept { return this->index() == 0; }
   constexpr inline bool is_err() noexcept { return this->index() == 1; }
   // ok,err
-  // constexpr std::optional<T> 
+  // constexpr std::optional<T>
 
   // unwrap
   constexpr T& unwrap() & {
