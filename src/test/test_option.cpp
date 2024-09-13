@@ -209,17 +209,18 @@ TEST_CASE("Constructor") {
   CHECK(o7.unwrap() == 42);
 
   Option<int> o8 = o7;
-  // CHECK(o8.unwrap() == 42);
+  CHECK(o8.unwrap() == 42);
 
   Option<int> o9 = std::move(o7);
   CHECK(o9.unwrap() == 42);
 
   {
-    Option<int&> o;
-    CHECK(!o);
+    // don't support &
+    // Option<int&> o;
+    // CHECK(!o);
 
-    Option<int&> oo = o;
-    CHECK(!oo);
+    // Option<int&> oo = o;
+    // CHECK(!oo);
   }
 
   {
@@ -320,14 +321,14 @@ TEST_CASE("Map") {
   CHECK(s1.unwrap() == 13);
 
   Option<std::string> o2 = None;
-  auto get_size2 = [](const std::string& str) {return str.size();};
-  auto s2 = o2.map_or(get_size2,9);
+  auto get_size2 = [](const std::string& str) { return str.size(); };
+  auto s2 = o2.map_or(get_size2, 9);
   CHECK(sizeof s2 == 8);
   CHECK(s2 == 9);
 
   Option<std::string> o3 = None;
-  auto default_size = []() -> unsigned long {return 10;};
-  auto get_size3  = [](const std::string& str) {return str.size();};
+  auto default_size = []() -> unsigned long { return 10; };
+  auto get_size3 = [](const std::string& str) { return str.size(); };
   auto s3 = o3.map_or_else(default_size, get_size3);
   CHECK(s3 == 10);
   o3.replace("Goodbye rust!");
@@ -344,8 +345,6 @@ TEST_CASE("Member Function Test") {
   struct T {
     std::string str;
     double num;
-
-
   };
 }
 
@@ -354,11 +353,10 @@ TEST_CASE("swap") {
   using T = Option<std::string>;
   T o1("Hello World!");
   T o2("Goodbye Rust!");
-  std::swap(o1,o2);
+  std::swap(o1, o2);
   CHECK(o1.unwrap() == "Goodbye Rust!");
   CHECK(o2.unwrap() == "Hello World!");
 }
-
 
 // as_ref
 TEST_CASE("Ref") {

@@ -4,6 +4,7 @@
 #include <boost/bimap.hpp>
 #include <format>
 
+#include "utils/logger.hpp"
 #include "utils/result.hpp"
 #include "utils/types.hpp"
 
@@ -80,7 +81,7 @@ struct Carrier {
   // Carrier() : id(CarrierEnum::L1) {}
   // Carrier(CarrierEnum carrier) : id(carrier) {}
   // from_str
-  static Result<Carrier> from_str(std::string_view str) {
+  static Carrier from_str(std::string_view str) {
     std::string s(str);
     boost::algorithm::to_upper(s);
     boost::algorithm::trim(s);
@@ -93,9 +94,9 @@ struct Carrier {
     } else {
       // make_error(CarrierError::parse_error, str)
       // return make_error<Carrier>(CarrierError::parse_error, str);
-      // auto error_msg = std::format("Unable to parse string \"{}\" to Carrier", str);
-      // nav_error(error_msg);
-      // throw std::runtime_error(error_msg);
+      auto error_msg = std::format("Unable to parse string \"{}\" to Carrier", str);
+      nav_error(error_msg);
+      throw std::runtime_error(error_msg);
     }
   }
 

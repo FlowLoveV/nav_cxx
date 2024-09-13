@@ -14,138 +14,17 @@ class Option;
 
 namespace details {
 
-template <typename T>
-struct is_option_type : std::false_type {};
-template <typename T>
-struct is_option_type<Option<T>> : std::true_type {};
-
 struct NoneType {
   explicit NoneType() = default;
 };
 
-template <typename T>
-concept is_tag_t = std::is_same_v<std::remove_cv_t<T>, NoneType>;
-template <typename T>
-concept not_tag_t = !std::is_same_v<std::remove_cv_t<T>, NoneType>;
-
-template <details::not_tag_t T>
-struct Some;
+template <typename T, template <typename...> class Template>
+struct is_instance_of : std::false_type {};
+template <template <typename...> class Template, typename... Args>
+struct is_instance_of<Template<Args...>, Template> : std::true_type {};
 
 template <typename T>
-struct is_some_type : std::false_type {};
-template <typename T>
-struct is_some_type<Some<T>> : std::true_type {};
-
-template <typename... T>
-struct not_variant_type : std::true_type {};
-template <typename... T>
-struct not_variant_type<std::variant<T...>> : std::false_type {};
-
-// The T type cannot be a tag type, which violates its original intent
-template <details::not_tag_t T>
-struct Some {
- private:
-  template <typename _Up>
-  using __not_self = std::__not_<std::is_same<Some, std::__remove_cvref_t<_Up>>>;
-
-  template <typename... _Cond>
-  using _Requires = std::enable_if_t<std::__and_v<_Cond...>, bool>;
-
- public:
-  typedef T value_type;
-
-  Some() = default;
-  Some(const Some&) = default;
-  Some(Some&&) = default;
-  Some& operator=(const Some&) = default;
-  Some& operator=(Some&&) = default;
-
-  // delete implicit conversion from Some<U> to Some<T>
-  template <typename U>
-    requires(!std::is_same_v<T, std::remove_cvref_t<U>>)
-  Some(const Some<U>&) = delete;
-  template <typename U>
-    requires(!std::is_same_v<T, std::remove_cvref_t<U>>)
-  Some(Some<U>&&) = delete;
-  template <typename U>
-    requires(!std::is_same_v<T, std::remove_cvref_t<U>>)
-  Some& operator=(const Some<U>&) = delete;
-  template <typename U>
-    requires(!std::is_same_v<T, std::remove_cvref_t<U>>)
-  Some& operator=(Some<U>&&) = delete;
-
-  // from U value which can construct T
-  template <typename U = T, _Requires<__not_self<U>, std::is_constructible<T, U>, std::is_convertible<U, T>> = true>
-  constexpr Some(U&& _val) noexcept(std::is_nothrow_constructible_v<T, U>)
-      : val(static_cast<T>(std::forward<U>(_val))) {}
-
-  template <typename U = T,
-            _Requires<__not_self<U>, std::is_constructible<T, U>, std::__not_<std::is_convertible<U, T>>> = true>
-  explicit constexpr Some(U&& _val) noexcept(std::is_nothrow_constructible_v<T, U>) : val((std::forward<U>(_val))) {}
-
-  template <details::not_tag_t U = T>
-    requires __not_self<U>::value && (!is_option_type<U>::value)
-  constexpr Some& operator=(const U& _val) noexcept(
-      std::conjunction_v<std::is_nothrow_copy_assignable<T>, std::is_nothrow_convertible<const U&, T>>) {
-    static_assert(std::is_copy_assignable_v<T>);
-    static_assert(std::is_convertible_v<const U&, T>);
-    if (this != &_val) {
-      val = static_cast<T>(_val);
-    }
-    return *this;
-  }
-
-  template <details::not_tag_t U = T>
-    requires __not_self<U>::value && (!is_option_type<U>::value)
-  constexpr Some& operator=(U&& _val) noexcept(
-      std::conjunction_v<std::is_nothrow_move_assignable<T>, std::is_nothrow_convertible<U&&, T>>) {
-    static_assert(std::is_move_assignable_v<T>);
-    static_assert(std::is_convertible_v<U&&, T>);
-    if (this != &_val) {
-      val = static_cast<T>(std::forward<U>(_val));
-    }
-    return *this;
-  }
-
-  // construct T in_place
-  template <typename... Args>
-    requires std::is_constructible_v<T, Args...>
-  constexpr Some(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
-      : val(std::forward<Args>(args)...) {}
-
-  template <typename U, typename... Args>
-    requires std::is_constructible_v<T, std::initializer_list<U>&, Args...>
-  constexpr Some(std::initializer_list<U> list,
-                 Args&&... args) noexcept(std::is_nothrow_constructible_v<T, std::initializer_list<U>&, Args...>)
-      : val(list, std::forward<Args>(args)...) {}
-
-  // constexpr inline operator T&() & noexcept { return val; }
-  // constexpr inline operator const T&() const& noexcept { return val; }
-  // constexpr inline operator T&&() && noexcept {
-  //   static_assert(std::is_move_assignable_v<T>);
-  //   return std::move(val);
-  // }
-  // constexpr inline operator const T&&() const&& noexcept {
-  //   static_assert(std::is_move_assignable_v<T>);
-  //   return std::move(val);
-  // }
-
-  // constexpr operator std::reference_wrapper<T>() & noexcept { return std::ref(val); }
-  // constexpr operator std::reference_wrapper<T>() const& noexcept { return std::cref(val); }
-  // constexpr operator std::reference_wrapper<T>() && noexcept { return std::ref(val); }
-  // constexpr operator std::reference_wrapper<T>() const&& noexcept { return std::ref(val); }
-
-  // constexpr operator Option<T>() & noexcept { return Option<T>(std::forward<T>(val)); }
-  // constexpr operator Option<T>() && noexcept { return Option<T>(std::forward<T>(val)); }
-
-  ~Some() = default;
-
-  T val;
-};
-
-// deduce helper
-template <typename T>
-Some(T) -> Some<T>;
+using not_tag = std::__not_<std::is_same<std::remove_cv<T>, NoneType>>;
 
 }  // namespace details
 
@@ -159,16 +38,24 @@ using __converts_from_option =
                std::is_convertible<const Option<_Up>&&, _Tp>, std::is_convertible<Option<_Up>&&, _Tp>>;
 
 template <typename T>
-class Option : private std::variant<details::Some<T>, details::NoneType> {
+class Option : private std::variant<T, details::NoneType> {
  private:
   template <typename _Up>
   using __not_self = std::__not_<std::is_same<Option, std::__remove_cvref_t<_Up>>>;
-  // template <typename _Up>
-  // using __not_some = std::__not_<std::is_same<details::Some<T>, std::__remove_cvref_t<_Up>>>;
   template <typename... _Cond>
   using _Requires = std::enable_if_t<std::__and_v<_Cond...>, bool>;
+  template <typename U>
+  using rmcv_ref_t = std::__remove_cvref_t<U>;
+  template <typename U>
+  using _not = std::__not_<U>;
+  template <typename... U>
+  using _and = std::__and_<U...>;
+  template <typename U>
+  using not_option = _not<details::is_instance_of<rmcv_ref_t<U>, Option>>;
+  template <typename U>
+  using not_variant = _not<details::is_instance_of<rmcv_ref_t<U>, std::variant>>;
 
-  using _Base = std::variant<details::Some<T>, details::NoneType>;
+  using _Base = std::variant<T, details::NoneType>;
 
  public:
   // operator ()
@@ -195,87 +82,127 @@ class Option : private std::variant<details::Some<T>, details::NoneType> {
     return is_some() ? std::move(rhs) : None;
   }
 
-  // default
-  // using std::variant<details::Some<T>, details::NoneType>::variant;
-  // Option() = default;
-  constexpr Option() noexcept : std::variant<details::Some<T>, details::NoneType>(details::NoneType{}) {}
-  constexpr Option(const Option&) noexcept = default;
-  constexpr Option(Option&&) noexcept = default;
-  constexpr Option& operator=(const Option&) noexcept = default;
-  constexpr Option& operator=(Option&&) noexcept = default;
+  constexpr Option() noexcept : std::variant<T, details::NoneType>(details::NoneType{}) {}
+  Option(const Option&) = default;
+  Option(Option&&) = default;
+  Option& operator=(const Option&) = default;
+  Option& operator=(Option&&) = default;
+  constexpr ~Option() = default;
 
-  // copy/move constructor from T
-  template <typename U = T, _Requires<std::__not_<details::is_option_type<U>>, details::not_variant_type<U>,
-                                      __not_self<U>, std::is_constructible<T, U>, std::is_convertible<U, T>> = true>
+  // construct from U value
+  template <typename U = T, _Requires<__not_self<U>, details::not_tag<U>, not_option<U>, not_variant<U>,
+                                      std::is_constructible<T, U>, std::is_convertible<U, T>> = true>
   constexpr Option(U&& val) noexcept(std::is_nothrow_constructible_v<T, U>)
-      : std::variant<details::Some<T>, details::NoneType>(details::Some(static_cast<T>(std::forward<U>(val)))) {}
+      : std::variant<T, details::NoneType>(static_cast<T>(std::forward<U>(val))) {}
 
-  template <typename U = T,
-            _Requires<__not_self<U>, std::is_constructible<T, U>, std::__not_<std::is_convertible<U, T>>> = false>
+  template <typename U = T, _Requires<__not_self<U>, details::not_tag<U>, not_option<U>, not_variant<U>,
+                                      std::is_constructible<T, U>, _not<std::is_convertible<U, T>>> = false>
   explicit constexpr Option(U&& val) noexcept(std::is_nothrow_constructible_v<T, U>)
-      : std::variant<details::Some<T>, details::NoneType>(details::Some(std::forward<U>(val))) {}
+      : std::variant<T, details::NoneType>(std::forward<U>(val)) {}
 
-  // copy/move constructor form Option<U>
-  template <typename U,
-            _Requires<__not_self<U>, std::is_constructible<T, const U&>, std::is_convertible<const U&, T>> = true>
+  // construct form Option<U>
+  template <typename U, _Requires<_not<std::is_same<U, T>>, std::is_constructible<T, const U&>,
+                                  std::is_convertible<const U&, T>> = true>
   constexpr Option(const Option<U>& other) noexcept(std::is_nothrow_convertible_v<T, const U&>) {
     if (other.is_none()) {
       *this = None;
     } else {
-      *this = T(other.unwrap());
+      this->template emplace<0>(other.unwrap());
+      // *this = T(other.unwrap());
     }
   }
 
-  template <typename U,
-            _Requires<__not_self<U>, std::is_constructible<T, const U&>, std::__not_<std::is_convertible<const U&, T>>,
-                      std::__not_<__converts_from_option<T, U>>> = false>
+  template <typename U, _Requires<_not<std::is_same<U, T>>, std::is_constructible<T, const U&>,
+                                  _not<std::is_convertible<const U&, T>>> = false>
   explicit constexpr Option(const Option<U>& other) noexcept(std::is_nothrow_convertible_v<T, const U&>) {
     if (other.is_none()) {
       *this = None;
     } else {
-      *this = T(other.unwrap());
+      this->template emplace<0>(other.unwrap());
+      // *this = T(other.unwrap());
     }
   }
 
-  template <typename U, _Requires<__not_self<U>, std::is_constructible<T, U>, std::is_convertible<U, T>,
-                                  std::__not_<__converts_from_option<T, U>>> = true>
+  template <typename U,
+            _Requires<_not<std::is_same<U, T>>, std::is_constructible<T, U>, std::is_convertible<U, T>> = true>
   constexpr Option(Option<U>&& other) noexcept(std::is_nothrow_convertible_v<T, U>) {
     if (other.is_none()) {
       *this = None;
     } else {
-      *this = std::move(T(other.unwrap()));
+      this->template emplace<0>(other.unwrap());
+      // *this = std::move(T(other.unwrap()));
     }
   }
 
-  template <typename U, _Requires<__not_self<U>, std::is_constructible<T, U>, std::__not_<std::is_convertible<U, T>>,
-                                  std::__not_<__converts_from_option<T, U>>> = false>
+  template <typename U,
+            _Requires<_not<std::is_same<U, T>>, std::is_constructible<T, U>, _not<std::is_convertible<U, T>>> = false>
   explicit constexpr Option(Option<U>&& other) noexcept(std::is_nothrow_convertible_v<T, U>) {
     if (other.is_none()) {
       *this = None;
     } else {
-      *this = std::move(T(other.unwrap()));
+      this->template emplace<0>(other.unwrap());
+      // *this = std::move(T(other.unwrap()));
     }
   }
 
   // construct in_place
   template <typename... Args, _Requires<std::is_constructible<T, Args...>> = false>
   explicit constexpr Option(std::in_place_t, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
-      : std::variant<details::Some<T>, details::NoneType>(std::in_place_index_t<0>{}, std::forward<Args>(args)...) {}
+      : std::variant<T, details::NoneType>(std::in_place_index_t<0>{}, std::forward<Args>(args)...) {}
 
   template <typename U, typename... Args,
             _Requires<std::is_constructible<T, std::initializer_list<U>&, Args...>> = false>
   explicit constexpr Option(std::in_place_t, std::initializer_list<U> list, Args&&... args) noexcept(
       std::is_nothrow_constructible_v<T, std::initializer_list<U>&, Args...>)
-      : std::variant<details::Some<T>, details::NoneType>(std::in_place_index_t<0>{}, list,
-                                                          std::forward<Args>(args)...) {}
+      : std::variant<T, details::NoneType>(std::in_place_index_t<0>{}, list, std::forward<Args>(args)...) {}
 
   // from NoneType
-  constexpr Option(details::NoneType) noexcept
-      : std::variant<details::Some<T>, details::NoneType>(details::NoneType{}) {}
+  constexpr Option(details::NoneType) noexcept : std::variant<T, details::NoneType>(details::NoneType{}) {}
+
+  // assign
   constexpr Option& operator=(details::NoneType) noexcept {
     *static_cast<_Base*>(this) = None;
     return *this;
   }
+
+  template <typename U = T, _Requires<__not_self<U>, details::not_tag<U>, not_option<U>, not_variant<U>,
+                                      _not<_and<std::is_scalar<T>, std::is_same<T, std::decay_t<U>>>>,
+                                      std::is_constructible<T, U>, std::is_assignable<T&, U>> = true>
+  constexpr Option& operator=(U&& val) noexcept(std::is_nothrow_constructible_v<T, U> &&
+                                                std::is_nothrow_assignable_v<T&, U>) {
+    this->template emplace<0>(std::forward<U>(val));
+    return *this;
+  }
+
+  template <typename U, _Requires<_not<std::is_same<U, T>>, std::is_constructible<T, const U&>,
+                                  std::is_assignable<T&, const U&>> = true>
+  constexpr Option& operator=(const Option<U>& other) noexcept(std::is_nothrow_convertible_v<T, const U&> &&
+                                                            std::is_nothrow_assignable_v<T&, const U&>) {
+    if (other.is_none()) {
+      *this = None;
+    } else {
+      this->template emplace<0>(other.unwrap());
+    }
+    return *this;
+  }
+
+  template <typename U, _Requires<_not<std::is_same<U, T>>, std::is_constructible<T, U>,
+                                  std::is_assignable<T&, U>> = true>
+  constexpr Option& operator=(Option<U>&& other) noexcept(std::is_nothrow_convertible_v<T, const U&> &&
+                                                            std::is_nothrow_assignable_v<T&, U>) {
+    if (other.is_none()) {
+      *this = None;
+    } else {
+      this->template emplace<0>(std::move(other.unwrap()));
+    }
+    return *this;
+  }
+
+  template <typename U = T, _Requires<__not_self<U>, details::not_tag<U>,
+                                      _not<details::is_instance_of<std::__remove_cvref_t<U>, Option>>,
+                                      _not<details::is_instance_of<std::__remove_cvref_t<U>, std::variant>>,
+                                      std::is_constructible<T, U>, std::is_convertible<U, T>> = true>
+  constexpr Option& operator=(U&& val) noexcept(std::is_nothrow_constructible_v<T, U>) {}
 
   // is_some
   constexpr bool is_some() const noexcept { return this->index() == 0; }
@@ -452,17 +379,6 @@ class Option : private std::variant<details::Some<T>, details::NoneType> {
   constexpr auto unwrap_unchecked() const { return _m_get_some_value(); }
   constexpr auto unwrap_unchecked() { return _m_get_some_value(); }
 
-  // template <typename F>
-  //   requires std::is_invocable_v<F, const T&>
-  // constexpr auto and_then(F&& f) const& noexcept(std::is_nothrow_invocable_v<F, const T&>) {
-  //   return is_some() ? f(_m_get_some_value()) : None;
-  // }
-  // template <typename F>
-  //   requires std::is_invocable_v<F, T&&>
-  // constexpr auto and_then(F&& f) && noexcept(std::is_nothrow_invocable_v<F, T&&>) {
-  //   return is_some() ? f(_m_get_some_value()) : None;
-  // }
-
   // expected
   constexpr auto expected(const char* msg) & -> std::add_lvalue_reference_t<T> {
     if (is_some()) {
@@ -486,11 +402,13 @@ class Option : private std::variant<details::Some<T>, details::NoneType> {
 
   // map_or
   template <typename F, typename U = std::invoke_result_t<F, const T&>>
-  constexpr std::invoke_result_t<F, const T&> map_or(F&& f, const U& _default) const& noexcept(std::is_nothrow_invocable_v<F, const T&>) {
+  constexpr std::invoke_result_t<F, const T&> map_or(F&& f, const U& _default) const& noexcept(
+      std::is_nothrow_invocable_v<F, const T&>) {
     return is_some() ? f(_m_get_some_value()) : _default;
   }
   template <typename F, typename U = std::invoke_result_t<F, T&&>>
-  constexpr std::invoke_result_t<F, const T&> map_or(F&& f, U&& _default) && noexcept(std::is_nothrow_invocable_v<F, T&&>) {
+  constexpr std::invoke_result_t<F, const T&> map_or(F&& f,
+                                                     U&& _default) && noexcept(std::is_nothrow_invocable_v<F, T&&>) {
     return is_some() ? f(std::move(_m_get_some_value())) : std::move(_default);
   }
 
@@ -524,22 +442,22 @@ class Option : private std::variant<details::Some<T>, details::NoneType> {
   // or
   // or_else
 
- private:
+ protected:
   // unchecked get value
-  constexpr inline const T& _m_get_some_value() const& { return std::get<details::Some<T>>(*this).val; }
-  constexpr inline T& _m_get_some_value() & { return std::get<details::Some<T>>(*this).val; }
-  constexpr inline T&& _m_get_some_value() && { return std::move(std::get<details::Some<T>>(*this)).val; }
-  constexpr inline const T&& _m_get_some_value() const&& { return std::move(std::get<details::Some<T>>(*this)).val; }
+  constexpr inline const T& _m_get_some_value() const& { return std::get<T>(*this); }
+  constexpr inline T& _m_get_some_value() & { return std::get<T>(*this); }
+  constexpr inline T&& _m_get_some_value() && { return std::move(std::get<T>(*this)); }
+  constexpr inline const T&& _m_get_some_value() const&& { return std::move(std::get<T>(*this)); }
 };
 
 // from r value
-template <details::not_tag_t T>
+template <typename T>
 constexpr Option<T> Some(T&& _val) noexcept {
   return Option<T>(_val);
 }
 
 // from l value
-template <details::not_tag_t T>
+template <typename T>
 constexpr Option<T> Some(const T& _val) noexcept {
   return Option<T>(std::move(_val));
 }
