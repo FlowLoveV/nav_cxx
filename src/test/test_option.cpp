@@ -265,14 +265,14 @@ TEST_CASE("Watcher") {
   auto o3 = Some(std::vector<int>{1, 2, 3, 4, 5, 6});
   CHECK(o3.unwrap().size() == 6);
   o3 = None;
-  auto& v1 = o3.unwrap_or(rval_o2);
+  auto v1 = o3.unwrap_or(rval_o2);
   CHECK(v1.size() == 5);
   o3 = None;
-  auto v2 = o3.unwrap_or_default();
+  auto v2 = std::move(o3).unwrap_or_default();
   CHECK(v2.size() == 0);
   auto make_vec = []() { return std::vector<int>{1, 2, 3}; };
   o3 = None;
-  auto v3 = o3.unwrap_or_else(make_vec);
+  auto v3 = std::move(o3).unwrap_or_else(make_vec);
   CHECK(v3.size() == 3);
   o3 = None;
   CHECK_THROWS(o3.unwrap_unchecked());
@@ -281,7 +281,7 @@ TEST_CASE("Watcher") {
   auto& ref_o4 = o4.inspect([](const std::vector<int>& vec) { CHECK(vec.size() == 4); });
 
   Option<int> o5 = None;
-  CHECK_THROWS(o5.expected("unwrap a none option"));
+  CHECK_THROWS(std::move(o5).expect("unwrap a none option"));
 }
 
 // from [https://github.com/TartanLlama/optional/tree/master/tests]
@@ -363,4 +363,13 @@ TEST_CASE("Ref") {
   auto o1 = Some<std::string>("Hello C++23!");
   auto ref = o1.as_ref();
   static_assert(std::is_same_v<std::remove_cvref_t<decltype(ref.unwrap())>, std::reference_wrapper<std::string>>);
+}
+
+ 
+TEST_CASE("Nesting") {
+  typedef Option<int> T;
+  Option<T> x = Some(10);
+  CHECK(x.unwrap().unwrap() == 10);
+  x = None;
+  CHECK_THROWS(x.unwrap());
 }

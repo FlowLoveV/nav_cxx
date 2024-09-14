@@ -3,39 +3,138 @@
 #include <cpptrace/cpptrace.hpp>
 #include <variant>
 
+#include "template_utils.hpp"
+
 namespace navp {
 
-// struct Error {
-//   unsigned code;
-//   std::string message;
+class result_error : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
 
-//   template <typename T>
-//     requires std::is_base_of_v<Error, T>
-//   bool operator==(const T& err) noexcept {
-//     return code == err.code;
-//   }
-
-//   void crash() {
-//     nav_error("{}", message);
-//     cpptrace::generate_trace(1).print();
-//     exit(-1);
-//   }
-// };
+template <typename T>
+class Option;
 
 template <typename T, typename E>
 class Result;
 
+template <typename T>
+struct Ok;
+
+template <typename E>
+struct Err;
+
 namespace details {
 
-template <typename T, template <typename...> class Template>
-struct is_instance_of : std::false_type {};
-template <template <typename...> class Template, typename... Args>
-struct is_instance_of<Template<Args...>, Template> : std::true_type {};
+struct ok_tag_t {};
+struct err_tag_t {};
+
+// implmet Ok and Err
+template <typename T, typename... TagArgs>
+struct result_construct_assgin_base {
+  T val;
+  result_construct_assgin_base() = default;
+
+  constexpr result_construct_assgin_base() noexcept(std::is_nothrow_default_constructible_v<T>)
+    requires std::is_default_constructible_v<T>
+      : val() {}
+
+  // from value
+  template <typename U>
+  constexpr result_construct_assgin_base(U&& val) noexcept(std::is_nothrow_constructible_v<T, U>)
+    requires std::is_constructible_v<T, U> && std::is_convertible_v<U, T>
+      : val(std::forward<U>(val)) {}
+
+  template <typename U>
+  explicit constexpr result_construct_assgin_base(U&& val) noexcept(std::is_nothrow_constructible_v<T, U>)
+    requires std::is_constructible_v<T, U> && (!std::is_convertible_v<U, T>)
+      : val(std::forward<U>(val)) {}
+
+  // from result_construct_assgin_base<U>
+  template <typename U>
+  constexpr result_construct_assgin_base(const result_construct_assgin_base<U, TagArgs...>& other) noexcept(
+      std::is_nothrow_constructible_v<T, const U&>)
+    requires(!std::is_same_v<U, T>) && std::is_constructible_v<T, const U&> && std::is_convertible_v<const U&, T>
+      : val(other.val) {}
+
+  template <typename U>
+  explicit constexpr result_construct_assgin_base(const result_construct_assgin_base<U, TagArgs...>& other) noexcept(
+      std::is_nothrow_constructible_v<T, const U&>)
+    requires(!std::is_same_v<U, T>) && std::is_constructible_v<T, const U&> && (!std::is_convertible_v<const U&, T>)
+      : val(std::move(other.val)) {}
+
+  template <typename U>
+  constexpr result_construct_assgin_base(result_construct_assgin_base<U, TagArgs...>&& other) noexcept(
+      std::is_nothrow_constructible_v<T, const U&>)
+    requires(!std::is_same_v<U, T>) && std::is_constructible_v<T, U> && std::is_convertible_v<U, T>
+      : val(std::move(other.val)) {}
+
+  template <typename U>
+  explicit constexpr result_construct_assgin_base(result_construct_assgin_base<U, TagArgs...>&& other) noexcept(
+      std::is_nothrow_constructible_v<T, const U&>)
+    requires(!std::is_same_v<U, T>) && std::is_constructible_v<T, U> && (!std::is_convertible_v<U, T>)
+      : val(std::move(other.val)) {}
+
+  template <typename U>
+  constexpr result_construct_assgin_base(result_construct_assgin_base<U, TagArgs...>&& other) noexcept {}
+
+  template <typename... Args>
+  constexpr result_construct_assgin_base(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+    requires std::is_constructible_v<T, Args...>
+      : val(std::forward<Args>(args)...) {}
+
+  template <typename U, typename... Args>
+  constexpr result_construct_assgin_base(std::initializer_list<U> list, Args&&... args) noexcept(
+      std::is_nothrow_constructible_v<T, std::initializer_list<U>&, Args...>)
+    requires std::is_constructible_v<T, std::initializer_list<U>&, Args...>
+      : val(list, std::forward<Args>(args)...) {}
+
+  template <typename U>
+  constexpr result_construct_assgin_base& operator=(U&& val) noexcept(std::is_nothrow_constructible_v<T, U> &&
+                                                                      std::is_nothrow_assignable_v<T, U>)
+    requires std::is_constructible_v<T, U> && std::is_assignable_v<T, U>
+  {
+    this->val = std::forward<U>(val);
+    return *this;
+  }
+
+  template <typename U>
+  constexpr result_construct_assgin_base& operator=(const result_construct_assgin_base<U, TagArgs...>& rhs) noexcept(
+      std::is_nothrow_constructible_v<T, const U&> && std::is_nothrow_assignable_v<T, const U&>)
+    requires std::is_constructible_v<T, const U&> && std::is_assignable_v<T, const U&>
+  {
+    this->val = std::forward<U>(val);
+    return *this;
+  }
+
+  template <typename U>
+  constexpr result_construct_assgin_base& operator=(result_construct_assgin_base<U, TagArgs...>&& rhs) noexcept(
+      std::is_nothrow_constructible_v<T, U> && std::is_nothrow_assignable_v<T, U>)
+    requires std::is_constructible_v<T, U> && std::is_assignable_v<T, U>
+  {
+    this->val = std::forward<U>(val);
+    return *this;
+  }
+};
 
 };  // namespace details
 
+template <typename T>
+struct Ok : public details::result_construct_assgin_base<T, details::ok_tag_t> {
+  using details::result_construct_assgin_base<T, details::ok_tag_t>::result_construct_assgin_base;
+};
+template <typename E>
+struct Err : public details::result_construct_assgin_base<E, details::err_tag_t> {
+  using details::result_construct_assgin_base<E, details::err_tag_t>::result_construct_assgin_base;
+};
+
+// decuce helper
+template <typename T>
+Ok(T) -> Ok<T>;
+template <typename E>
+Err(E) -> Err<E>;
+
 template <typename T, typename E>
-class Result : private std::variant<T, E> {
+class Result : private std::variant<Ok<T>, Err<E>> {
  private:
   template <typename _Up>
   using __not_self = std::__not_<std::is_same<Result, std::__remove_cvref_t<_Up>>>;
@@ -52,234 +151,369 @@ class Result : private std::variant<T, E> {
   template <typename U>
   using not_variant = _not<details::is_instance_of<rmcv_ref_t<U>, std::variant>>;
 
-  using _Base = std::variant<T, E>;
+  using _Base = std::variant<Ok<T>, Err<E>>;
+  using ok_t = Ok<T>;
+  using err_t = Err<E>;
 
  public:
-  using std::variant<T, E>::variant;
-  using std::variant<T, E>::operator=;
-
   // default constructor(default Ok)
   // only when U can default construct
-  // constexpr Result(std::enable_if_t<std::is_default_constructible_v<T>, bool> = true) noexcept(
-  //     std::is_nothrow_default_constructible_v<T>) {
-  //   this->template emplace<0>();
-  // }
+  constexpr Result() noexcept(std::is_nothrow_default_constructible_v<T>)
+    requires std::is_default_constructible_v<T>
+      : _Base(T()) {}
 
-  // Result(const Result&) = default;
+  Result(const Result&) = default;
 
-  // // when T or E is not trivially copy constructible, overload default copy constructor
-  // constexpr Result(const Result& _other) noexcept(
-  //     _and<std::is_nothrow_copy_constructible<T>, std::is_nothrow_copy_constructible<E>>::value)
-  //   requires std::is_copy_constructible_v<T> && std::is_copy_constructible_v<E> &&
-  //            (!std::is_trivially_copy_constructible_v<T> || !std::is_trivially_copy_constructible_v<E>)
-  // {
-  //   if (_other.is_ok()) {
-  //     this->template emplace<0>(_other._m_get_ok_value());
-  //   } else {
-  //     this->template emplace<1>(_other._m_get_err_value());
-  //   }
-  // }
+  // when T or E is not trivially copy constructible, overload default copy constructor
+  constexpr Result(const Result& _other) noexcept(
+      _and<std::is_nothrow_copy_constructible<T>, std::is_nothrow_copy_constructible<E>>::value)
+    requires std::is_copy_constructible_v<T> && std::is_copy_constructible_v<E> &&
+             (!std::is_trivially_copy_constructible_v<T> || !std::is_trivially_copy_constructible_v<E>)
+  {
+    if (_other.is_ok()) {
+      this->template emplace<0>(_other._m_get_ok_value());
+    } else {
+      this->template emplace<1>(_other._m_get_err_value());
+    }
+  }
 
-  // Result(Result&&) = default;
+  Result(Result&&) = default;
 
-  // // when T or E is not trivially move constructible, overload default move constructor
-  // constexpr Result(Result&& _other) noexcept(
-  //     _and<std::is_nothrow_move_constructible<T>, std::is_nothrow_move_constructible<E>>::value)
-  //   requires std::is_move_constructible_v<T> && std::is_move_constructible_v<E> &&
-  //            (!std::is_trivially_move_constructible_v<T> || !std::is_trivially_move_constructible_v<E>)
-  // {
-  //   if (_other.is_ok()) {
-  //     this->template emplace<0>(std::move(_other._m_get_ok_value()));
-  //   } else {
-  //     this->template emplace<1>(std::move(_other._m_get_err_value()));
-  //   }
-  // }
+  // when T or E is not trivially move constructible, overload default move constructor
+  constexpr Result(Result&& _other) noexcept(
+      _and<std::is_nothrow_move_constructible<T>, std::is_nothrow_move_constructible<E>>::value)
+    requires std::is_move_constructible_v<T> && std::is_move_constructible_v<E> &&
+             (!std::is_trivially_move_constructible_v<T> || !std::is_trivially_move_constructible_v<E>)
+  {
+    if (_other.is_ok()) {
+      this->template emplace<0>(std::move(_other._m_get_ok_value()));
+    } else {
+      this->template emplace<1>(std::move(_other._m_get_err_value()));
+    }
+  }
 
-  // Result& operator=(const Result&) = default;
+  Result& operator=(const Result&) = delete;
 
-  // // when T or E can be move nothrowable, overload copy assign
-  // constexpr Result& operator=(const Result& _other) noexcept(
-  //     _and<std::is_nothrow_copy_constructible<T>, std::is_nothrow_copy_constructible<E>,
-  //          std::is_nothrow_copy_assignable<T>, std::is_nothrow_copy_assignable<E>>::value)
-  //   requires std::is_copy_assignable_v<T> && std::is_copy_constructible_v<T> && std::is_copy_assignable_v<E> &&
-  //            std::is_copy_constructible_v<E> &&
-  //            (std::is_nothrow_move_constructible_v<T> || std::is_nothrow_move_constructible_v<E>)
-  // {
-  //   if (_other.is_ok()) {
-  //     this->template emplace<0>(_other._m_get_ok_value());
-  //   } else {
-  //     this->template emplace<1>(_other._m_get_err_value());
-  //   }
-  // }
+  // when T or E can be move nothrowable, overload copy assign
+  constexpr Result& operator=(const Result& _other) noexcept(
+      _and<std::is_nothrow_copy_constructible<T>, std::is_nothrow_copy_constructible<E>,
+           std::is_nothrow_copy_assignable<T>, std::is_nothrow_copy_assignable<E>>::value)
+    requires std::is_copy_assignable_v<T> && std::is_copy_constructible_v<T> && std::is_copy_assignable_v<E> &&
+             std::is_copy_constructible_v<E> &&
+             (std::is_nothrow_move_constructible_v<T> || std::is_nothrow_move_constructible_v<E>)
+  {
+    if (_other.is_ok()) {
+      this->template emplace<0>(_other._m_get_ok_value());
+    } else {
+      this->template emplace<1>(_other._m_get_err_value());
+    }
+  }
 
-  // Result& operator=(Result&&) = default;
+  Result& operator=(Result&&) = default;
 
-  // // when T or E can be move nothrowable, overload move assign
-  // constexpr Result& operator=(Result&& _other) noexcept(
-  //     _and<std::is_nothrow_move_constructible<T>, std::is_nothrow_move_constructible<E>,
-  //          std::is_nothrow_move_assignable<T>, std::is_nothrow_move_assignable<E>>::value)
-  //   requires std::is_move_assignable_v<T> && std::is_move_constructible_v<T> && std::is_move_assignable_v<E> &&
-  //            std::is_move_constructible_v<E> &&
-  //            (std::is_nothrow_move_constructible_v<T> || std::is_nothrow_move_constructible_v<E>)
-  // {
-  //   if (_other.is_ok()) {
-  //     this->template emplace<0>(std::move(_other._m_get_ok_value()));
-  //   } else {
-  //     this->template emplace<1>(std::move(_other._m_get_err_value()));
-  //   }
-  // }
+  // when T or E can be move nothrowable, overload move assign
+  constexpr Result& operator=(Result&& _other) noexcept(
+      _and<std::is_nothrow_move_constructible<T>, std::is_nothrow_move_constructible<E>,
+           std::is_nothrow_move_assignable<T>, std::is_nothrow_move_assignable<E>>::value)
+    requires std::is_move_assignable_v<T> && std::is_move_constructible_v<T> && std::is_move_assignable_v<E> &&
+             std::is_move_constructible_v<E> &&
+             (std::is_nothrow_move_constructible_v<T> || std::is_nothrow_move_constructible_v<E>)
+  {
+    if (_other.is_ok()) {
+      this->template emplace<0>(std::move(_other._m_get_ok_value()));
+    } else {
+      this->template emplace<1>(std::move(_other._m_get_err_value()));
+    }
+  }
 
-  // constexpr ~Result() = default;
+  constexpr ~Result() = default;
 
-  // // construct from U value
-  // template <typename U,
-  //           _Requires<not_result<U>, not_variant<U>, std::is_constructible<T, U>, std::is_convertible<U, T>> = true>
-  // constexpr Result(U&& ok_val) noexcept(std::is_nothrow_constructible_v<T, U>)
-  //     : std::variant<T, E>(static_cast<T>(ok_val)) {}
+  // construct from ok_t or err_t
+  template <typename U, _Requires<not_result<U>, not_variant<U>, std::is_constructible<ok_t, U>,
+                                  std::is_convertible<U, ok_t>> = true>
+  constexpr Result(U&& ok_val) noexcept(std::is_nothrow_constructible_v<T, U>) : _Base(std::forward<U>(ok_val)) {}
 
-  // template <typename U, _Requires<not_result<U>, not_variant<U>, std::is_constructible<T, U>,
-  //                                 _not<std::is_convertible<U, T>>> = false>
-  // explicit constexpr Result(U&& ok_val) noexcept(std::is_nothrow_constructible_v<T, U>)
-  //     : std::variant<T, E>(static_cast<T>(ok_val)) {}
+  template <typename U, _Requires<not_result<U>, not_variant<U>, std::is_constructible<ok_t, U>,
+                                  _not<std::is_same<ok_t, err_t>>, _not<std::is_convertible<U, ok_t>>> = false>
+  explicit constexpr Result(U&& ok_val) noexcept(std::is_nothrow_constructible_v<ok_t, U>)
+      : _Base(std::forward<U>(ok_val)) {}
 
-  // template <typename U,
-  //           _Requires<not_result<U>, not_variant<U>, std::is_constructible<E, U>, std::is_convertible<U, E>> = true>
-  // constexpr Result(U&& err_val) noexcept(std::is_nothrow_constructible_v<E, U>)
-  //     : std::variant<T, E>(static_cast<E>(err_val)) {}
+  template <typename G, _Requires<not_result<G>, not_variant<G>, std::is_constructible<err_t, G>,
+                                  std::is_convertible<G, err_t>> = true>
+  constexpr Result(G&& err_val) noexcept(std::is_nothrow_constructible_v<err_t, G>) : _Base(std::forward<G>(err_val)) {}
 
-  // template <typename U, _Requires<not_result<U>, not_variant<U>, std::is_constructible<E, U>,
-  //                                 _not<std::is_convertible<U, E>>> = false>
-  // explicit constexpr Result(U&& err_val) noexcept(std::is_nothrow_constructible_v<E, U>)
-  //     : std::variant<T, E>(static_cast<E>(err_val)) {}
+  template <typename G, _Requires<not_result<G>, not_variant<G>, std::is_constructible<err_t, G>,
+                                  _not<std::is_same<ok_t, err_t>>, _not<std::is_convertible<G, err_t>>> = false>
+  explicit constexpr Result(G&& err_val) noexcept(std::is_nothrow_constructible_v<err_t, G>)
+      : _Base(std::forward<G>(err_val)) {}
 
-  // constrcut from Result<T,E>
+  // assign operator from Ok<U>,Err<G>
+  template <typename U, _Requires<not_result<U>, not_variant<U>, std::is_constructible<ok_t, U>,
+                                  std::is_assignable<ok_t, U>> = true>
+  constexpr Result& operator=(U&& ok_val) noexcept(std::is_nothrow_constructible_v<ok_t, U> &&
+                                                   std::is_nothrow_assignable_v<ok_t, U>) {
+    this->template emplace<0>((std::forward<U>(ok_val)));
+    return *this;
+  }
 
-  // constrcut in_place
+  template <typename G, _Requires<not_result<G>, not_variant<G>, std::is_constructible<err_t, G>,
+                                  std::is_assignable<err_t, G>> = true>
+  constexpr Result& operator=(G&& ok_val) noexcept(std::is_nothrow_constructible_v<err_t, G> &&
+                                                   std::is_nothrow_assignable_v<err_t, G>) {
+    this->template emplace<1>((std::forward<G>(ok_val)));
+    return *this;
+  }
 
-  // template <typename U>
-  // constexpr Result(U&& err_val) noexcept {}
-
-  // is_ok,is_err
+  // is_ok
   constexpr inline bool is_ok() const noexcept { return this->index() == 0; }
+  // is_err
   constexpr inline bool is_err() const noexcept { return this->index() == 1; }
-  // Err,err
-  // constexpr std::optional<T>
 
-  // unwrap
-  constexpr T& unwrap() & {
-    if (is_ok()) [[likely]] {
+  // is_ok_and
+  template <typename F>
+  constexpr bool is_ok_and(F&& f) const noexcept(std::is_nothrow_invocable_v<F, const T&>)
+    requires std::is_invocable_r_v<bool, F, const T&>
+  {
+    return is_ok() ? true : f(_m_get_ok_value());
+  }
+
+  // is_err_or
+  template <typename F>
+  constexpr bool is_err_and(F&& f) const noexcept(std::is_nothrow_invocable_v<F, const T&>)
+    requires std::is_invocable_r_v<bool, F, const E&>
+  {
+    return is_err() ? true : f(_m_get_err_value());
+  }
+
+  // and()
+  // Considering the particularity of the identifier `and` in C++, operator | is used here to replace the `and`
+  // function.
+  template <typename U>
+  constexpr Result<U, E> operator|(const Result<U, E>& other) const&& noexcept(
+      std::is_nothrow_copy_constructible_v<Result<U, E>>)
+    requires std::is_copy_constructible_v<Result<U, E>>
+  {
+    return is_ok() ? other : Result<U, E>(std::move(std::get<err_t>(*this)));
+  }
+  template <typename U>
+  constexpr Result<U, E> operator|(Result<U, E>&& other) const&& noexcept(
+      std::is_nothrow_move_constructible_v<Result<U, E>>)
+    requires std::is_move_constructible_v<Result<U, E>>
+  {
+    return is_ok() ? other : Result<U, E>(std::move(std::get<err_t>(*this)));
+  }
+
+  // and_then()
+  template <typename U, typename F>
+  constexpr Result<U, E> and_then(F&& f) const&& noexcept(std::is_nothrow_invocable_v<F, const T&>)
+    requires std::is_invocable_r_v<Result<U, E>, F, const T&>
+  {
+    return is_ok() ? Result<U, E>(std::move(f(_m_get_ok_value()))) : Result<U, E>(std::move(std::get<err_t>(*this)));
+  }
+
+  // err()
+  constexpr Option<E> err() const&& noexcept(std::is_nothrow_move_constructible_v<Option<E>>)
+    requires std::is_move_constructible_v<Option<E>>
+  {
+    return is_err() ? Option<E>(std::move(_m_get_err_value())) : Option<E>();
+  }
+
+  // ok()
+  constexpr Option<T> ok() const&& noexcept(std::is_nothrow_move_constructible_v<Option<T>>)
+    requires std::is_move_constructible_v<Option<T>>
+  {
+    return is_ok() ? Option<E>(std::move(_m_get_ok_value())) : Option<T>();
+  }
+
+  // expect()
+  constexpr T& expect(const char* msg) const& {
+    if (is_ok()) {
       return _m_get_ok_value();
     } else {
       cpptrace::generate_trace(1).print_with_snippets();
+      throw result_error(msg);
     }
   }
-  constexpr const T& unwrap() const& {
-    if (is_ok()) [[likely]] {
-      return std::get<T>(*this);
+  constexpr T&& expect(const char* msg) const&& {
+    if (is_ok()) {
+      return std::move(_m_get_ok_value());
     } else {
       cpptrace::generate_trace(1).print_with_snippets();
+      throw result_error(msg);
     }
   }
-  constexpr const T&& unwrap() const&& {
-    if (is_ok()) [[likely]] {
-      return std::move(std::get<T>(*this));
+
+  // expect_err()
+  constexpr E& expect_err(const char* msg) const& {
+    if (is_err()) {
+      return _m_get_err_value();
     } else {
       cpptrace::generate_trace(1).print_with_snippets();
+      throw result_error(msg);
+    }
+  }
+  constexpr E&& expect_err(const char* msg) const&& {
+    if (is_err()) {
+      return std::move(_m_get_err_value());
+    } else {
+      cpptrace::generate_trace(1).print_with_snippets();
+      throw result_error(msg);
+    }
+  }
+
+  // inspect()
+  template <typename F>
+  constexpr Result& inspect(F&& f) const& noexcept(std::is_nothrow_invocable_v<F, const T&>)
+    requires std::is_invocable_v<F, const T&>
+  {
+    if (is_ok()) {
+      f(_m_get_ok_value());
+    }
+    return const_cast<Result&>(*this);
+  }
+  template <typename F>
+  constexpr Result&& inspect(F&& f) const&& noexcept(std::is_nothrow_invocable_v<F, const T&>)
+    requires std::is_invocable_v<F, const T&>
+  {
+    if (is_ok()) {
+      f(_m_get_ok_value());
+    }
+    return std::move(*this);
+  }
+
+  // inspect_err()
+  template <typename F>
+  constexpr Result& inspect_err(F&& f) const& noexcept(std::is_nothrow_invocable_v<F, const E&>)
+    requires std::is_invocable_v<F, const E&>
+  {
+    if (is_err()) {
+      f(_m_get_ok_value());
+    }
+    return const_cast<Result&>(*this);
+  }
+  template <typename F>
+  constexpr Result&& inspect_err(F&& f) const&& noexcept(std::is_nothrow_invocable_v<F, const E&>)
+    requires std::is_invocable_v<F, const E&>
+  {
+    if (is_err()) {
+      f(_m_get_ok_value());
+    }
+    return std::move(*this);
+  }
+
+  // unwrap
+  constexpr T& unwrap() const& {
+    if (is_ok()) [[likely]] {
+      return const_cast<T&>(_m_get_ok_value());
+    } else {
+      cpptrace::generate_trace(1).print_with_snippets();
+      throw result_error("unwrap a result with err value!");
     }
   }
   constexpr T&& unwrap() && {
     if (is_ok()) [[likely]] {
-      return std::move(std::get<T>(*this));
+      return std::move(_m_get_ok_value());
     } else {
       cpptrace::generate_trace(1).print_with_snippets();
+      throw result_error("unwrap a result with err value!");
     }
   }
+
+  // unwrap_err()
+  constexpr E& unwrap_err() const& {
+    if (is_err()) [[likely]] {
+      return const_cast<E&>(_m_get_err_value());
+    } else {
+      cpptrace::generate_trace(1).print_with_snippets();
+      throw result_error("unwrap_err a result with ok value!");
+    }
+  }
+  constexpr E&& unwrap_err() && {
+    if (is_err()) [[likely]] {
+      return std::move(_m_get_err_value());
+    } else {
+      cpptrace::generate_trace(1).print_with_snippets();
+      throw result_error("unwrap_err a result with ok value!");
+    }
+  }
+
+  // unwrap_unchecked()
+  // dangerous!!!
+  constexpr T& unwrap_unchecked() const& { return const_cast<T&>(_m_get_ok_value()); }
+  constexpr T&& unwrap_unchecked() const&& { return std::move(_m_get_ok_value()); }
+
+  // unwrap_err_unchecked()
+  // dangerous!!!
+  constexpr E& unwrap_err_unchecked() const& { return const_cast<E&>(_m_get_err_value()); }
+  constexpr E&& unwrap_err_unchecked() const&& { return std::move(_m_get_err_value()); }
 
   // unwrap_or
   template <typename U>
   constexpr T unwrap_or(U&& _default) const& noexcept(
-      std::__and_v<std::is_nothrow_copy_constructible<T>, std::is_nothrow_convertible<U, T>>) {
-    static_assert(std::is_copy_constructible_v<T>);
-    static_assert(std::is_convertible_v<U, T>);
-    return is_ok() ? _m_get_ok_value() : static_cast<T>(std::forward<U>(_default));
+      std::__and_v<std::is_nothrow_copy_constructible<T>, std::is_nothrow_convertible<U, T>>)
+    requires std::is_copy_constructible_v<T> && std::is_convertible_v<U, T>
+  {
+    return is_ok() ? _m_get_ok_value() : T(std::forward<U>(_default));
   }
   template <typename U>
   constexpr T unwrap_or(U&& _default) && noexcept(
-      std::__and_v<std::is_nothrow_move_constructible<T>, std::is_nothrow_convertible<U, T>>) {
-    static_assert(std::is_copy_constructible_v<T>);
-    static_assert(std::is_convertible_v<U, T>);
-    return is_ok() ? std::move(_m_get_ok_value()) : static_cast<T>(std::forward<U>(_default));
+      std::__and_v<std::is_nothrow_move_constructible<T>, std::is_nothrow_convertible<U, T>>)
+    requires std::is_copy_constructible_v<T> && std::is_convertible_v<U, T>
+  {
+    return is_ok() ? std::move(_m_get_ok_value()) : T(std::forward<U>(_default));
+  }
+
+  // unwrap_or_default()
+  constexpr T unwrap_or_default() && noexcept(std::is_nothrow_default_constructible_v<T>)
+    requires std::is_default_constructible_v<T>
+  {
+    return is_ok() ? std::move(_m_get_ok_value()) : T();
   }
 
   // unwarp_or_else
+  template <typename F>
+  constexpr T unwrap_or_else(F&& f) && noexcept(std::is_nothrow_invocable_v<F, const E&>)
+    requires std::is_invocable_r_v<T, F, const E&>
+  {
+    return is_ok() ? std::move(_m_get_ok_value()) : f();
+  }
 
-  // is_ok
+  // map
+  template <typename U, typename F>
+  constexpr Result<U, E> map(F&& f) noexcept(std::is_nothrow_invocable_v<F, const T&>)
+    requires std::is_invocable_r_v<U, F, const T&>
+  {
+    return is_ok() ? Result<U, E>(f(_m_get_ok_value())) : Result<U, E>(std::get<err_t>(*this));
+  }
 
-  // is_ok_and
+  // map_err
+  template <typename G, typename F>
+  constexpr Result<T, G> map_err(F&& f) noexcept(std::is_nothrow_invocable_v<F, const E&>)
+    requires std::is_invocable_r_v<G, F, const E&>
+  {
+    return is_err() ? Result<T, G>(f(_m_get_err_value())) : Result<T, G>(std::get<ok_t>(*this));
+  }
 
-  // is_err
-
-  // is_err_and
-
-  // and_then
+  // map_or_else
+  template <typename U, typename F, typename D>
+  constexpr U map_or_else(D&& _default, F&& f) noexcept(std::is_nothrow_invocable_v<D, const E&> &&
+                                                        std::is_nothrow_invocable_v<F, const T&>)
+    requires std::is_invocable_r_v<U, D, const E&> && std::is_invocable_r_v<U, F, const T&>
+  {
+    return is_ok() ? f(_m_get_ok_value()) : _default(_m_get_err_value());
+  }
 
  protected:
   // uncecked get ok value
-  constexpr inline T& _m_get_ok_value() & { return std::get<T>(*this); }
-  constexpr inline const T& _m_get_ok_value() const& { return std::get<T>(*this); }
-  constexpr inline T&& _m_get_ok_value() && { return std::get<T>(*this); }
-  constexpr inline const T&& _m_get_ok_value() const&& { return std::get<T>(*this); }
+  constexpr inline T& _m_get_ok_value() & { return std::get<ok_t>(*this).val; }
+  constexpr inline const T& _m_get_ok_value() const& { return std::get<ok_t>(*this).val; }
+  constexpr inline T&& _m_get_ok_value() && { return std::get<ok_t>(*this).val; }
+  constexpr inline const T&& _m_get_ok_value() const&& { return std::get<ok_t>(*this).val; }
   // uncecked get err value
-  constexpr inline T& _m_get_err_value() & { return std::get<E>(*this); }
-  constexpr inline const T& _m_get_err_value() const& { return std::get<E>(*this); }
-  constexpr inline T&& _m_get_err_value() && { return std::get<E>(*this); }
-  constexpr inline const T&& _m_get_err_value() const&& { return std::get<E>(*this); }
+  constexpr inline E& _m_get_err_value() & { return std::get<err_t>(*this).val; }
+  constexpr inline const E& _m_get_err_value() const& { return std::get<err_t>(*this).val; }
+  constexpr inline E&& _m_get_err_value() && { return std::get<err_t>(*this).val; }
+  constexpr inline const E&& _m_get_err_value() const&& { return std::get<err_t>(*this).val; }
 };
-
-template <typename T, typename E>
-constexpr Result<T, E> Ok(const T& ok_val) noexcept {
-  return Result<T, E>(ok_val);
-}
-
-template <typename T, typename E>
-constexpr Result<T, E> Ok(T&& ok_val) noexcept {
-  return Result<T, E>(std::move(ok_val));
-}
-
-template <typename T, typename E, typename... Args>
-  requires std::is_constructible_v<T, Args...>
-constexpr Result<T, E> Ok(Args... args) noexcept(std::is_nothrow_constructible_v<T, Args...>) {
-  return Result<T, E>(std::forward<Args>(args)...);
-}
-
-template <typename T, typename E, typename U, typename... Args>
-  requires std::is_constructible_v<T, std::initializer_list<U>&, Args...>
-constexpr Result<T, E> Ok(std::initializer_list<U> list, Args... args) noexcept(
-    std::is_nothrow_constructible_v<T, std::initializer_list<U>&, Args...>) {
-  return Result<T, E>(list, std::forward<Args>(args)...);
-}
-
-template <typename T, typename E>
-constexpr Result<T, E> Err(const E& err_val) noexcept {
-  return Result<T, E>(err_val);
-}
-
-template <typename T, typename E>
-constexpr Result<T, E> Err(E&& err_val) noexcept {
-  return Result<T, E>(std::move(err_val));
-}
-
-template <typename T, typename E, typename... Args>
-  requires std::is_constructible_v<E, Args...>
-constexpr Result<T, E> Err(Args... args) noexcept(std::is_nothrow_constructible_v<E, Args...>) {
-  return Result<T, E>(std::forward<Args>(args)...);
-}
-
-template <typename T, typename E, typename U, typename... Args>
-  requires std::is_constructible_v<E, std::initializer_list<U>&, Args...>
-constexpr Result<T, E> Err(std::initializer_list<U> list, Args... args) noexcept(
-    std::is_nothrow_constructible_v<E, std::initializer_list<U>&, Args...>) {
-  return Result<T, E>(list, std::forward<Args>(args)...);
-}
 
 }  // namespace navp

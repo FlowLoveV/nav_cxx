@@ -3,7 +3,12 @@
 using namespace navp;
 
 int main() {
-  Option<short> o1(10);
-  Option<int> o2 = 20;
+  struct item {};
+  struct some {
+    explicit some(const item& _item){};
+  };
+
+  item i1;
+  some s1( std::move(i1));
   return 0;
 }

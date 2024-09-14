@@ -3,11 +3,16 @@
 #include <cpptrace/cpptrace.hpp>
 #include <variant>
 
+#include "template_utils.hpp"
+
 namespace navp {
 
 class option_error : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
+
+template <typename T, typename E>
+class Result;
 
 template <typename T>
 class Option;
@@ -17,11 +22,6 @@ namespace details {
 struct NoneType {
   explicit NoneType() = default;
 };
-
-template <typename T, template <typename...> class Template>
-struct is_instance_of : std::false_type {};
-template <template <typename...> class Template, typename... Args>
-struct is_instance_of<Template<Args...>, Template> : std::true_type {};
 
 template <typename T>
 using not_tag = std::__not_<std::is_same<std::remove_cv<T>, NoneType>>;
@@ -72,14 +72,28 @@ class Option : private std::variant<T, details::NoneType> {
   }
   constexpr bool operator==(details::NoneType) const noexcept { return is_none(); }
 
-  // operator |
+  // operator | <=> and method in rust Option type
   template <typename U>
-  constexpr Option<U> operator|(const Option<U>& rhs) const noexcept {
+  constexpr Option<U> operator|(const Option<U>& rhs) const noexcept(std::is_nothrow_copy_constructible_v<Option<U>>)
+    requires std::is_copy_constructible_v<Option<U>>
+  {
     return is_some() ? rhs : None;
   }
   template <typename U>
-  constexpr Option<U> operator|(Option<U>&& rhs) const noexcept {
+  constexpr Option<U> operator|(Option<U>&& rhs) const noexcept(std::is_nothrow_move_constructible_v<Option<U>>)
+    requires std::is_move_constructible_v<Option<U>>
+  {
     return is_some() ? std::move(rhs) : None;
+  }
+
+  template <typename U>
+  constexpr bool operator||(const Option<U>& rhs) const noexcept {
+    return is_some() ? true : rhs.is_some();
+  }
+
+  template <typename U>
+  constexpr bool operator&&(const Option<U>& rhs) const noexcept {
+    return is_some() ? is_some() : false;
   }
 
   constexpr Option() noexcept : std::variant<T, details::NoneType>(details::NoneType{}) {}
@@ -177,7 +191,7 @@ class Option : private std::variant<T, details::NoneType> {
   template <typename U, _Requires<_not<std::is_same<U, T>>, std::is_constructible<T, const U&>,
                                   std::is_assignable<T&, const U&>> = true>
   constexpr Option& operator=(const Option<U>& other) noexcept(std::is_nothrow_convertible_v<T, const U&> &&
-                                                            std::is_nothrow_assignable_v<T&, const U&>) {
+                                                               std::is_nothrow_assignable_v<T&, const U&>) {
     if (other.is_none()) {
       *this = None;
     } else {
@@ -186,10 +200,10 @@ class Option : private std::variant<T, details::NoneType> {
     return *this;
   }
 
-  template <typename U, _Requires<_not<std::is_same<U, T>>, std::is_constructible<T, U>,
-                                  std::is_assignable<T&, U>> = true>
+  template <typename U,
+            _Requires<_not<std::is_same<U, T>>, std::is_constructible<T, U>, std::is_assignable<T&, U>> = true>
   constexpr Option& operator=(Option<U>&& other) noexcept(std::is_nothrow_convertible_v<T, const U&> &&
-                                                            std::is_nothrow_assignable_v<T&, U>) {
+                                                          std::is_nothrow_assignable_v<T&, U>) {
     if (other.is_none()) {
       *this = None;
     } else {
@@ -225,7 +239,7 @@ class Option : private std::variant<T, details::NoneType> {
   constexpr bool is_some_and(F&& f) && noexcept(std::is_nothrow_invocable_r_v<bool, F, T&&> &&
                                                 std::is_nothrow_invocable_v<F, T&&>) {
     if (is_some()) {
-      return f(_m_get_some_value());
+      return f(std::move(_m_get_some_value()));
     }
     return false;
   }
@@ -235,15 +249,15 @@ class Option : private std::variant<T, details::NoneType> {
     requires std::is_invocable_r_v<bool, F, const T&>
   constexpr bool is_none_or(F&& f) const& noexcept(std::is_nothrow_invocable_v<F, const T&>) {
     if (is_some()) {
-      return F(_m_get_some_value());
+      return f(_m_get_some_value());
     }
     return true;
   }
   template <typename F>
-    requires std::is_invocable_r_v<bool, F, const T&&>
-  constexpr bool is_none_or(F&& f) const&& noexcept(std::is_nothrow_invocable_v<F, T&&>) {
+    requires std::is_invocable_r_v<bool, F, T&&>
+  constexpr bool is_none_or(F&& f) && noexcept(std::is_nothrow_invocable_v<F, T&&>) {
     if (is_some()) {
-      return F(_m_get_some_value());
+      return f(std::move(_m_get_some_value()));
     }
     return true;
   }
@@ -285,15 +299,15 @@ class Option : private std::variant<T, details::NoneType> {
   // inspect
   template <typename F>
     requires std::is_invocable_r_v<void, F, const T&>
-  [[nodiscard]] constexpr Option& inspect(F&& f) & noexcept(std::is_nothrow_invocable_v<F, const T&>) {
+  [[nodiscard]] constexpr Option& inspect(F&& f) const& noexcept(std::is_nothrow_invocable_v<F, const T&>) {
     if (is_some()) {
       f(_m_get_some_value());
     }
-    return *this;
+    return const_cast<Option&>(*this);
   }
   template <typename F>
-    requires std::is_invocable_r_v<void, F, T&&>
-  [[nodiscard]] constexpr Option& inspect(F&& f) && noexcept(std::is_nothrow_invocable_v<F, T&&>) {
+    requires std::is_invocable_r_v<void, F, const T&>
+  [[nodiscard]] constexpr Option&& inspect(F&& f) const&& noexcept(std::is_nothrow_invocable_v<F, const T&>) {
     if (is_some()) {
       f(_m_get_some_value());
     }
@@ -316,17 +330,9 @@ class Option : private std::variant<T, details::NoneType> {
   }
 
   // unwrap
-  constexpr T& unwrap() & {
+  constexpr T& unwrap() const& {
     if (is_some()) {
-      return _m_get_some_value();
-    } else {
-      cpptrace::generate_trace(1).print_with_snippets();
-      throw option_error("unwrap a none option!");
-    }
-  }
-  constexpr const T& unwrap() const& {
-    if (is_some()) {
-      return _m_get_some_value();
+      return const_cast<T&>(_m_get_some_value());
     } else {
       cpptrace::generate_trace(1).print_with_snippets();
       throw option_error("unwrap a none option!");
@@ -340,49 +346,54 @@ class Option : private std::variant<T, details::NoneType> {
       throw option_error("unwrap a none option!");
     }
   }
-  constexpr const T&& unwrap() const&& {
-    if (is_some()) {
-      return std::move(_m_get_some_value());
-    } else {
-      cpptrace::generate_trace(1).print_with_snippets();
-      throw option_error("unwrap a none option!");
-    }
-  }
 
   // unwrap_or
-  constexpr T& unwrap_or(const T& _val) & noexcept { return is_some() ? _m_get_some_value() : const_cast<T&>(_val); }
-  constexpr const T& unwrap_or(const T& _val) const& noexcept {
-    return is_some() ? _m_get_some_value() : const_cast<T&>(_val);
+  template<typename U>
+  constexpr T unwrap_or(U&& _val) const& noexcept(std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_convertible_v<U, T>)
+  requires std::is_copy_constructible_v<T> && std::is_convertible_v<U, T>
+  {
+    return is_some() ? _m_get_some_value() : T(std::forward<U>(_val));
   }
-  constexpr T&& unwrap_or(T&& _val) && noexcept {
-    return is_some() ? std::move(_m_get_some_value()) : std::forward<T>(_val);
-  }
-  constexpr const T&& unwrap_or(T&& _val) const&& noexcept {
-    return is_some() ? std::move(_m_get_some_value()) : std::forward<T>(_val);
+  template<typename U>
+  constexpr T unwrap_or(U&& _val) && noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_convertible_v<U, T>)
+  requires std::is_move_constructible_v<T> && std::is_convertible_v<U, T>
+  {
+    return is_some() ? std::move(_m_get_some_value()) : T(std::forward<T>(_val));
   }
 
   // unwrap_or_default
-  template <typename U = T>
-    requires std::is_default_constructible_v<U>
-  constexpr U unwrap_or_default() noexcept(std::is_nothrow_default_constructible_v<T>) {
-    return is_some() ? _m_get_some_value() : T();
+  constexpr T unwrap_or_default() && noexcept(std::is_nothrow_default_constructible_v<T> &&
+                                              std::is_nothrow_move_constructible_v<T>)
+    requires std::is_default_constructible_v<T> && std::is_move_constructible_v<T>
+  {
+    return is_some() ? std::move(_m_get_some_value()) : T();
   }
 
   // unwrap_or_else
   template <typename F>
     requires std::is_invocable_r_v<T, F>
-  constexpr T unwrap_or_else(F&& f) noexcept(std::is_nothrow_invocable_r_v<T, F>) {
-    return is_some() ? _m_get_some_value() : f();
+  constexpr T unwrap_or_else(F&& f) && noexcept(std::is_nothrow_invocable_r_v<T, F> &&
+                                                std::is_nothrow_move_constructible_v<T>)
+    requires std::is_move_constructible_v<T>
+  {
+    return is_some() ? std::move(_m_get_some_value()) : f();
   }
 
   // unwrap_unchecked
-  constexpr auto unwrap_unchecked() const { return _m_get_some_value(); }
-  constexpr auto unwrap_unchecked() { return _m_get_some_value(); }
+  constexpr T& unwrap_unchecked() const& { return const_cast<T&>(_m_get_some_value()); }
+  constexpr T&& unwrap_unchecked() && { return _m_get_some_value(); }
 
   // expected
-  constexpr auto expected(const char* msg) & -> std::add_lvalue_reference_t<T> {
+  constexpr T& expect(const char* msg) const& {
     if (is_some()) {
-      return _m_get_some_value();
+      return const_cast<T&>(_m_get_some_value());
+    }
+    cpptrace::generate_trace(1).print_with_snippets();
+    throw option_error(msg);
+  }
+  constexpr T&& expect(const char* msg) && {
+    if (is_some()) {
+      return std::move(_m_get_some_value());
     }
     cpptrace::generate_trace(1).print_with_snippets();
     throw option_error(msg);
