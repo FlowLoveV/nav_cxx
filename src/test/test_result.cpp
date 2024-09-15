@@ -2,6 +2,7 @@
 #include <expected>
 
 #include "doctest.h"
+#include "utils/option.hpp"
 #include "utils/result.hpp"
 
 using navp::Err;
@@ -157,15 +158,80 @@ TEST_CASE("Constructor,Assignment for Result") {
   U u2 = "Error";
   CHECK(u2.is_err());
   CHECK(u2.unwrap_err() == "Error");
+}
 
-  struct error1 {
-    std::string msg;
-  };
-  struct error2 {
-    std::string msg;
-  };
-  typedef Result<double, error1> R1;
-  typedef Result<double, error2> R2;
-  R1 r1_1 = 20;
-  R2 r2_1 = "Error!";
+TEST_CASE("Operator") {
+  typedef Result<double, std::string> U;
+  U u0 = 20.0;
+  U u1 = "Error";
+  CHECK(u0.is_ok_and([](const double& val) { return val >= 10; }));
+  CHECK(u1.is_err_and([](const std::string& err) { return err == "Error"; }));
+
+  auto u2 = u0 | u1;
+  CHECK(u2.is_err());
+  CHECK(u2.unwrap_err() == "Error");
+
+  U u3 = 194910011400.0;
+  auto u4 = u0 | u3;
+  CHECK(u4.is_ok());
+  CHECK(u4.unwrap() == 194910011400.0);
+}
+
+TEST_CASE("Extension") {
+  typedef Result<double, std::string> U;
+
+  U u1 = 19760909.0;
+  auto u2 = u1.and_then<bool>([](const double& val) -> Result<bool, std::string> { return val >= 0.0; });
+  CHECK(u2.is_ok());
+
+  U u3 = "Goodbye Rust!";
+  CHECK(std::move(u3).ok().is_none());
+  U u4 = "Hello Modern C++!";
+  CHECK(std::move(u4).err().is_some());
+
+  U u5 = "China";
+  CHECK_THROWS(u5.expect("try to unwrap a result with err val"));
+  U u6 = 2000;
+  CHECK_THROWS(u6.expect_err("try to unwrap_err a result with ok val"));
+
+  U u7 = 3000;
+  u7.inspect([](const double& val) {
+    if (val <= 2000.0) {
+      // do something
+    }
+  });
+
+  U u8 = "Error";
+  u8.inspect_err([](const std::string& str) {
+    if (str == "Error") {
+      // do something
+    }
+  });
+
+  U u9 = "Exit";
+  auto ok1 = u9.unwrap_or(200.0);
+  CHECK(ok1 == 200.0);
+
+  auto u10 = std::move(u9).unwrap_or_default();
+  CHECK(u10 == 0.0);
+
+  U u11 = "American";
+  auto ok3 = std::move(u11).unwrap_or_else([](const std::string& err) {
+    if (err == "American") {
+      return 1949.0;
+    }
+    return 2024.0;
+  });
+  CHECK(ok3 == 1949.0);
+
+  U u12 = 1314;
+  auto x1 = u12.map<bool>([](const double& val) -> bool { return val >= 10; });
+  CHECK(x1.unwrap() == true);
+  auto x2 = u12.map_err<std::string>([](const std::string& val) { return val.substr(0); });
+  CHECK(x2.unwrap() == 1314);
+
+  U u13 = 20;
+  auto x3 = u13.map_or_else<bool>([](const std::string& str) { return str == "Error"; },
+                                  [](const double& val) { return val >= 0.0; });
+  CHECK(x3 == true);
 }

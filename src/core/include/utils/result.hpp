@@ -279,7 +279,7 @@ class Result : private std::variant<Ok<T>, Err<E>> {
 
   // is_err_or
   template <typename F>
-  constexpr bool is_err_and(F&& f) const noexcept(std::is_nothrow_invocable_v<F, const T&>)
+  constexpr bool is_err_and(F&& f) const noexcept(std::is_nothrow_invocable_v<F, const E&>)
     requires std::is_invocable_r_v<bool, F, const E&>
   {
     return is_err() ? true : f(_m_get_err_value());
@@ -296,11 +296,25 @@ class Result : private std::variant<Ok<T>, Err<E>> {
     return is_ok() ? other : Result<U, E>(std::move(std::get<err_t>(*this)));
   }
   template <typename U>
+  constexpr Result<U, E> operator|(const Result<U, E>& other) const& noexcept(
+      std::is_nothrow_copy_constructible_v<Result<U, E>>)
+    requires std::is_copy_constructible_v<Result<U, E>>
+  {
+    return is_ok() ? other : Result<U, E>(std::get<err_t>(*this));
+  }
+  template <typename U>
   constexpr Result<U, E> operator|(Result<U, E>&& other) const&& noexcept(
       std::is_nothrow_move_constructible_v<Result<U, E>>)
     requires std::is_move_constructible_v<Result<U, E>>
   {
     return is_ok() ? other : Result<U, E>(std::move(std::get<err_t>(*this)));
+  }
+  template <typename U>
+  constexpr Result<U, E> operator|(Result<U, E>&& other) const& noexcept(
+      std::is_nothrow_move_constructible_v<Result<U, E>>)
+    requires std::is_move_constructible_v<Result<U, E>>
+  {
+    return is_ok() ? other : Result<U, E>(std::get<err_t>(*this));
   }
 
   // and_then()
@@ -309,6 +323,12 @@ class Result : private std::variant<Ok<T>, Err<E>> {
     requires std::is_invocable_r_v<Result<U, E>, F, const T&>
   {
     return is_ok() ? Result<U, E>(std::move(f(_m_get_ok_value()))) : Result<U, E>(std::move(std::get<err_t>(*this)));
+  }
+  template <typename U, typename F>
+  constexpr Result<U, E> and_then(F&& f) const& noexcept(std::is_nothrow_invocable_v<F, const T&>)
+    requires std::is_invocable_r_v<Result<U, E>, F, const T&>
+  {
+    return is_ok() ? Result<U, E>(std::move(f(_m_get_ok_value()))) : Result<U, E>(std::get<err_t>(*this));
   }
 
   // err()
@@ -322,13 +342,13 @@ class Result : private std::variant<Ok<T>, Err<E>> {
   constexpr Option<T> ok() const&& noexcept(std::is_nothrow_move_constructible_v<Option<T>>)
     requires std::is_move_constructible_v<Option<T>>
   {
-    return is_ok() ? Option<E>(std::move(_m_get_ok_value())) : Option<T>();
+    return is_ok() ? Option<T>(std::move(_m_get_ok_value())) : Option<T>();
   }
 
   // expect()
   constexpr T& expect(const char* msg) const& {
     if (is_ok()) {
-      return _m_get_ok_value();
+      return const_cast<T&>(_m_get_ok_value());
     } else {
       cpptrace::generate_trace(1).print_with_snippets();
       throw result_error(msg);
@@ -346,7 +366,7 @@ class Result : private std::variant<Ok<T>, Err<E>> {
   // expect_err()
   constexpr E& expect_err(const char* msg) const& {
     if (is_err()) {
-      return _m_get_err_value();
+      return const_cast<E&>(_m_get_err_value());
     } else {
       cpptrace::generate_trace(1).print_with_snippets();
       throw result_error(msg);
@@ -387,7 +407,7 @@ class Result : private std::variant<Ok<T>, Err<E>> {
     requires std::is_invocable_v<F, const E&>
   {
     if (is_err()) {
-      f(_m_get_ok_value());
+      f(_m_get_err_value());
     }
     return const_cast<Result&>(*this);
   }
@@ -396,7 +416,7 @@ class Result : private std::variant<Ok<T>, Err<E>> {
     requires std::is_invocable_v<F, const E&>
   {
     if (is_err()) {
-      f(_m_get_ok_value());
+      f(_m_get_err_value());
     }
     return std::move(*this);
   }
@@ -475,7 +495,7 @@ class Result : private std::variant<Ok<T>, Err<E>> {
   constexpr T unwrap_or_else(F&& f) && noexcept(std::is_nothrow_invocable_v<F, const E&>)
     requires std::is_invocable_r_v<T, F, const E&>
   {
-    return is_ok() ? std::move(_m_get_ok_value()) : f();
+    return is_ok() ? std::move(_m_get_ok_value()) : f(_m_get_err_value());
   }
 
   // map
