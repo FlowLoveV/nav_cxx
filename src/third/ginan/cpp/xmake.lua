@@ -5,7 +5,7 @@ set_toolchains("gcc")
 set_targetdir("$(projectdir)/bin")
 set_objectdir("$(projectdir)/libs")
 
-if is_plat("macosx") and is_cc("clang") then
+if is_plat("macosx") and is_cxxcomp("clang") then
     print("Using Clang complient compiler flags")
     add_cxxflags("-Wno-shift-overflow")
     add_cxxflags("-Wno-string-concatenation")

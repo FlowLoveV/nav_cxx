@@ -2,8 +2,8 @@
 
 #include <format>
 
-#include "utils/macro.hpp"
 #include "utils/angle.hpp"
+#include "utils/macro.hpp"
 
 namespace navp {
 
@@ -50,15 +50,15 @@ Quaternion EulerAngle::to_quaternion() const noexcept { return Quaternion{this->
 RotationVector EulerAngle::to_rotationVector() const noexcept { return RotationVector{this->to_dcm()}; }
 
 void EulerAngle::as_degress() noexcept {
-    this->x() = to_degress(this->x());
-    this->y() = to_degress(this->y());
-    this->z() = to_degress(this->z());
+  this->x() = to_degress(this->x());
+  this->y() = to_degress(this->y());
+  this->z() = to_degress(this->z());
 }
 
 void EulerAngle::as_radians() noexcept {
-    this->x() = to_radians(this->x());
-    this->y() = to_radians(this->y());
-    this->z() = to_radians(this->z());
+  this->x() = to_radians(this->x());
+  this->y() = to_radians(this->y());
+  this->z() = to_radians(this->z());
 }
 
 RotationVector Dcm::to_rotationVector() const noexcept { return RotationVector{*this}; }

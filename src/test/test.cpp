@@ -1,6 +1,6 @@
 #include "rtklib.h"
 #include "spdlog/common.h"
-#include "utils/errors.hpp"
+#include "utils/result.hpp"
 #include "utils/logger.hpp"
 #include "utils/macro.hpp"
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN

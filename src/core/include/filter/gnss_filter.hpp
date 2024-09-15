@@ -1,11 +1,9 @@
 #pragma once
 
-
 #include "items.hpp"
 #include "sensors/gnss/carrier.hpp"
 #include "sensors/gnss/sv.hpp"
 #include "utils/time.hpp"
-
 
 namespace navp::filter {
 
@@ -19,6 +17,5 @@ using navp::sensors::gnss::Sv;
 //                     MaskFilter<Epoch<UTC>>,
 //                     std::monostate> FilterGnssItems;
 // clang-format on
-
 
 }  // namespace navp::filter
