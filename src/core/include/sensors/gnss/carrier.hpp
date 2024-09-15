@@ -4,6 +4,7 @@
 #include <boost/bimap.hpp>
 #include <format>
 
+#include "utils/error.hpp"
 #include "utils/logger.hpp"
 #include "utils/result.hpp"
 #include "utils/types.hpp"
@@ -71,10 +72,6 @@ enum class CarrierEnum : u8 {
   S1,
   /// DORIS U2 Frequency
   U2,
-};
-
-struct CarrierError {
-  constexpr static auto parse_error = "Unable to parse string \"{}\" to Carrier";
 };
 
 struct Carrier {

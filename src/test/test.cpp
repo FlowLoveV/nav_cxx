@@ -1,15 +1,9 @@
-#include "rtklib.h"
 #include "spdlog/common.h"
-#include "utils/result.hpp"
 #include "utils/logger.hpp"
 #include "utils/macro.hpp"
+#include "utils/result.hpp"
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
-
-TEST_CASE("test open rtklib trace") {
-  traceopen("../log/rtklib/trace.txt");
-  tracelevel(5);
-}
 
 TEST_CASE("test format_num") {
   // float
