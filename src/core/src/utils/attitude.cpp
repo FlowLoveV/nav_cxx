@@ -5,14 +5,14 @@
 #include "utils/angle.hpp"
 #include "utils/macro.hpp"
 
-namespace navp {
+namespace navp::utils {
 
-RotationVector::RotationVector(const Vector3d& vec) noexcept {
+RotationVector::RotationVector(const NavVector3f64& vec) noexcept {
   auto mod = vec.norm();
   *this = {mod, vec.normalized()};
 }
 
-Eigen::Vector3d RotationVector::to_vector() const noexcept { return this->angle() * this->axis(); }
+NavVector3f64 RotationVector::to_vector() const noexcept { return this->angle() * this->axis(); }
 
 Quaternion RotationVector::to_quaternion() const noexcept { return Quaternion{*this}.normalized(); }
 
@@ -21,14 +21,11 @@ EulerAngle RotationVector::to_eulerAngle() const noexcept { return this->to_dcm(
 Dcm RotationVector::to_dcm() const noexcept { return {this->toRotationMatrix()}; }
 
 Dcm EulerAngle::to_dcm() const noexcept {
-  // auto matrix = Eigen::AngleAxisd((*this)(2), Eigen::Vector3d::UnitZ()) *
-  //               Eigen::AngleAxisd((*this)(1), Eigen::Vector3d::UnitY()) *
-  //               Eigen::AngleAxisd((*this)(0), Eigen::Vector3d::UnitX());
   auto [s1, c1] = navp::sin_cos(this->x());
   auto [s2, c2] = navp::sin_cos(this->y());
   auto [s3, c3] = navp::sin_cos(this->z());
 
-  Eigen::Matrix3d C;
+  NavMatrix33f64 C;
 
   C(0, 0) = c2 * c3;
   C(0, 1) = -c1 * s3 + s1 * s2 * c3;
@@ -65,9 +62,9 @@ RotationVector Dcm::to_rotationVector() const noexcept { return RotationVector{*
 
 EulerAngle Dcm::to_eulerAngle() const noexcept {
   auto& dcm = *this;
-  double pitch = std::atan2(-dcm(2, 0), std::sqrt(dcm(2, 1) * dcm(2, 1) + dcm(2, 2) * dcm(2, 2)));
+  f64 pitch = std::atan2(-dcm(2, 0), std::sqrt(dcm(2, 1) * dcm(2, 1) + dcm(2, 2) * dcm(2, 2)));
 
-  double roll, yaw;
+  f64 roll, yaw;
 
   if (std::abs(dcm(2, 0)) < 0.999) {
     roll = std::atan2(dcm(2, 1), dcm(2, 2));
@@ -80,7 +77,7 @@ EulerAngle Dcm::to_eulerAngle() const noexcept {
     }
   }
 
-  return Vector3d(roll, pitch, yaw);
+  return NavVector3f64(roll, pitch, yaw);
 }
 
 Quaternion Dcm::to_quaternion() const noexcept { return Quaternion{*this}.normalized(); }
@@ -98,4 +95,4 @@ auto EulerAngle::format_as_string() const noexcept -> std::string {
                      FORMAT_NUM(_fixed, _fmt, this->z()));
 }
 
-}  // namespace navp
+}  // namespace navp::utils

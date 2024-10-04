@@ -9,7 +9,7 @@ add_requires("toml++",{
     }
 })
 add_requires("spdlog",{
-    version = ">=1.12.0",
+    version = "=1.14.1",
     configs = {
         shared = true,
         cppstd = "c++20",
@@ -72,6 +72,7 @@ add_requires("cpptrace",{
         cppstd = "c++23",
     }
 })
+
 
 
 -- Define a recursive function to traverse all directories and add them to includedirs

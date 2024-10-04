@@ -2,9 +2,11 @@
 
 #include <rfl.hpp>
 
-#include "ginan/cpp/common/gTime.hpp"
 #include "logger.hpp"
 #include "types.hpp"
+#include "utils/error.hpp"
+#include "utils/gTime.hpp"
+#include "utils/result.hpp"
 
 // [formatter-doc](https://zh.cppreference.com/w/cpp/chrono/system_clock/formatter)
 // [parse-doc](https://zh.cppreference.com/w/cpp/chrono/parse)
@@ -79,14 +81,14 @@ namespace navp {
 
 // template <typename T>
 // requires std::chrono::__is_time_point_v<T>
-// constexpr auto ymd_of(T t) -> std::tuple<int, unsigned, unsigned> {
+// constexpr auto ymd_of(T t) -> std::tuple<i32, unsigned, unsigned> {
 //   const auto _sys_days = std::chrono::clock_cast<std::chrono::system_clock>(t);
 //   // change duration type
 //   const auto sys_days = time_point_cast<std::chrono::duration<long,
 //   std::ratio<86400>>>(_sys_days);
 //   // considering leaps between
 //   auto ymd = std::chrono::year_month_day{sys_days};
-//   return std::make_tuple(int(ymd.year()), unsigned(ymd.month()), unsigned(ymd.day()));
+//   return std::make_tuple(i32(ymd.year()), unsigned(ymd.month()), unsigned(ymd.day()));
 // }
 
 // template <typename T>
@@ -143,9 +145,9 @@ struct EpochPayload {
     return ReflectionType{.time = *tm};
   }
 
-  // to long double seconds
-  operator long double() const noexcept {
-    return static_cast<long double>(this->time_point().time_since_epoch().count());
+  // to f128 seconds
+  operator f128() const noexcept {
+    return static_cast<f128>(this->time_point().time_since_epoch().count());
   }
   // to long nanos
   operator long() const noexcept { return this->time_point().time_since_epoch().count(); }
@@ -174,8 +176,8 @@ struct EpochPayload {
   // auto-increment,auto-decrement opearator
   constexpr T& operator++() { static_cast<T*>(this)++; }
   constexpr T& operator--() { static_cast<T*>(this)--; }
-  constexpr T& operator++(int _dur) { static_cast<T*>(this)++(_dur); }
-  constexpr T& operator--(int _dur) { static_cast<T*>(this)--(_dur); }
+  constexpr T& operator++(i32 _dur) { static_cast<T*>(this)++(_dur); }
+  constexpr T& operator--(i32 _dur) { static_cast<T*>(this)--(_dur); }
 
   // now
   constexpr static T now() {
@@ -202,17 +204,19 @@ struct EpochPayload {
     ss >> std::chrono::parse(fmt, static_cast<T*>(this)->tp);
     if (ss.fail()) {
       nav_error("Failed to parse datetime string : Can't format string \"{}\" with fmt \"{}\".", ctx, fmt);
+      cpptrace::generate_trace(1).print_with_snippets();
     }
   }
   // construct from utc time string
-  constexpr static T from_str(const char* fmt, const char* ctx) {
+  constexpr static NavResult<T> from_str(const char* fmt, const char* ctx) {
     std::chrono::time_point<utc_clock, std::chrono::duration<long, std::ratio<1, 1000000000>>> base_tp;
     istringstream ss(ctx);
     ss >> std::chrono::parse(fmt, base_tp);
     if (ss.fail()) {
-      nav_error("Failed to parse datetime string : Can't format string \"{}\" with fmt \"{}\".", ctx, fmt);
+      return Err(errors::NavError::Utils::Time::ParseEpochError);
+      // nav_error("Failed to parse datetime string : Can't format string \"{}\" with fmt \"{}\".", ctx, fmt);
     }
-    return T{clock_cast<typename T::clock_type>(base_tp)};
+    return Ok(T{clock_cast<typename T::clock_type>(base_tp)});
   }
 
   // from nanos
@@ -221,11 +225,11 @@ struct EpochPayload {
   }
 
   // from seconds
-  constexpr static T from_seconds(long double seconds) noexcept {
+  constexpr static T from_seconds(f128 seconds) noexcept {
     auto f = seconds * 1e9;
     long nanos = static_cast<long>(f);
     if ((f - nanos) != 0.0) {
-      nav_warn("There is a loss of precision when converting long double seconds to long nanoseconds");
+      nav_warn("There is a loss of precision when converting f128 seconds to long nanoseconds");
     }
     return EpochPayload::from_nanos(nanos);
   }
@@ -330,7 +334,7 @@ struct EpochPayload {
   constexpr auto nanoseconds_within_day() { return this->duration_of_nanoseconds_within_day().count(); }
   constexpr auto seconds_within_day() { return this->duration_of_seconds_within_day().count(); }
 
-  constexpr static auto ymd_of(const T& t, bool is_local = false) -> std::tuple<int, unsigned, unsigned> {
+  constexpr static auto ymd_of(const T& t, bool is_local = false) -> std::tuple<i32, unsigned, unsigned> {
     auto tp = t.tp;
     // Considering that the starting points of different time scales are inconsistent, overflow may
     // occur during conversion, so it is necessary to unify the starting points of the time scales
@@ -353,7 +357,7 @@ struct EpochPayload {
     } else {
       ymd = std::chrono::year_month_day{std::chrono::floor<std::chrono::days>(sys_tp)};
     }
-    return std::make_tuple(int(ymd.year()), unsigned(ymd.month()), unsigned(ymd.day()));
+    return std::make_tuple(i32(ymd.year()), unsigned(ymd.month()), unsigned(ymd.day()));
   }
 
   constexpr static auto hms_of(const T& t, bool is_local = false) -> std::tuple<long, long, long, long> {
@@ -369,16 +373,16 @@ struct EpochPayload {
   }
 
   constexpr static auto date_of(const T& t,
-                                bool is_local = false) -> std::tuple<int, unsigned, unsigned, long, long, long, long> {
+                                bool is_local = false) -> std::tuple<i32, unsigned, unsigned, long, long, long, long> {
     auto [y, m, d] = EpochPayload::ymd_of(t, is_local);
     auto [H, M, S, N] = EpochPayload::hms_of(t, is_local);
     return std::make_tuple(y, m, d, H, M, S, N);
   }
 
-  constexpr auto local_date() -> std::tuple<int, unsigned, unsigned, long, long, long, long> {
+  constexpr auto local_date() -> std::tuple<i32, unsigned, unsigned, long, long, long, long> {
     return EpochPayload::date_of(*static_cast<T*>(this), true);
   }
-  constexpr auto utc_date() -> std::tuple<int, unsigned, unsigned, long, long, long, long> {
+  constexpr auto utc_date() -> std::tuple<i32, unsigned, unsigned, long, long, long, long> {
     return EpochPayload::date_of(*static_cast<T*>(this), false);
   }
   // helper
@@ -449,7 +453,7 @@ struct EpochPayload {
       nav_error("The range of seconds in weeks should be in [0,604800),but get {}.", seconds);
       return false;
     }
-    if ((weeks * 604800 + seconds) * 1e9 >= static_cast<double>(numeric_limits<long>::max())) {
+    if ((weeks * 604800 + seconds) * 1e9 >= static_cast<f64>(numeric_limits<long>::max())) {
       nav_error(
           "The range of GPS exceeds the maximum value that can be represented by the data "
           "structure,but get {} {} .",
@@ -495,16 +499,11 @@ struct Epoch<UTC> : public details::EpochPayload<Epoch<UTC>> {
   constexpr explicit Epoch(const duration_type& dur) : tp(dur) {}
 
   // Interacting with the ginan library's gTime type
-  Epoch(GTime gtime) noexcept;
-  operator GTime() const noexcept;
+  Epoch(utils::GTime gtime) noexcept;
+  operator utils::GTime() const noexcept;
 
   // reflect constructor
-  Epoch(const ReflectionType& _impl) {
-    auto tm = _impl.time.get().tm();
-    auto utc =
-        Epoch<UTC>::from_utc_date(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-    this->tp = utc.tp;
-  }
+  Epoch(const ReflectionType& _impl);
 };
 
 template <>
@@ -540,17 +539,11 @@ struct Epoch<GPST> : public details::EpochPayload<Epoch<GPST>> {
   constexpr explicit Epoch(const duration_type& dur) : tp(dur) {}
 
   // Interacting with the ginan library's gTime type
-  Epoch(GTime gtime) noexcept;
-  operator GTime() const noexcept;
+  Epoch(utils::GTime gtime) noexcept;
+  operator utils::GTime() const noexcept;
 
   // reflect constructor
-  Epoch(const ReflectionType& _impl) {
-    auto tm = _impl.time.get().tm();
-    auto utc =
-        Epoch<UTC>::from_utc_date(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-    auto gpst = epoch_cast<GPST>(utc);
-    this->tp = gpst.tp;
-  }
+  Epoch(const ReflectionType& _impl);
 };
 
 template <>
@@ -586,27 +579,12 @@ struct Epoch<BDT> : public details::EpochPayload<Epoch<BDT>> {
   constexpr explicit Epoch(const duration_type& dur) : tp(dur) {}
 
   // Interacting with the ginan library's gTime type
-  Epoch(GTime gtime) noexcept;
-  operator GTime() const noexcept;
+  Epoch(utils::GTime gtime) noexcept;
+  operator utils::GTime() const noexcept;
 
   // reflect constructor
-  Epoch(const ReflectionType& _impl) {
-    auto tm = _impl.time.get().tm();
-    auto utc =
-        Epoch<UTC>::from_utc_date(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-    auto bdt = epoch_cast<BDT>(utc);
-    this->tp = bdt.tp;
-  }
+  Epoch(const ReflectionType& _impl);
 };
-
-// template <TimeScaleEnum Dst, TimeScaleEnum Src>
-// Epoch<Dst> epoch_cast(const Epoch<Src>& src) {
-//   if constexpr (Dst == Src) {
-//     return src;
-//   } else {
-//     return std::chrono::clock_cast<typename Epoch<Dst>::clock_type>(src.tp);
-//   }
-// }
 
 // operators
 template <TimeScaleEnum T>

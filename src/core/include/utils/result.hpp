@@ -536,4 +536,7 @@ class Result : private std::variant<Ok<T>, Err<E>> {
   constexpr inline const E&& _m_get_err_value() const&& { return std::get<err_t>(*this).val; }
 };
 
+template <typename T>
+using NavResult = Result<T, uint16_t>;
+
 }  // namespace navp

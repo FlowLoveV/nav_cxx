@@ -1,3 +1,0 @@
-
-
-namespace navp {}  // namespace navp

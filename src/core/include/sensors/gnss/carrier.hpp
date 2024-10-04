@@ -5,7 +5,6 @@
 #include <format>
 
 #include "utils/error.hpp"
-#include "utils/logger.hpp"
 #include "utils/result.hpp"
 #include "utils/types.hpp"
 
@@ -13,7 +12,7 @@ namespace navp::sensors::gnss {
 enum class CarrierEnum : u8;
 }
 
-namespace nav::constants {
+namespace navp::sensors::gnss {
 extern const boost::bimap<std::string, navp::sensors::gnss::CarrierEnum> CARRIER_TABLE;
 }
 
@@ -78,23 +77,18 @@ struct Carrier {
   // Carrier() : id(CarrierEnum::L1) {}
   // Carrier(CarrierEnum carrier) : id(carrier) {}
   // from_str
-  static Carrier from_str(std::string_view str) {
+  static NavResult<Carrier> from_str(const char* str) {
     std::string s(str);
     boost::algorithm::to_upper(s);
     boost::algorithm::trim(s);
     /*
      * GPS, Galieo
      */
-    auto it = nav::constants::CARRIER_TABLE.left.find(s);
-    if (it != nav::constants::CARRIER_TABLE.left.end()) {
-      return Carrier{it->second};
-    } else {
-      // make_error(CarrierError::parse_error, str)
-      // return make_error<Carrier>(CarrierError::parse_error, str);
-      auto error_msg = std::format("Unable to parse string \"{}\" to Carrier", str);
-      nav_error(error_msg);
-      throw std::runtime_error(error_msg);
+    auto it = navp::sensors::gnss::CARRIER_TABLE.left.find(s);
+    if (it != navp::sensors::gnss::CARRIER_TABLE.left.end()) {
+      return Ok(Carrier{it->second});
     }
+    return Err(errors::NavError::Utils::Gnss::ParseCarrierStringError);
   }
 
   CarrierEnum id;
@@ -112,7 +106,7 @@ struct std::formatter<navp::sensors::gnss::Carrier, char> {
   template <class FormatContext>
   auto format(navp::sensors::gnss::Carrier carrier, FormatContext& ctx) const {
     try {
-      const std::string& carrier_str = nav::constants::CARRIER_TABLE.right.at(carrier.id);
+      const std::string& carrier_str = navp::sensors::gnss::CARRIER_TABLE.right.at(carrier.id);
       return std::format_to(ctx.out(), "{}", carrier_str);
     } catch (const std::out_of_range&) {
       return std::format_to(ctx.out(), "Unknown Carrier");

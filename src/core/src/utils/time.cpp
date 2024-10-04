@@ -2,6 +2,8 @@
 
 namespace navp {
 
+using utils::GTime;
+
 namespace details {
 std::tuple<long, long> convert_seconds(f64 seconds) {
   long sec = static_cast<long>(std::floor(seconds));
@@ -20,9 +22,9 @@ Epoch<GPST>::Epoch(GTime gtime) noexcept {
 }
 
 Epoch<GPST>::operator GTime() const noexcept {
-  long double t = *this;
+  f128 t = *this;
   GTime res;
-  res.bigTime = t;
+  res.bigTime = t / 1e9;
   return res;
 }
 
@@ -44,6 +46,26 @@ Epoch<BDT>::Epoch(GTime gtime) noexcept {
 Epoch<BDT>::operator GTime() const noexcept {
   auto epoch_gpst = epoch_cast<GPST>(*this);
   return epoch_gpst;
+}
+
+Epoch<UTC>::Epoch(const ReflectionType& _impl) {
+  auto tm = _impl.time.get().tm();
+  auto utc = Epoch<UTC>::from_utc_date(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+  this->tp = utc.tp;
+}
+
+Epoch<GPST>::Epoch(const ReflectionType& _impl) {
+  auto tm = _impl.time.get().tm();
+  auto utc = Epoch<UTC>::from_utc_date(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+  auto gpst = epoch_cast<GPST>(utc);
+  this->tp = gpst.tp;
+}
+
+Epoch<BDT>::Epoch(const ReflectionType& _impl) {
+  auto tm = _impl.time.get().tm();
+  auto utc = Epoch<UTC>::from_utc_date(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+  auto bdt = epoch_cast<BDT>(utc);
+  this->tp = bdt.tp;
 }
 
 }  // namespace navp

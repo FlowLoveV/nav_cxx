@@ -1,15 +1,13 @@
 #pragma once
 
-#include <Eigen/Eigen>
 #include <span>
 #include <vector>
 
-#include "types.hpp"
+#include "utils/eigen.hpp"
+#include "utils/types.hpp"
 
-namespace navp {
-using coordinate_t = Eigen::Matrix<f64, 3, 1>;
-using Eigen::Matrix3d;
-using Eigen::Vector3d;
+namespace navp::utils {
+using coordinate_t = NavVector3f64;
 
 enum CoordSystemEnum : u8 {
   XYZ,
@@ -48,14 +46,14 @@ class Coordinate<XYZ> : public details::CoordinatePayload {
   // bool operator!=(const Coordinate&) const noexcept = default;
 
   auto to_blh() const noexcept -> Coordinate<BLH>;
-  auto to_enu_matrix() const noexcept -> Matrix3d;
+  auto to_enu_matrix() const noexcept -> NavMatrix33f64;
   auto to_enu(const Coordinate&) const noexcept -> Coordinate<ENU>;
   auto to_enu(const std::span<Coordinate>&) const noexcept -> std::vector<Coordinate<ENU>>;
   auto to_enu(const Coordinate<BLH>&) const noexcept -> Coordinate<ENU>;
   auto to_enu(const std::span<Coordinate<BLH>>&) const noexcept -> std::vector<Coordinate<ENU>>;
 
   // convariance
-  auto conv_enu(const Matrix3d&) const -> Matrix3d;
+  auto conv_enu(const NavMatrix33f64&) const -> NavMatrix33f64;
 };
 
 template <>
@@ -70,14 +68,14 @@ class Coordinate<BLH> : public details::CoordinatePayload {
   // bool operator!=(const Coordinate&) const noexcept = default;
 
   auto to_xyz() const noexcept -> Coordinate<XYZ>;
-  auto to_enu_matrix() const noexcept -> Matrix3d;
+  auto to_enu_matrix() const noexcept -> NavMatrix33f64;
   auto to_enu(const Coordinate&) const noexcept -> Coordinate<ENU>;
   auto to_enu(const std::span<Coordinate>&) const noexcept -> std::vector<Coordinate<ENU>>;
   auto to_enu(const Coordinate<XYZ>&) const noexcept -> Coordinate<ENU>;
   auto to_enu(const std::span<Coordinate<XYZ>>&) const noexcept -> std::vector<Coordinate<ENU>>;
 
   // convariance
-  auto conv_enu(const Matrix3d&) const noexcept -> Matrix3d;
+  auto conv_enu(const NavMatrix33f64&) const noexcept -> NavMatrix33f64;
 };
 
 template <>
@@ -93,8 +91,8 @@ class Coordinate<ENU> : public details::CoordinatePayload {
 };
 
 // convariance of enu to convariance xyz
-extern Matrix3d conv_xyz(const Coordinate<BLH>&, const Matrix3d&);
+extern NavMatrix33f64 conv_xyz(const Coordinate<BLH>&, const NavMatrix33f64&);
 // convariance of enu to convariance xyz
-extern Matrix3d conv_xyz(const Coordinate<XYZ>&, const Matrix3d&);
+extern NavMatrix33f64 conv_xyz(const Coordinate<XYZ>&, const NavMatrix33f64&);
 
-}  // namespace navp
+}  // namespace navp::utils

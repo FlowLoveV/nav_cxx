@@ -20,10 +20,6 @@
 #define NAV_SUFFIX hpp
 #endif
 
-// macro FORMATLIB, decides which format library will be used
-// 0 - fmt (https://github.com/fmtlib/fmt)
-// 1 - c++20 format,c++23 print(which is not support on linux and macos)
-
 #define NAV_FORMAT std::format
 #define NAV_PRINT std::print
 #define NAV_PRINTLN std::println

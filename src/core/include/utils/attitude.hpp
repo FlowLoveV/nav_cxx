@@ -1,32 +1,29 @@
 #pragma once
 
-#include <Eigen/Eigen>
 #include <cmath>
 #include <iostream>
 
-namespace navp {
+#include "utils/eigen.hpp"
 
-using Eigen::Matrix3d;
-using Eigen::Quaterniond;
-using Eigen::Vector3d;
+namespace navp::utils {
 
 class RotationVector;
 class EulerAngle;
 class Dcm;
 class Quaternion;
 
-class RotationVector : public Eigen::AngleAxisd {
+class RotationVector : public AngleAxisf64 {
  public:
-  using Eigen::AngleAxis<double>::AngleAxis;
-  RotationVector(const Vector3d &vec) noexcept;
+  using AngleAxisf64::AngleAxis;
+  RotationVector(const NavVector3f64 &vec) noexcept;
 
-  [[nodiscard]] Eigen::Vector3d to_vector() const noexcept;
+  [[nodiscard]] NavVector3f64 to_vector() const noexcept;
 
   [[nodiscard]] Quaternion to_quaternion() const noexcept;
   [[nodiscard]] EulerAngle to_eulerAngle() const noexcept;
   [[nodiscard]] Dcm to_dcm() const noexcept;
 
-  Eigen::Vector3d operator-(const RotationVector &other) const noexcept;
+  NavVector3f64 operator-(const RotationVector &other) const noexcept;
 
   friend std::ostream &operator<<(std::ostream &os, const RotationVector &rv) noexcept {
     os << rv.to_vector() << '\n';
@@ -36,9 +33,9 @@ class RotationVector : public Eigen::AngleAxisd {
 
 // Rotation sequence : ZYX
 // x,y and z respectively represent roll pitch yaw, RPY
-class EulerAngle : public Eigen::Vector3d {
+class EulerAngle : public NavVector3f64 {
  public:
-  using Eigen::Vector3<double>::Vector3;
+  using NavVector3f64::Matrix;
   [[nodiscard]] Dcm to_dcm() const noexcept;
   [[nodiscard]] Quaternion to_quaternion() const noexcept;
   [[nodiscard]] RotationVector to_rotationVector() const noexcept;
@@ -47,22 +44,22 @@ class EulerAngle : public Eigen::Vector3d {
   auto format_as_string() const noexcept -> std::string;
 };
 
-class Dcm : public Eigen::Matrix3d {
+class Dcm : public NavMatrix33f64 {
  public:
-  using Eigen::Matrix3<double>::Matrix3;
+  using NavMatrix33f64::Matrix;
   [[nodiscard]] RotationVector to_rotationVector() const noexcept;
   [[nodiscard]] EulerAngle to_eulerAngle() const noexcept;
   [[nodiscard]] Quaternion to_quaternion() const noexcept;
 
   friend std::ostream &operator<<(std::ostream &os, const Dcm &q) {
-    os << static_cast<Matrix3d>(q);
+    os << static_cast<NavMatrix33f64>(q);
     return os;
   }
 };
 
-class Quaternion : public Eigen::Quaterniond {
+class Quaternion : public NavQuaternionf64 {
  public:
-  using Eigen::Quaternion<double>::Quaternion;
+  using NavQuaternionf64::Quaternion;
   [[nodiscard]] RotationVector to_rotationVector() const noexcept;
   [[nodiscard]] Dcm to_dcm() const noexcept;
   [[nodiscard]] EulerAngle to_eulerAngle() const noexcept;
@@ -79,4 +76,4 @@ typedef union {
   Dcm cbn;
   EulerAngle euler;
 } Attitude;
-}  // namespace navp
+}  // namespace navp::utils

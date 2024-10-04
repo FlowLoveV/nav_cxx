@@ -348,15 +348,17 @@ class Option : private std::variant<T, details::NoneType> {
   }
 
   // unwrap_or
-  template<typename U>
-  constexpr T unwrap_or(U&& _val) const& noexcept(std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_convertible_v<U, T>)
-  requires std::is_copy_constructible_v<T> && std::is_convertible_v<U, T>
+  template <typename U>
+  constexpr T unwrap_or(U&& _val) const& noexcept(std::is_nothrow_copy_constructible_v<T> &&
+                                                  std::is_nothrow_convertible_v<U, T>)
+    requires std::is_copy_constructible_v<T> && std::is_convertible_v<U, T>
   {
     return is_some() ? _m_get_some_value() : T(std::forward<U>(_val));
   }
-  template<typename U>
-  constexpr T unwrap_or(U&& _val) && noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_convertible_v<U, T>)
-  requires std::is_move_constructible_v<T> && std::is_convertible_v<U, T>
+  template <typename U>
+  constexpr T unwrap_or(U&& _val) && noexcept(std::is_nothrow_move_constructible_v<T> &&
+                                              std::is_nothrow_convertible_v<U, T>)
+    requires std::is_move_constructible_v<T> && std::is_convertible_v<U, T>
   {
     return is_some() ? std::move(_m_get_some_value()) : T(std::forward<T>(_val));
   }

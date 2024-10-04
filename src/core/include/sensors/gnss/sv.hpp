@@ -4,63 +4,28 @@
 #include <string>
 #include <string_view>
 
+#include "enums.hpp"
 #include "magic_enum.hpp"
+#include "utils/error.hpp"
 #include "utils/logger.hpp"
+#include "utils/result.hpp"
 #include "utils/types.hpp"
 
 namespace navp::sensors::gnss {
 
-enum class ConstellationEnum : u8 {
-  /// `GPS` american constellation,
-  GPS = 0x00,
-  /// `Glonass` russian constellation
-  Glonass,
-  /// `BeiDou` chinese constellation
-  BeiDou,
-  /// `QZSS` japanese constellation
-  QZSS,
-  /// `Galileo` european constellation
-  Galileo,
-  /// `IRNSS` constellation, renamed "NavIC"
-  IRNSS,
-  /// American augmentation system,
-  WAAS,
-  /// European augmentation system
-  EGNOS,
-  /// Japanese MTSAT Space Based augmentation system
-  MSAS,
-  /// Indian augmentation system
-  GAGAN,
-  /// Chinese augmentation system
-  BDSBAS,
-  /// South Korean augmentation system
-  KASS,
-  /// Russian augmentation system
-  SDCM,
-  /// South African augmentation system
-  ASBAS,
-  /// Autralia / NZ augmentation system
-  SPAN,
-  /// SBAS is used to describe SBAS (augmentation)
-  /// vehicles without much more information
-  SBAS,
-  /// Australia-NZ Geoscience system
-  AusNZ,
-  /// Group Based SBAS
-  GBAS,
-  /// Nigerian SBAS
-  NSAS,
-  /// Algerian SBAS
-  ASAL,
-  /// `Mixed` for Mixed constellations
-  /// RINEX files description
-  Mixed,
-};
+inline auto constexpr NSYSGPS = 1;
+inline auto constexpr NSATGPS = 32;  ///< potential number of GPS satellites, PRN goes from 1 to this number
+inline auto constexpr NSATGLO = 27;  ///< potential number of GLONASS satellites, PRN goes from 1 to this number
+inline auto constexpr NSATGAL = 36;  ///< potential number of Galileo satellites, PRN goes from 1 to this number
+inline auto constexpr NSATQZS = 7;   ///< potential number of QZSS satellites, PRN goes from 1 to this number
+inline auto constexpr NSATLEO = 78;  ///< potential number of LEO satellites, PRN goes from 1 to this number
+inline auto constexpr NSATBDS = 62;  ///< potential number of Beidou satellites, PRN goes from 1 to this number
+inline auto constexpr NSATSBS = 39;  ///< potential number of SBAS satellites, PRN goes from 1 to this number
 
 struct Constellation {
   // constexpr Constellation() : id(ConstellationEnum::GPS) {}
   // constexpr Constellation(ConstellationEnum id) : id(id) {}
-  static Constellation form_str(std::string_view str) {
+  static NavResult<Constellation> form_str(const char* str) {
     std::string s(str);
     boost::algorithm::trim(s);
     boost::algorithm::to_lower(s);
@@ -68,17 +33,17 @@ struct Constellation {
     if (s == "g" || s == "gps")
       result = ConstellationEnum::GPS;
     else if (s == "c" || s == "bds")
-      result = ConstellationEnum::BeiDou;
+      result = ConstellationEnum::BDS;
     else if (s == "e" || s == "gal")
-      result = ConstellationEnum::Galileo;
+      result = ConstellationEnum::GAL;
     else if (s == "r" || s == "glo")
-      result = ConstellationEnum::Glonass;
+      result = ConstellationEnum::GLO;
     else if (s == "j" || s == "qzss")
-      result = ConstellationEnum::QZSS;
+      result = ConstellationEnum::QZS;
     else if (s == "i" || s == "irnss")
-      result = ConstellationEnum::IRNSS;
+      result = ConstellationEnum::IRN;
     else if (s == "s" || s == "sbas")
-      result = ConstellationEnum::SBAS;
+      result = ConstellationEnum::SBS;
     else if (s == "m" || s == "mixed")
       result = ConstellationEnum::Mixed;
     else if (s == "ausnz")
@@ -110,32 +75,30 @@ struct Constellation {
     else if (s.find("gps") != std::string::npos)
       result = ConstellationEnum::GPS;
     else if (s.find("glonass") != std::string::npos)
-      result = ConstellationEnum::Glonass;
+      result = ConstellationEnum::GLO;
     else if (s.find("beidou") != std::string::npos)
-      result = ConstellationEnum::BeiDou;
+      result = ConstellationEnum::BDS;
     else if (s.find("galileo") != std::string::npos)
-      result = ConstellationEnum::Galileo;
+      result = ConstellationEnum::GAL;
     else if (s.find("qzss") != std::string::npos)
-      result = ConstellationEnum::QZSS;
+      result = ConstellationEnum::QZS;
     else if (s.find("sbas") != std::string::npos || s.find("geo") != std::string::npos)
-      result = ConstellationEnum::SBAS;
+      result = ConstellationEnum::SBS;
     else if (s.find("irnss") != std::string::npos || s.find("navic") != std::string::npos)
-      result = ConstellationEnum::IRNSS;
+      result = ConstellationEnum::IRN;
     else if (s.find("mix") != std::string::npos)
       result = ConstellationEnum::Mixed;
     else {
-      auto error_msg = std::format("Unable to parse string \"{}\" to Constellation", s);
-      nav_error(error_msg);
-      throw std::runtime_error(error_msg);
+      return Err(errors::NavError::Utils::Gnss::ParseConstellationStringError);
     }
 
-    return Constellation(result);
+    return Ok(Constellation(result));
   }
   bool is_sbas() const {
     return id == ConstellationEnum::WAAS || id == ConstellationEnum::EGNOS || id == ConstellationEnum::MSAS ||
            id == ConstellationEnum::GAGAN || id == ConstellationEnum::BDSBAS || id == ConstellationEnum::KASS ||
            id == ConstellationEnum::SDCM || id == ConstellationEnum::ASBAS || id == ConstellationEnum::SPAN ||
-           id == ConstellationEnum::SBAS || id == ConstellationEnum::AusNZ || id == ConstellationEnum::GBAS ||
+           id == ConstellationEnum::SBS || id == ConstellationEnum::AusNZ || id == ConstellationEnum::GBAS ||
            id == ConstellationEnum::NSAS || id == ConstellationEnum::ASAL;
   }
   bool is_mixed() const { return id == ConstellationEnum::Mixed; }
@@ -151,17 +114,28 @@ struct Sv {
   // Sv(u8 prn, Constellation cons) : prn(prn), constellation(cons) {}
   // Sv(ConstellationEnum cons_enum) : prn(0), constellation(cons_enum) {}
   // Sv(Constellation cons) : prn(0), constellation(cons) {}
-  static Sv from_str(std::string_view str) {
-    std::string_view first(str.data(), 1);
+  static NavResult<Sv> from_str(const char* str) {
+    std::string_view view(&str[1]);
+    char first[] = {str[0], '\0'};
     auto constellation = Constellation::form_str(first);
-    u8 prn;
-    auto [ptr, ec] = std::from_chars(str.data() + 1, str.data() + str.size(), prn);
-    if (ec != std::errc()) {
-      auto error_msg = std::format("Unable to parse string \"{}\" to Sv", std::string(str.data() + 1));
+    if (constellation.is_err()) {
+      auto error_msg = std::format("Unable to parse string \"{}\" to Constellation", &str[0]);
       nav_error(error_msg);
       throw std::runtime_error(error_msg);
     }
-    return Sv{prn, constellation};
+    u8 prn;
+    if (std::all_of(view.begin(), view.end(), [](char c) { return std::isspace(c); })) {
+      prn = 0;
+    } else {
+      auto [ptr, ec] = std::from_chars(view.data(), view.data() + view.size(), prn);
+      if (ec != std::errc()) {
+        // auto error_msg = std::format("Unable to parse string \"{}\" to Sv", std::string(str.data() + 1));
+        // nav_error(error_msg);
+        // throw std::runtime_error(error_msg);
+        return Err(errors::NavError::Utils::Gnss::ParseSvStringError);
+      }
+    }
+    return Ok(Sv{prn, constellation.unwrap_unchecked()});
   };
   constexpr inline bool operator!=(const Sv& rhs) const noexcept { return !(*this == rhs); }
   constexpr inline bool operator==(const Sv& rhs) const noexcept {
@@ -174,16 +148,22 @@ struct Sv {
   }
   constexpr inline auto operator<=>(const Sv& rhs) const {
     if (rhs.constellation != constellation) {
-      auto error_msg = "Cannot compare prn of Sv with different systems.";
-      nav_error(error_msg);
-      throw std::runtime_error(error_msg);
+      return rhs.constellation.id <=> constellation.id;
+      // auto error_msg = "Cannot compare prn of Sv with different systems.";
+      // nav_error(error_msg);
+      // throw std::runtime_error(error_msg);
     }
     return prn <=> rhs.prn;
   }
 
+  operator bool() const noexcept { return !(constellation.id == ConstellationEnum::NONE || prn == 0); }
+
   u8 prn;
   Constellation constellation;
 };
+
+std::vector<Sv> get_sv_sats(ConstellationEnum cons);
+
 }  // namespace navp::sensors::gnss
 
 template <>
@@ -199,23 +179,21 @@ struct std::formatter<navp::sensors::gnss::Constellation, char> {
     switch (cons.id) {
       case ConstellationEnum::GPS:
         return std::format_to(ctx.out(), "G");
-      case ConstellationEnum::Glonass:
+      case ConstellationEnum::GLO:
         return std::format_to(ctx.out(), "R");
-      case ConstellationEnum::Galileo:
+      case ConstellationEnum::GAL:
         return std::format_to(ctx.out(), "E");
-      case ConstellationEnum::BeiDou:
+      case ConstellationEnum::BDS:
         return std::format_to(ctx.out(), "C");
-      case ConstellationEnum::QZSS:
+      case ConstellationEnum::QZS:
         return std::format_to(ctx.out(), "J");
-      case ConstellationEnum::IRNSS:
+      case ConstellationEnum::IRN:
         return std::format_to(ctx.out(), "I");
       default: {
         if (cons.is_sbas()) {
           return std::format_to(ctx.out(), "S");
-        } else if (cons.is_mixed()) {
-          return std::format_to(ctx.out(), "M");
         } else {
-          throw std::format("Format Constellation {} error", static_cast<navp::u8>(cons.id));
+          return std::format_to(ctx.out(), "-");
         }
       }
     }
@@ -230,6 +208,19 @@ struct std::formatter<navp::sensors::gnss::Sv, char> {
   }
   template <class FormatContext>
   auto format(navp::sensors::gnss::Sv sv, FormatContext& ctx) const {
-    return std::format_to(ctx.out(), "{}{:02}", sv.constellation, sv.prn);
+    if (sv.prn == 0) {
+      return std::format_to(ctx.out(), "{}--", sv.constellation);
+    }
+    return std::format_to(ctx.out(), "{}{:02d}", sv.constellation, sv.prn);
   }
 };
+
+namespace std {
+template <>
+struct hash<navp::sensors::gnss::Sv> {
+  size_t operator()(const navp::sensors::gnss::Sv& sv) const {
+    // 结合两个成员的哈希值
+    return hash<navp::u8>()(sv.prn) ^ (hash<navp::u8>()((navp::u8)(sv.constellation.id)) << 1);
+  }
+};
+}  // namespace std

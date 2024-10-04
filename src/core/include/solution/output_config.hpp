@@ -15,7 +15,7 @@ struct TimeConfig {
 };
 
 struct CoordConfig {
-  CoordSystemEnum coord_type;
+  utils::CoordSystemEnum coord_type;
   u8 precision;
 };
 

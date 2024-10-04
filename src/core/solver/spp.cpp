@@ -1,0 +1,10 @@
+#include "solution/spp.hpp"
+
+using navp::i32;
+
+i32 main(i32 argc, char* argv[]) {
+  using namespace navp::solution;
+
+  Spp spp("../config/spp_config.json");
+  return 0;
+}

@@ -15,9 +15,9 @@ enum class AngleEnum : u8 {
   Nmea,
 };
 
-constexpr double CST_PI = std::numbers::pi;
-constexpr double CST_D2R = CST_PI / 180.0;
-constexpr double CST_R2D = 180.0 / CST_PI;
+constexpr f64 CST_PI = std::numbers::pi;
+constexpr f64 CST_D2R = CST_PI / 180.0;
+constexpr f64 CST_R2D = 180.0 / CST_PI;
 
 // turn a degress to a radians
 template <std::floating_point T>
@@ -41,11 +41,11 @@ struct DDmmss {
   template <std::floating_point U = T>
     requires std::is_same_v<std::common_type_t<U, T>, T>
   static constexpr DDmmss form_degress(U deg) {
-    T hh = int(deg);
+    T hh = i32(deg);
     T temp1 = (deg - hh) * 60;
-    T mm = int(temp1);
+    T mm = i32(temp1);
     T temp2 = (temp1 - mm) * 60;
-    T ss = int(temp2);
+    T ss = i32(temp2);
     return DDmmss{hh, mm, ss};
   }
 

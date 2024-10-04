@@ -7,6 +7,11 @@
 
 namespace navp::solution {
 
+using utils::Attitude;
+using utils::Coordinate;
+using utils::NavMatrix33f64;
+using utils::XYZ;
+
 enum class PositioningMode : u8 {
   SPP = 0,
   RTK = 1,
@@ -21,9 +26,9 @@ struct PositioningResult {
   Coordinate<XYZ> position;
   Coordinate<XYZ> velicity;
   Attitude attitude;
-  Matrix3d pos_var;
-  Matrix3d vel_var;
-  Matrix3d att_var;
+  NavMatrix33f64 pos_var;
+  NavMatrix33f64 vel_var;
+  NavMatrix33f64 att_var;
   PositioningMode mode;
   //   void write(std::istream& os) const noexcept;
 };

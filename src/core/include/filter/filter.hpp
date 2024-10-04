@@ -11,11 +11,14 @@ using navp::Epoch;
 using navp::sensors::gnss::Carrier;
 using navp::sensors::gnss::Sv;
 
-// clang-format off
-// typedef std::variant<MaskFilter<Sv>, 
-//                     MaskFilter<Carrier>,
-//                     MaskFilter<Epoch<UTC>>,
-//                     std::monostate> FilterGnssItems;
-// clang-format on
+struct MaskFilter {
+  CompareOperatorEnum op;
+  FilterItems item;
+};
+
+template <typename Self>
+void mask_filter(Self& self, const MaskFilter& filter) noexcept;
+template <typename Self>
+Self mask_filter(const Self& self, const MaskFilter& filter) noexcept;
 
 }  // namespace navp::filter

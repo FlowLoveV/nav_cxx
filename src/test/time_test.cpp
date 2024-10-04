@@ -5,8 +5,9 @@
 #include "utils/macro.hpp"
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
-#include "utils/time.hpp"
 #include "rfl/json.hpp"
+#include "utils/gTime.hpp"
+#include "utils/time.hpp"
 
 using namespace navp;
 using namespace std::chrono;
@@ -54,7 +55,7 @@ TEST_CASE("constructors") {
 
   // from str,the str should be expresed in utc style
   // the date in string is utc date
-  Utc utc3 = Utc::from_str("%Y-%m-%d %H:%M:%S", "2024-7-23 17:32:30.1");
+  Utc utc3 = Utc::from_str("%Y-%m-%d %H:%M:%S", "2024-7-23 17:32:30.1").unwrap();
   auto [y3, m3, d3, H3, M3, S3, N3] = utc3.utc_date();
   CHECK(y3 == 2024);
   CHECK(m3 == 7);
@@ -64,10 +65,10 @@ TEST_CASE("constructors") {
   CHECK(S3 == 30);
   CHECK(N3 == 1E8);
 
-  Gpst gpst2 = Gpst::from_str("%Y-%m-%d %H:%M:%S", "2024-7-23 17:32:30.1");
+  Gpst gpst2 = Gpst::from_str("%Y-%m-%d %H:%M:%S", "2024-7-23 17:32:30.1").unwrap();
   // As of July 23, 2024, GPST is 18 seconds offset from UTC
   CHECK_EQ(NAV_FORMAT("{}", gpst2), "2024-07-23 17:32:48.100000000");
-  Bdt bdt2 = Bdt::from_str("%Y-%m-%d %H:%M:%S", "2024-7-23 17:32:30.1");
+  Bdt bdt2 = Bdt::from_str("%Y-%m-%d %H:%M:%S", "2024-7-23 17:32:30.1").unwrap();
   // As of July 23, 2024, BDT is 4 seconds offset from UTC
   CHECK_EQ(NAV_FORMAT("{}", bdt2), "2024-07-23 17:32:34.100000000");
 }
@@ -99,5 +100,12 @@ TEST_CASE("formatter") {
 TEST_CASE("reflect") {
   auto utc = Epoch<UTC>::now();
   auto json = rfl::json::write(utc);
-  std::println("{}",json);
+  std::println("{}", json);
+}
+
+TEST_CASE("gtime") {
+  auto utc = Epoch<UTC>::from_str("%Y-%m-%d %H:%M:%S", "2021-11-14 07:00:00").unwrap();
+  utils::GTime gtime = utc;
+  Epoch<UTC> utc_verse(gtime);
+  NAV_PRINTLN("{}", utc_verse);
 }

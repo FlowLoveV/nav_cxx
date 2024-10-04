@@ -1,26 +1,67 @@
 #pragma once
 
-#include "types.hpp"
-
+#include <cstdint>
 namespace navp::errors {
 
-enum class TopErrorEnum : u8 {
-  InitializeError,
-  ReadConfigError,
-  ReadInputError,
-  ProcessError,
-  OutputError,
-  UnknownError,
+struct NavError {
+  struct Initalize {
+    struct GetArguments {
+      enum : uint16_t {
+        NotEnoughArguments = 0,
+        ErrorArguments,
+        UnknownArguments,
+      };
+    };
+
+    struct Configuration {
+      enum : uint16_t {
+        NoSppConfigurationFile = 100,
+        ParseSppConfigurationError,
+      };
+    };
+
+    struct ReadEphemerisFile {};
+
+    struct ReadGnssObservationFile {};
+
+    struct ReadImuRawFile {};
+  };
+
+  struct Utils {
+    struct Gnss {
+      enum : uint16_t {
+        ParseSvStringError = 1000,
+        ParseConstellationStringError,
+        ParseCarrierStringError,
+      };
+    };
+
+    struct Time {
+      enum : uint16_t {
+        ParseEpochError = 1100,
+      };
+    };
+
+    struct Filter {
+      enum : uint16_t {
+        ParseOperandError = 1110,
+      };
+    };
+  };
+
+  struct PreProcess {};
+
+  struct Process {
+    struct Gnss {
+      struct EphemerisSolver {
+        enum : uint16_t {
+          KeplerIterationOvrflow = 2000,
+        };
+      };
+    };
+  };
+
+  struct OutPut {};
 };
 
-struct nav_err_code {
-  u32 top : 4;
-  u32 mid : 8;
-  u32 details : 24;
-
-  virtual std::string err_name(nav_err_code code) noexcept = 0;
-};
-
-struct nav_err : public nav_err_code, public std::exception {};
-
-}  // namespace navp
+}  // namespace navp::errors

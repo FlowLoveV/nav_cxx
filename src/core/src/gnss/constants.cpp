@@ -1,6 +1,8 @@
+#include "sensors/gnss/constants.hpp"
+
 #include "sensors/gnss/carrier.hpp"
 
-namespace navp::constants {
+namespace navp::sensors::gnss {
 
 using navp::sensors::gnss::CarrierEnum;
 
@@ -30,4 +32,4 @@ const boost::bimap<std::string, CarrierEnum> CARRIER_TABLE = []() {
   return bimap;
 }();
 
-}  // namespace navp::constants
+}  // namespace navp::sensors::gnss
