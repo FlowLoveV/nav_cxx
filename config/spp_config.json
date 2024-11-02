@@ -1,7 +1,6 @@
 {
     "navigation_files_path": [
-        "/root/project/nav_cxx/test_resources/SPP/NovatelOEM20211114-01.nav",
-        "/root/project/nav_cxx/test_resources/SPP/NovatelOEM20211114-01.21N"
+        "/root/project/nav_cxx/test_resources/NAV/V4/BRD400DLR_S_20230710000_01D_MN.rnx"
     ],
     "observation_path": "/root/project/nav_cxx/test_resources/SPP/NovatelOEM20211114-01.obs",
     "output_path": "/root/project/nav_cxx/test_resources/SPP/res.txt",

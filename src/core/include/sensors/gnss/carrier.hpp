@@ -5,15 +5,16 @@
 #include <format>
 
 #include "utils/error.hpp"
+#include "utils/macro.hpp"
 #include "utils/result.hpp"
 #include "utils/types.hpp"
 
 namespace navp::sensors::gnss {
-enum class CarrierEnum : u8;
+enum class NAVP_EXPORT CarrierEnum : u8;
 }
 
 namespace navp::sensors::gnss {
-extern const boost::bimap<std::string, navp::sensors::gnss::CarrierEnum> CARRIER_TABLE;
+NAVP_EXPORT extern const boost::bimap<std::string, navp::sensors::gnss::CarrierEnum> CARRIER_TABLE;
 }
 
 namespace navp::sensors::gnss {
@@ -73,7 +74,7 @@ enum class CarrierEnum : u8 {
   U2,
 };
 
-struct Carrier {
+struct NAVP_EXPORT Carrier {
   // Carrier() : id(CarrierEnum::L1) {}
   // Carrier(CarrierEnum carrier) : id(carrier) {}
   // from_str
@@ -97,7 +98,7 @@ struct Carrier {
 }  // namespace navp::sensors::gnss
 
 template <>
-struct std::formatter<navp::sensors::gnss::Carrier, char> {
+struct NAVP_EXPORT std::formatter<navp::sensors::gnss::Carrier, char> {
   template <class ParseContext>
   constexpr auto parse(ParseContext& ctx) {
     return ctx.begin();

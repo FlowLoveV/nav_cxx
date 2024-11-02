@@ -1,8 +1,6 @@
 #include <matplot/matplot.h>
 
-#include <cmath>
-
-namespace nav::plotter {
+namespace navp::plotter {
 
 void example_01();
 

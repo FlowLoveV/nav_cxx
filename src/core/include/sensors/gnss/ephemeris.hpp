@@ -6,10 +6,11 @@
 #include "sv.hpp"
 #include "utils/gTime.hpp"
 #include "utils/eigen.hpp"
+#include "utils/macro.hpp"
 
 namespace navp::sensors::gnss {
 
-struct KeplerEph {
+struct NAVP_EXPORT KeplerEph {
   f64 A = 0;     ///< semi major axis
   f64 e = 0;     ///< eccentricity
   f64 i0 = 0;    ///< inclination
@@ -29,9 +30,9 @@ struct KeplerEph {
   f64 Adot = 0;  ///< rate of A
 };
 
-struct BrdcEph {};
+struct NAVP_EXPORT BrdcEph {};
 
-struct Eph : BrdcEph, KeplerEph {
+struct NAVP_EXPORT Eph : BrdcEph, KeplerEph {
   NavMsgTypeEnum type = NavMsgTypeEnum::NONE;  ///< message type
   Sv Sat;                                      ///< satellite number
   i32 iode = -1;                               ///< GPS/QZS: IODE, GAL: IODnav
@@ -86,7 +87,7 @@ struct Eph : BrdcEph, KeplerEph {
   i32 fitFlag = 0;   ///< fit flag
 };
 
-struct Geph : BrdcEph {
+struct NAVP_EXPORT Geph : BrdcEph {
   NavMsgTypeEnum type = NavMsgTypeEnum::NONE;  ///< message type
   Sv Sat;                                      ///< satellite number
   i32 iode = -1;                               ///< IODE (0-6 bit of tb field)
@@ -115,7 +116,7 @@ struct Geph : BrdcEph {
   i32 N4;         ///< 4-year interval number
 };
 
-struct Pclk {
+struct NAVP_EXPORT Pclk {
   f64 clk = 999999.999999;  ///< satellite clock (s)
   f64 clkStd = 0;           ///< satellite clock std (s)
   i32 clkIndex;                ///< clock index for multiple files
@@ -123,7 +124,7 @@ struct Pclk {
 
 /** precise ephemeris
  */
-struct Peph : Pclk {
+struct NAVP_EXPORT Peph : Pclk {
   Sv Sat;                                            ///< satellite number
   utils::GTime time;                                 ///< time (GPST)
   i32 index;                                         ///< ephemeris index for multiple files
@@ -135,7 +136,7 @@ struct Peph : Pclk {
 
 /** Satellite attitude
  */
-struct Att {
+struct NAVP_EXPORT Att {
   std::string id;
   utils::GTime time;  ///< time (GPST)
   i32 index;          ///< ephemeris index for multiple files
@@ -145,7 +146,7 @@ struct Att {
 
 /** SBAS ephemeris
  */
-struct Seph : BrdcEph {
+struct NAVP_EXPORT Seph : BrdcEph {
   NavMsgTypeEnum type = NavMsgTypeEnum::NONE;  ///< message type
   Sv Sat;                                      ///< satellite number
   utils::GTime t0;                             ///< reference epoch time (GPST)
@@ -165,7 +166,7 @@ struct Seph : BrdcEph {
 
 /** GPS/QZS CNAV/CNAV-2 or BDS CNAV-1/CNAV-2/CNAV-3 ephemeris
  */
-struct Ceph : KeplerEph {
+struct NAVP_EXPORT Ceph : KeplerEph {
   NavMsgTypeEnum type = NavMsgTypeEnum::NONE;  ///< message type
   SatTypeEnum orb = SatTypeEnum::NONE;         ///< BDS sat/orbit type
   Sv Sat;                                      ///< satellite number
@@ -203,7 +204,7 @@ struct Ceph : KeplerEph {
 
 /** system Time offset message
  */
-struct STO {
+struct NAVP_EXPORT STO {
   NavMsgTypeEnum type = NavMsgTypeEnum::NONE;  ///< message type
   Sv Sat;                                      ///< satellite number
   utils::GTime tot;                            ///< reference epoch for time offset information
@@ -221,7 +222,7 @@ struct STO {
 
 /** EOP message
  */
-struct EOP {
+struct NAVP_EXPORT EOP {
   NavMsgTypeEnum type = NavMsgTypeEnum::NONE;  ///< message type
   Sv Sat;                                      ///< satellite number
   utils::GTime teop;                           ///< reference epoch of EOP data
@@ -242,7 +243,7 @@ struct EOP {
 
 /** ionosphere message
  */
-struct ION {
+struct NAVP_EXPORT ION {
   NavMsgTypeEnum type = NavMsgTypeEnum::NONE;  ///< message type
   Sv Sat;                                      ///< satellite number
   utils::GTime ttm;                            ///< transmission time

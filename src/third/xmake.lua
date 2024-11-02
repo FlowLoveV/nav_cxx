@@ -12,7 +12,7 @@ add_requires("spdlog",{
     version = "=1.14.1",
     configs = {
         shared = true,
-        cppstd = "c++20",
+        cppstd = "c++23",
         defines = { "SPDLOG_USE_STD_FORMAT" } -- Add macro definition to enable std::format
     }
 })
@@ -44,13 +44,6 @@ add_requires("fast_float",{
         cppstd = "c++23"
     }
 })
--- add_requires("date",{
---     version = "3.0.1",
---     configs = {
---         shared = true,
---         cppstd = "c++23"
---     }
--- })
 add_requires("proj",{
     -- version = "9.4.1",
     configs = {
@@ -65,8 +58,14 @@ add_requires("stringzilla",{
         cppstd = "c++23",
     }
 })
--- add_requires("boost", {configs = {shared = true}})
 add_requires("cpptrace",{
+    configs = {
+        shared = true,
+        cppstd = "c++23",
+    }
+})
+add_requires("flatbuffers",{
+    version = "v24.3.25",
     configs = {
         shared = true,
         cppstd = "c++23",
@@ -117,6 +116,7 @@ target("reflect-cpp")
     add_includedirs("reflect-cpp/include",{public = true})
     add_files("reflect-cpp/src/yyjson.c")
     add_packages("toml++",{public = true})
+    add_packages("flatbuffers",{public = true})
 target_end()
 
 

@@ -2,11 +2,12 @@
 
 #include "enums.hpp"
 #include "sv.hpp"
+#include "utils/macro.hpp"
 
 namespace navp::sensors::gnss {
 
 // GM(MU)
-struct GM {
+struct NAVP_EXPORT GM {
   inline static constexpr f64 GPS = 3.9860050E14;
   inline static constexpr f64 BDS = 3.986004418E14;
   inline static constexpr f64 GLO = 3.9860044E14;
@@ -14,21 +15,21 @@ struct GM {
 };
 
 // Omega(Earth rotation speed)
-struct Omega {
+struct NAVP_EXPORT Omega {
   inline static constexpr f64 GPS = 7.2921151467E-5;
   inline static constexpr f64 BDS = 7.292115E-5;
   inline static constexpr f64 GLO = 7.292115E-5;
   inline static constexpr f64 GAL = 7.2921151467E-5;
 };
 
-struct DtrF {
+struct NAVP_EXPORT DtrF {
   inline static constexpr f64 GPS = -0.000000000444280763339306;
   inline static constexpr f64 BDS = -0.00000000044428073090439775;
   inline static constexpr f64 GAL = -0.00000000044428073090439775;
 };
 
 // Max Toe
-struct MaxToe {
+struct NAVP_EXPORT MaxToe {
   inline static constexpr f64 GPS = 7200.0;
   inline static constexpr f64 QZS = 3600.0;
   inline static constexpr f64 GAL = 9600.0;
@@ -37,11 +38,13 @@ struct MaxToe {
   inline static constexpr f64 SBAS = 360.0;
 };
 
-struct MaxIterNumber {
+struct NAVP_EXPORT MaxIterNumber {
   inline static constexpr uint8_t KEPLER = 30;
 };
 
-struct Constants {
+struct NAVP_EXPORT Constants {
+  inline static constexpr f64 CLIGHT = 299792458.0;
+
   static constexpr f64 gm(const Sv& sv) {
     switch (sv.constellation.id) {
       case ConstellationEnum::BDS:

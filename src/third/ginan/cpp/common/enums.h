@@ -15,7 +15,7 @@ typedef enum
 	FTYPE_NONE,
 
 	/* Base carrier frequencies */
-	F1 = 1,		 	//  1575.42  MHz: GPS L1, GAL E1,  BDS B1,  QZS L1,  SBS L1,
+	F1 = 1,		 	//  1575.42  MHz: GPS L1, GAL E1,  BDS B1C,  QZS L1,  SBS L1,
 	F2 = 2,			//  1227.60  MHz: GPS L2, QZS L2,
 	F5 = 5,			//  1176.45  MHz: GPS L5, GAL E5A, BDS B2A, QZS L5, SBS L5
 	F6 = 6,			//  1278.75  MHz: GAL E6, QZS L6,
@@ -26,8 +26,8 @@ typedef enum
 	G3 = 13,		//  1202.025 MHz: GLO G3,
 	G4 = 14,		//  1600.995 MHz  GLO G1A
 	G6 = 16,		//  1248.08  MHz: GLO G2A,
-	B1 = 21,		//  1561.098 MHz: BDS B2-1,
-	B3 = 23,		//  1268.52  MHz: BDS B3
+	B1 = 21,		//  1561.098 MHz: BDS B1I,
+	B3 = 23,		//  1268.52  MHz: BDS B3I,
 	I9 = 39,		//  2492.028 MHz: IRN S9
 	NUM_FTYPES,
 } E_FType;

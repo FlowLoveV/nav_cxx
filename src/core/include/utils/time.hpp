@@ -6,6 +6,7 @@
 #include "types.hpp"
 #include "utils/error.hpp"
 #include "utils/gTime.hpp"
+#include "utils/macro.hpp"
 #include "utils/result.hpp"
 
 // [formatter-doc](https://zh.cppreference.com/w/cpp/chrono/system_clock/formatter)
@@ -23,7 +24,7 @@ template <typename _Duration = std::chrono::duration<long, std::ratio<1, 1000000
 using bds_time = time_point<bds_clock, _Duration>;
 using bds_seconds = bds_time<seconds>;
 
-class bds_clock {
+class NAVP_EXPORT bds_clock {
  public:
   using rep = system_clock::rep;
   using period = system_clock::period;
@@ -56,7 +57,7 @@ inline constexpr bool is_clock_v<navp::details::bds_clock> = true;
 }  // namespace std::chrono
 
 template <typename _Duration, typename _CharT>
-struct std::formatter<navp::details::bds_time<_Duration>, _CharT> : __format::__formatter_chrono<_CharT> {
+struct NAVP_EXPORT std::formatter<navp::details::bds_time<_Duration>, _CharT> : __format::__formatter_chrono<_CharT> {
   template <typename _ParseContext>
   constexpr typename _ParseContext::iterator parse(_ParseContext& __pc) {
     return _M_f._M_parse(__pc, __format::_ZonedDateTime);
@@ -79,27 +80,6 @@ struct std::formatter<navp::details::bds_time<_Duration>, _CharT> : __format::__
 
 namespace navp {
 
-// template <typename T>
-// requires std::chrono::__is_time_point_v<T>
-// constexpr auto ymd_of(T t) -> std::tuple<i32, unsigned, unsigned> {
-//   const auto _sys_days = std::chrono::clock_cast<std::chrono::system_clock>(t);
-//   // change duration type
-//   const auto sys_days = time_point_cast<std::chrono::duration<long,
-//   std::ratio<86400>>>(_sys_days);
-//   // considering leaps between
-//   auto ymd = std::chrono::year_month_day{sys_days};
-//   return std::make_tuple(i32(ymd.year()), unsigned(ymd.month()), unsigned(ymd.day()));
-// }
-
-// template <typename T>
-// requires std::chrono::__is_time_point_v<T>
-// constexpr auto hms_of(T t) -> std::tuple<long, long, long> {
-//   auto days = std::chrono::floor<std::chrono::days>(t);
-//   auto frac = t - days;
-//   auto hms = std::chrono::hh_mm_ss(frac);
-//   return std::make_tuple(hms.hours().count(), hms.minutes().count(), hms.seconds().count());
-// }
-
 enum TimeScaleEnum : u8 {
   UTC,
   GPST,
@@ -111,7 +91,7 @@ struct Epoch;
 
 // epoch_cast
 template <TimeScaleEnum Dst, TimeScaleEnum Src>
-Epoch<Dst> epoch_cast(const Epoch<Src>& src) {
+NAVP_EXPORT Epoch<Dst> epoch_cast(const Epoch<Src>& src) {
   if constexpr (Dst == Src) {
     return src;
   } else {
@@ -127,12 +107,12 @@ struct EpochReflectHelper {
 };
 
 // convert a f64 second to [long second,long nanosecond]
-std::tuple<long, long> convert_seconds(f64 seconds);
+NAVP_EXPORT std::tuple<long, long> convert_seconds(f64 seconds);
 
 // convert [u8 second,long nanosecond] to a f64 second
-f64 convert_seconds(long second, long nanos);
+NAVP_EXPORT f64 convert_seconds(long second, long nanos);
 
-bool is_leap_year(i32 year);
+NAVP_EXPORT bool is_leap_year(i32 year);
 
 template <typename T>
 struct EpochPayload {
@@ -146,9 +126,7 @@ struct EpochPayload {
   }
 
   // to f128 seconds
-  operator f128() const noexcept {
-    return static_cast<f128>(this->time_point().time_since_epoch().count());
-  }
+  operator f128() const noexcept { return static_cast<f128>(this->time_point().time_since_epoch().count()); }
   // to long nanos
   operator long() const noexcept { return this->time_point().time_since_epoch().count(); }
   // plus / minus opearator
@@ -467,7 +445,7 @@ struct EpochPayload {
 };  // namespace details
 
 template <>
-struct Epoch<UTC> : public details::EpochPayload<Epoch<UTC>> {
+struct NAVP_EXPORT Epoch<UTC> : public details::EpochPayload<Epoch<UTC>> {
   typedef std::chrono::utc_clock clock_type;
   typedef std::chrono::duration<long, std::ratio<1, 1000000000>> duration_type;
   typedef std::chrono::time_point<clock_type, duration_type> time_point_type;
@@ -507,7 +485,7 @@ struct Epoch<UTC> : public details::EpochPayload<Epoch<UTC>> {
 };
 
 template <>
-struct Epoch<GPST> : public details::EpochPayload<Epoch<GPST>> {
+struct NAVP_EXPORT Epoch<GPST> : public details::EpochPayload<Epoch<GPST>> {
   typedef std::chrono::gps_clock clock_type;
   typedef std::chrono::duration<long, std::ratio<1, 1000000000>> duration_type;
   typedef std::chrono::time_point<clock_type, duration_type> time_point_type;
@@ -547,7 +525,7 @@ struct Epoch<GPST> : public details::EpochPayload<Epoch<GPST>> {
 };
 
 template <>
-struct Epoch<BDT> : public details::EpochPayload<Epoch<BDT>> {
+struct NAVP_EXPORT Epoch<BDT> : public details::EpochPayload<Epoch<BDT>> {
   typedef details::bds_clock clock_type;
   typedef std::chrono::duration<long, std::ratio<1, 1000000000>> duration_type;
   typedef std::chrono::time_point<clock_type, duration_type> time_point_type;
@@ -596,17 +574,22 @@ constexpr auto operator<=>(const Epoch<T>& lhs, const Epoch<T>& rhs) {
   return lhs.tp <=> rhs.tp;
 }
 
+// export
+typedef Epoch<UTC> EpochUtc;
+typedef Epoch<GPST> EpochGpst;
+typedef Epoch<BDT> EpochBdt;
+
 }  // namespace navp
 
 // std::hash
 template <navp::TimeScaleEnum T>
-struct std::hash<navp::Epoch<T>> {
+struct NAVP_EXPORT std::hash<navp::Epoch<T>> {
   std::size_t operator()(const navp::Epoch<T>& d) const noexcept { return d.tp.time_since_epoch().count(); }
 };
 
 // std::formatter
 template <typename CharT>
-struct std::formatter<navp::Epoch<navp::GPST>, CharT> : __format::__formatter_chrono<CharT> {
+struct NAVP_EXPORT std::formatter<navp::Epoch<navp::GPST>, CharT> : __format::__formatter_chrono<CharT> {
   using _Duration = navp::Epoch<navp::GPST>::duration_type;
 
   template <typename _ParseContext>
@@ -631,7 +614,7 @@ struct std::formatter<navp::Epoch<navp::GPST>, CharT> : __format::__formatter_ch
   __format::__formatter_chrono<CharT> _M_f;
 };
 template <typename CharT>
-struct std::formatter<navp::Epoch<navp::UTC>, CharT> : __format::__formatter_chrono<CharT> {
+struct NAVP_EXPORT std::formatter<navp::Epoch<navp::UTC>, CharT> : __format::__formatter_chrono<CharT> {
   using _Duration = navp::Epoch<navp::UTC>::duration_type;
 
   template <typename _ParseContext>
@@ -661,7 +644,7 @@ struct std::formatter<navp::Epoch<navp::UTC>, CharT> : __format::__formatter_chr
   __format::__formatter_chrono<CharT> _M_f;
 };
 template <typename CharT>
-struct std::formatter<navp::Epoch<navp::BDT>, CharT> : __format::__formatter_chrono<CharT> {
+struct NAVP_EXPORT std::formatter<navp::Epoch<navp::BDT>, CharT> : __format::__formatter_chrono<CharT> {
   using _Duration = navp::Epoch<navp::BDT>::duration_type;
 
   template <typename _ParseContext>

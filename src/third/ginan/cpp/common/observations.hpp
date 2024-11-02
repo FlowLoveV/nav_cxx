@@ -77,13 +77,14 @@ protected:
 struct RawSig
 {
 	E_ObsCode		code	= E_ObsCode::NONE;	///< Reported code type
+	bool			LLI		= false;			///< Loss of lock indicator
+	bool			invalid	= false;
+
 	double			L		= 0;				///< Carrier phase (cycles)
 	double			P		= 0;				///< Pseudorange (meters)
 	double			D		= 0;				///< Doppler
-	bool			LLI		= false;			///< Loss of lock indicator
 	double			snr		= 0;				///< Signal to Noise ratio (dB-Hz)
 
-	bool			invalid	= false;
 
 	bool operator < (const RawSig& b) const
 	{

@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "utils/eigen.hpp"
+#include "utils/macro.hpp"
 
 namespace navp::utils {
 
@@ -12,7 +13,7 @@ class EulerAngle;
 class Dcm;
 class Quaternion;
 
-class RotationVector : public AngleAxisf64 {
+class NAVP_EXPORT RotationVector : public AngleAxisf64 {
  public:
   using AngleAxisf64::AngleAxis;
   RotationVector(const NavVector3f64 &vec) noexcept;
@@ -33,7 +34,7 @@ class RotationVector : public AngleAxisf64 {
 
 // Rotation sequence : ZYX
 // x,y and z respectively represent roll pitch yaw, RPY
-class EulerAngle : public NavVector3f64 {
+class NAVP_EXPORT EulerAngle : public NavVector3f64 {
  public:
   using NavVector3f64::Matrix;
   [[nodiscard]] Dcm to_dcm() const noexcept;
@@ -44,7 +45,7 @@ class EulerAngle : public NavVector3f64 {
   auto format_as_string() const noexcept -> std::string;
 };
 
-class Dcm : public NavMatrix33f64 {
+class NAVP_EXPORT Dcm : public NavMatrix33f64 {
  public:
   using NavMatrix33f64::Matrix;
   [[nodiscard]] RotationVector to_rotationVector() const noexcept;
@@ -57,7 +58,7 @@ class Dcm : public NavMatrix33f64 {
   }
 };
 
-class Quaternion : public NavQuaternionf64 {
+class NAVP_EXPORT Quaternion : public NavQuaternionf64 {
  public:
   using NavQuaternionf64::Quaternion;
   [[nodiscard]] RotationVector to_rotationVector() const noexcept;
@@ -71,9 +72,9 @@ class Quaternion : public NavQuaternionf64 {
   }
 };
 
-typedef union {
+union NAVP_EXPORT Attitude {
   Quaternion qbn;
   Dcm cbn;
   EulerAngle euler;
-} Attitude;
+};
 }  // namespace navp::utils

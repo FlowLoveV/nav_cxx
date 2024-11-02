@@ -5,8 +5,6 @@
 #include <memory>
 #include <source_location>
 
-#include "utils/macro.hpp"
-
 #define _normal_logger_pattern "[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t] %v"
 #define _data_logger_pattern "%v"
 
@@ -80,7 +78,7 @@ std::shared_ptr<spdlog::logger> createDataSpdlogger(const std::string& loggerFil
 }
 
 // output source location using c20 source_location
-std::string sourceInformation(std::source_location location) {
+std::string source_information(std::source_location location) {
   return NAV_FORMAT("{}({}:{}) `{}`", location.file_name(), location.line(), location.column(),
                     location.function_name());
 }

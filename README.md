@@ -71,4 +71,6 @@ GTSAM 是一个用于处理大规模非线性优化和图优化的库，适用�
 #### 准备使用g2o替代ceres-solvers来实现因子图
 
 
+### 2024-11-2
+#### QCustomPlot [教程](https://lancelot-yagami.github.io/QCustomPlot-Manual/#/README)
 

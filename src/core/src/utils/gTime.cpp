@@ -1,6 +1,3 @@
-
-// #pragma GCC optimize ("O0")
-
 #include "utils/gTime.hpp"
 
 #include <math.h>
@@ -73,7 +70,7 @@ ostream& operator<<(ostream& stream, const Duration& duration) {
  * return : converted number (0.0:error)
  */
 f64 str2num(const char* s, i32 i, i32 n) {
-  f64 value;
+  double value;
   char str[256], *p = str;
 
   if (i < 0 || (i32)strlen(s) < i || (i32)sizeof(str) - 1 < n) return 0.;
@@ -81,7 +78,7 @@ f64 str2num(const char* s, i32 i, i32 n) {
   for (s += i; *s && --n >= 0; s++) *p++ = *s == 'd' || *s == 'D' ? 'E' : *s;
 
   *p = '\0';
-  return sscanf(str, "%lf", &value) == 1 ? value : 0;
+  return sscanf(str, "%lf", &value) == 1 ? static_cast<f64>(value) : 0;
 }
 
 /* convert substring in string to GTime struct
@@ -115,7 +112,6 @@ i32 str2time(const char* s, i32 i, i32 n, GTime& t, TimeSystemEnum tsys) {
   return 0;
 }
 
-// todo
 f64 leapSeconds(GTime time) {
   using namespace std::chrono;
   typedef std::chrono::duration<long, std::ratio<1, 1000000000>> duration_type;
@@ -124,7 +120,6 @@ f64 leapSeconds(GTime time) {
   auto utc = clock_cast<utc_clock>(gtime);
   const auto _li = get_leap_second_info(utc);
   return static_cast<f64>(_li.elapsed.count()) - 9;
-  return 0;
 }
 
 GTime yds2time(const f64* yds, TimeSystemEnum tsys) {

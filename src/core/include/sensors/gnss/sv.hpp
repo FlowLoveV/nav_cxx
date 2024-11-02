@@ -8,6 +8,7 @@
 #include "magic_enum.hpp"
 #include "utils/error.hpp"
 #include "utils/logger.hpp"
+#include "utils/macro.hpp"
 #include "utils/result.hpp"
 #include "utils/types.hpp"
 
@@ -22,7 +23,7 @@ inline auto constexpr NSATLEO = 78;  ///< potential number of LEO satellites, PR
 inline auto constexpr NSATBDS = 62;  ///< potential number of Beidou satellites, PRN goes from 1 to this number
 inline auto constexpr NSATSBS = 39;  ///< potential number of SBAS satellites, PRN goes from 1 to this number
 
-struct Constellation {
+struct NAVP_EXPORT Constellation {
   // constexpr Constellation() : id(ConstellationEnum::GPS) {}
   // constexpr Constellation(ConstellationEnum id) : id(id) {}
   static NavResult<Constellation> form_str(const char* str) {
@@ -105,11 +106,12 @@ struct Constellation {
   constexpr std::string_view name() const { return magic_enum::enum_name(id); }
   constexpr bool operator==(const Constellation& rhs) const { return this->id == rhs.id; }
   constexpr bool operator!=(const Constellation& rhs) const { return this->id != rhs.id; }
+  constexpr auto operator<=>(const Constellation& rhs) const { return id <=> rhs.id; }
 
   ConstellationEnum id;
 };
 
-struct Sv {
+struct NAVP_EXPORT Sv {
   // Sv(u8 prn, ConstellationEnum cons_enum) : prn(prn), constellation(cons_enum) {}
   // Sv(u8 prn, Constellation cons) : prn(prn), constellation(cons) {}
   // Sv(ConstellationEnum cons_enum) : prn(0), constellation(cons_enum) {}
@@ -167,7 +169,7 @@ std::vector<Sv> get_sv_sats(ConstellationEnum cons);
 }  // namespace navp::sensors::gnss
 
 template <>
-struct std::formatter<navp::sensors::gnss::Constellation, char> {
+struct NAVP_EXPORT std::formatter<navp::sensors::gnss::Constellation, char> {
   template <class ParseContext>
   constexpr auto parse(ParseContext& ctx) {
     return ctx.begin();
@@ -201,7 +203,7 @@ struct std::formatter<navp::sensors::gnss::Constellation, char> {
 };
 
 template <>
-struct std::formatter<navp::sensors::gnss::Sv, char> {
+struct NAVP_EXPORT std::formatter<navp::sensors::gnss::Sv, char> {
   template <class ParseContext>
   constexpr auto parse(ParseContext& ctx) {
     return ctx.begin();
@@ -217,9 +219,8 @@ struct std::formatter<navp::sensors::gnss::Sv, char> {
 
 namespace std {
 template <>
-struct hash<navp::sensors::gnss::Sv> {
+struct NAVP_EXPORT hash<navp::sensors::gnss::Sv> {
   size_t operator()(const navp::sensors::gnss::Sv& sv) const {
-    // 结合两个成员的哈希值
     return hash<navp::u8>()(sv.prn) ^ (hash<navp::u8>()((navp::u8)(sv.constellation.id)) << 1);
   }
 };

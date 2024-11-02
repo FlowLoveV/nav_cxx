@@ -1,96 +1,111 @@
-#include "io/rinex/rinex.hpp"
+#include "io/rinex/rinex_reader.hpp"
+#include "io/rinex/rinex_record.hpp"
+#include "io/rinex/rinex_stream.hpp"
+#include "sensors/gnss/navigation.hpp"
+#include "sensors/gnss/observation.hpp"
+
+using navp::sensors::gnss::GnssNavRecord;
+using navp::sensors::gnss::GnssObsRecord;
+using navp::sensors::gnss::ObsList;
 
 namespace navp::io::rinex {
 
-Rinex::Rinex(std::istream& inputstream) {
-  allocate_all_members();
-  details::readRnx(inputstream, this->cmn_info->type, *obs, *nav, this->obs_info->header, this->cmn_info->version,
-                   this->cmn_info->sys, this->obs_info->tsys, sys_code_types);
+RinexRecord::RinexRecord() : _station(std::make_shared<RinexStation>()), _nav(std::make_shared<Navigation>()) {}
+
+RinexRecord::~RinexRecord() = default;
+
+RinexStream::~RinexStream() = default;
+
+void RinexStream::decode_record(Record& record) {
+  // decode header
+  if (tellg() == 0) {
+    readRnxH(*this, _version, _type, _sys, _tsys,
+             _sys_code_types, *_nav, *_station);
+  }
+  if (_type == ' ') {
+    nav_warn("RinexStream receive an empty stream!");
+  }
+  // decode body
+  i32 stat = 0;
+  switch (_type) {
+    case 'O': {
+      if (auto gnss_obs = dynamic_cast<GnssObsRecord*>(&record); gnss_obs) {
+        ObsList obs_list;
+        stat = readRnxObs(*this, _version, _tsys, _sys_code_types, obs_list,
+                          *_station);
+        gnss_obs->add_obs_list(std::move(obs_list));
+        break;
+      } else {
+        nav_warn("RinexStream decode unmatched record!");
+      }
+      return;
+    }
+
+    case 'N': {
+      if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
+        stat = readRnxNav(*this, _version, _sys, *gnss_nav->nav);
+      } else {
+        nav_warn("RinexStream decode unmatched record!");
+      }
+      return;
+    }
+
+    case 'G': {
+      if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
+        stat = readRnxNav(*this, _version, ConstellationEnum::GLO, *gnss_nav->nav);
+      } else {
+        nav_warn("RinexStream decode unmatched record!");
+      }
+      return;
+    }
+
+    case 'H': {
+      if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
+        stat = readRnxNav(*this, _version, ConstellationEnum::SBS, *gnss_nav->nav);
+      } else {
+        nav_warn("RinexStream decode unmatched record!");
+      }
+      return;
+    }
+
+    case 'J': {
+      if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
+        stat = readRnxNav(*this, _version, ConstellationEnum::QZS, *gnss_nav->nav);  // extension
+      } else {
+        nav_warn("RinexStream decode unmatched record!");
+      }
+      return;
+    }
+
+    case 'L': {
+      if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
+        stat = readRnxNav(*this, _version, ConstellationEnum::GAL, *gnss_nav->nav);  // extension
+      } else {
+        nav_warn("RinexStream decode unmatched record!");
+      }
+      return;
+    }
+
+    case 'C': {
+      if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
+        stat = readRnxClk(*this, _version, *gnss_nav->nav);
+      } else {
+        nav_warn("RinexStream decode unmatched record!");
+      }
+      return;
+    }
+  }
+
+  if (stat) {
+    record_number++;
+  }
 }
 
-Rinex::Rinex(const char* path) {
-  std::ifstream inputstream(path);
-  allocate_all_members();
-  details::readRnx(inputstream, this->cmn_info->type, *obs, *nav, this->obs_info->header, this->cmn_info->version,
-                   this->cmn_info->sys, this->obs_info->tsys, sys_code_types);
+void RinexStream::encode_record(Record& record) {
+  // todo
+  nav_error("Not implentted yet!");
+  exit(-1);
 }
 
-Rinex::operator RinexObs() && noexcept {
-  return RinexObs{
-      std::move(this->obs),
-      std::move(this->sys_code_types),
-      std::move(this->cmn_info),
-      std::move(this->obs_info),
-  };
-}
-
-Rinex::operator RinexNav() && noexcept {
-  return RinexNav{
-      std::move(this->nav),
-      std::move(this->cmn_info),
-  };
-}
-
-Rinex::operator std::unique_ptr<RinexObs>() && noexcept {
-  return static_cast<std::unique_ptr<RinexObs>>(RinexObs{
-      std::move(this->obs),
-      std::move(this->sys_code_types),
-      std::move(this->cmn_info),
-      std::move(this->obs_info),
-  });
-}
-
-Rinex::operator std::unique_ptr<RinexNav>() && noexcept {
-  return static_cast<std::unique_ptr<RinexNav>>(RinexNav{
-      std::move(this->nav),
-      std::move(this->cmn_info),
-  });
-}
-
-void Rinex::allocate_all_members() {
-  this->cmn_info = std::make_unique<RinexCommonInfo>();
-  this->obs_info = std::make_unique<RinexObsInfo>();
-  this->obs = std::make_unique<ObsList>();
-  this->nav = std::make_unique<Navigation>();
-}
-
-RinexObs::RinexObs(std::unique_ptr<ObsList>&& obs_list,
-                   std::map<sensors::gnss::ConstellationEnum, std::map<i32, CodeType>>&& sys_code_types,
-                   std::unique_ptr<RinexCommonInfo>&& cmn_info, std::unique_ptr<RinexObsInfo>&& obs_info)
-    : obs_list(std::move(obs_list)),
-      sys_code_types(std::move(sys_code_types)),
-      cmn_info(std::move(cmn_info)),
-      obs_info(std::move(obs_info)) {}
-
-RinexObs::RinexObs(std::istream& inputstream) {
-  auto rinex = Rinex(inputstream);
-  *this = std::move(static_cast<RinexObs>(std::move(rinex)));
-}
-
-RinexObs::RinexObs(const char* path) {
-  auto rinex = Rinex(path);
-  *this = std::move(static_cast<RinexObs>(std::move(rinex)));
-}
-
-RinexObs::operator std::unique_ptr<RinexObs>() && noexcept { return std::make_unique<RinexObs>(std::move(*this)); }
-
-RinexObs::operator RecordGnssObs() && noexcept { return RecordGnssObs(std::move(*this).obs_list); }
-
-RinexNav::RinexNav(std::unique_ptr<Navigation>&& nav, std::unique_ptr<RinexCommonInfo>&& info)
-    : nav(std::move(nav)), info(std::move(info)) {}
-
-RinexNav::RinexNav(std::istream& inputstream) {
-  auto rinex = Rinex(inputstream);
-  *this = std::move(static_cast<RinexNav>(std::move(rinex)));
-}
-
-RinexNav::RinexNav(const char* path) {
-  auto rinex = Rinex(path);
-  *this = std::move(static_cast<RinexNav>(std::move(rinex)));
-}
-
-RinexNav::operator std::unique_ptr<RinexNav>() && noexcept { return std::make_unique<RinexNav>(std::move(*this)); }
-
-RinexNav::operator RecordGnssNav() && noexcept { return RecordGnssNav(std::move(*this).nav); }
 
 }  // namespace navp::io::rinex

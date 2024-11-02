@@ -7,6 +7,7 @@
 
 #include "utils/types.hpp"
 #include "sensors/gnss/enums.hpp"
+#include "utils/macro.hpp"
 
 namespace navp::utils {
 
@@ -308,7 +309,7 @@ struct MjDateTT {
   f64 to_j2000() const { return (f64)(val - MJD_j2000); }
 };
 
-struct UtcTime {
+struct NAVP_EXPORT UtcTime {
   f128 bigTime;  // Eugene: bigTime can be ambiguous, e.g. 1167264000.5, never know if GPST is 2017-01-01
                         // 00:00:17.5 or 2017-01-01 00:00:18.5
 

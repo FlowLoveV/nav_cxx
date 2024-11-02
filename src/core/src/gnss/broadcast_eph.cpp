@@ -23,7 +23,6 @@ using navp::utils::NavVector4f64;
 
 namespace navp::sensors::gnss {
 
-namespace details {
 // clang-format off
 struct BdsGroupDelay {
   f64 tgd1=0.0,tgd2=0.0,tgd_b1cp=0.0,tgd_b2ap=0.0,tgd_b2bi=0.0;
@@ -145,7 +144,6 @@ protected:
   void update_fdma_tgd(f64 dtaun) noexcept { this->tgd = dtaun; }
 };
 
-// clang-format on
 
 std::string BrdcEphResult::format_as_string() const noexcept {
   static constexpr auto pos_formatter =
@@ -159,7 +157,6 @@ std::string BrdcEphResult::format_as_string() const noexcept {
                      pos_formatter.format(pos[2]), vel_formatter.format(vel[0]), vel_formatter.format(vel[1]),
                      vel_formatter.format(vel[2]), dtsv_formatter.format(dtsv), dtsv_formatter.format(fd_dtsv));
 }
-}  // namespace details
 
 using utils::GTime;
 
@@ -945,12 +942,12 @@ void SephSolver::solve_clock(const utils::GTime& _t) noexcept {
  */
 BrdcEphSolver::BrdcEphSolver(const Navigation* _nav) noexcept
     : nav(_nav),
-      sv_status(std::make_shared<std::map<Epoch<UTC>, std::map<Sv, details::BrdcEphResult>>>()),
-      bds_gd(std::make_shared<details::BdsGroupDelay>()),
-      gps_gd(std::make_shared<details::GpsGroupDelay>()),
-      gal_gd(std::make_shared<details::GalGroupDelay>()),
-      qzs_gd(std::make_shared<details::QzsGroupDelay>()),
-      glo_gd(std::make_shared<details::GloGroupDelay>()),
+      sv_status(std::make_shared<std::map<EpochUtc, std::map<Sv, BrdcEphResult>>>()),
+      bds_gd(std::make_shared<BdsGroupDelay>()),
+      gps_gd(std::make_shared<GpsGroupDelay>()),
+      gal_gd(std::make_shared<GalGroupDelay>()),
+      qzs_gd(std::make_shared<QzsGroupDelay>()),
+      glo_gd(std::make_shared<GloGroupDelay>()),
       cache_bds_d1d2(nullptr),
       cache_gps_lnav(nullptr),
       cache_qzs_lnav(nullptr),
@@ -964,7 +961,7 @@ BrdcEphSolver::BrdcEphSolver(const Navigation* _nav) noexcept
       cache_qzs_cnv2(nullptr),
       cache_glo_fdma(nullptr) {}
 
-BrdcEphSolver::BrdcEphSolver(const RecordGnssNav& record_gnss_nav) noexcept
+BrdcEphSolver::BrdcEphSolver(const GnssNavRecord& record_gnss_nav) noexcept
     : BrdcEphSolver(record_gnss_nav.nav.get()) {}
 
 template <ConstellationEnum U, NavMsgTypeEnum T>
@@ -1077,7 +1074,7 @@ bool BrdcEphSolver::update_newest_glo_fdma(const utils::GTime& t) noexcept {
   return false;
 }
 
-bool BrdcEphSolver::update_sv_status_pos_vel(Epoch<UTC> t, Sv sv,
+bool BrdcEphSolver::update_sv_status_pos_vel(EpochUtc t, Sv sv,
                                              Option<std::tuple<NavVector3f64, NavVector3f64>>&& pv) noexcept {
   if (pv.is_some()) {
     auto [_pos, _vel] = pv.unwrap();
@@ -1089,7 +1086,7 @@ bool BrdcEphSolver::update_sv_status_pos_vel(Epoch<UTC> t, Sv sv,
   return false;
 }
 
-bool BrdcEphSolver::update_sv_status_clock(Epoch<UTC> t, Sv sv, const Option<std::tuple<f64, f64>>& clock) noexcept {
+bool BrdcEphSolver::update_sv_status_clock(EpochUtc t, Sv sv, const Option<std::tuple<f64, f64>>& clock) noexcept {
   if (clock.is_some()) {
     auto [_dt, _fd_dt] = clock.unwrap();
     (*sv_status)[t][sv].sv = sv;
@@ -1100,7 +1097,7 @@ bool BrdcEphSolver::update_sv_status_clock(Epoch<UTC> t, Sv sv, const Option<std
   return false;
 }
 
-std::vector<Sv> BrdcEphSolver::solve_sv_stat(const std::vector<Sv>& sv, Epoch<UTC> t) noexcept {
+std::vector<Sv> BrdcEphSolver::solve_sv_stat(EpochUtc t, const std::vector<Sv>& sv) noexcept {
   for (auto _sv : sv) {
     auto _cons = _sv.constellation.id;
     // GPS,BDS,QZS
@@ -1245,7 +1242,7 @@ void BrdcEphSolver::update_tgd(ConstellationEnum sys, const utils::GTime& t) noe
   }
 }
 
-auto BrdcEphSolver::quary_sv_status(Sv sv, Epoch<UTC> t) const noexcept -> const details::BrdcEphResult* {
+auto BrdcEphSolver::quary_sv_status(EpochUtc t, Sv sv) const noexcept -> const BrdcEphResult* {
   if (!sv_status->contains(t) && !sv_status->at(t).contains(sv)) {
     return nullptr;
   } else {
@@ -1253,12 +1250,12 @@ auto BrdcEphSolver::quary_sv_status(Sv sv, Epoch<UTC> t) const noexcept -> const
   }
 }
 
-std::vector<const details::BrdcEphResult*> BrdcEphSolver::quary_sv_status(const std::vector<Sv>& sv,
-                                                                          Epoch<UTC> t) const noexcept {
+std::vector<const BrdcEphResult*> BrdcEphSolver::quary_sv_status(EpochUtc t,
+                                                                          const std::vector<Sv>& sv) const noexcept {
   if (!sv_status->contains(t)) {
     return {};
   }
-  std::vector<const details::BrdcEphResult*> res;
+  std::vector<const BrdcEphResult*> res;
   res.reserve(sv.size());
   const auto& sv_map = sv_status->at(t);
   for (auto _sv : sv) {
@@ -1269,9 +1266,9 @@ std::vector<const details::BrdcEphResult*> BrdcEphSolver::quary_sv_status(const 
   return res;
 }
 
-std::vector<const details::BrdcEphResult*> BrdcEphSolver::quary_sv_status_unchecked(const std::vector<Sv>& sv,
-                                                                                    Epoch<UTC> t) const {
-  std::vector<const details::BrdcEphResult*> res;
+std::vector<const BrdcEphResult*> BrdcEphSolver::quary_sv_status_unchecked(EpochUtc t,
+                                                                                    const std::vector<Sv>& sv) const {
+  std::vector<const BrdcEphResult*> res;
   res.reserve(sv.size());
   const auto& sv_map = sv_status->at(t);
   for (auto _sv : sv) {
@@ -1280,8 +1277,52 @@ std::vector<const details::BrdcEphResult*> BrdcEphSolver::quary_sv_status_unchec
   return res;
 }
 
-auto BrdcEphSolver::quary_sv_status_unchecked(Sv sv, Epoch<UTC> t) const -> const details::BrdcEphResult* {
+auto BrdcEphSolver::quary_sv_status_unchecked(EpochUtc t, Sv sv) const -> const BrdcEphResult* {
   return &sv_status->at(t).at(sv);
+}
+
+auto BrdcEphSolver::quary_gps_tgd(EpochUtc t) noexcept -> const GpsGroupDelay* {
+  update_tgd(ConstellationEnum::GPS, static_cast<GTime>(t));
+  return this->gps_gd.get();
+}
+
+auto BrdcEphSolver::quary_bds_tgd(EpochUtc t) noexcept -> const BdsGroupDelay* {
+  update_tgd(ConstellationEnum::BDS, static_cast<GTime>(t));
+  return this->bds_gd.get();
+}
+
+auto BrdcEphSolver::quary_gal_tgd(EpochUtc t) noexcept -> const GalGroupDelay* {
+  update_tgd(ConstellationEnum::GAL, static_cast<GTime>(t));
+  return this->gal_gd.get();
+}
+
+auto BrdcEphSolver::quary_glo_tgd(EpochUtc t) noexcept -> const GloGroupDelay* {
+  update_tgd(ConstellationEnum::GLO, static_cast<GTime>(t));
+  return this->glo_gd.get();
+}
+
+auto BrdcEphSolver::quary_qzs_tgd(EpochUtc t) noexcept -> const QzsGroupDelay* {
+  update_tgd(ConstellationEnum::QZS, static_cast<GTime>(t));
+  return this->qzs_gd.get();
+}
+
+auto BrdcEphSolver::quary_frq_bias(Sv sv, EpochUtc t) const noexcept -> i32 {
+  if (sv.constellation.id != ConstellationEnum::GLO) {
+    return 0;
+  }
+  const auto& geph_map = nav->gephMap;
+  if (geph_map.contains(sv)) {
+    if (geph_map.at(sv).contains(NavMsgTypeEnum::FDMA)) {
+      for (const auto [toe, eph] : geph_map.at(sv).at(NavMsgTypeEnum::FDMA)) {
+        if (abs((static_cast<GTime>(t) - toe).to_double()) <= Constants::max_toe(sv)) {
+          return eph.frq;
+        }
+      }
+    }
+  } else if (nav->glo_fcn[sv.prn - 1] > 0) {
+    return nav->glo_fcn[sv.prn - 1] - 8;
+  }
+  return 0;
 }
 
 }  // namespace navp::sensors::gnss

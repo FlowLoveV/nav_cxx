@@ -40,3 +40,19 @@
 #else
 #define ANNOTATE(attr)
 #endif
+
+// export
+#ifdef NAVP_LIBRARY
+#ifdef _WIN32
+    #define NAVP_EXPORT __declspec(dllexport)
+#else
+    #define NAVP_EXPORT __attribute__((visibility("default")))
+#endif
+#else
+#ifdef _WIN32
+    #define NAVP_EXPORT __declspec(dllimport)
+#else
+    #define NAVP_EXPORT
+#endif
+#endif
+

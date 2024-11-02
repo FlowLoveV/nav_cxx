@@ -7,7 +7,7 @@
 #include <spdlog/spdlog.h>
 
 #include <source_location>
-
+#include "utils/macro.hpp"
 namespace navp {
 
 using spdlog::level::level_enum;
@@ -17,10 +17,10 @@ constexpr std::string logDirection = "../log/nav/";
 constexpr std::string dataDirection = "../log/data/";
 }  // namespace constants
 
-std::string sourceInformation(std::source_location location = std::source_location::current());
+NAVP_EXPORT std::string source_information(std::source_location location = std::source_location::current());
 
 #define nav_log(level, ...)                                                          \
-  navp::details::globalFormattedLogger->log(level, "{}", navp::sourceInformation()); \
+  navp::details::globalFormattedLogger->log(level, "{}", navp::source_information()); \
   navp::details::globalPureLogger->log(level, __VA_ARGS__);
 #define nav_trace(...) nav_log(spdlog::level::trace, __VA_ARGS__)
 #define nav_debug(...) nav_log(spdlog::level::debug, __VA_ARGS__)
@@ -63,14 +63,14 @@ namespace details {
 // create a global logger, output to file and stdout, with format:
 // [2024-04-23 11:58:28.135] [D] [thread 18488] can't find valid ephemeris
 // file path -> {workspace}/log/navlogger_$date$.txt
-extern std::shared_ptr<spdlog::logger> globalFormattedLogger;
+extern NAVP_EXPORT std::shared_ptr<spdlog::logger> globalFormattedLogger;
 
 // create a global logger,which output pure message with no more information
-extern std::shared_ptr<spdlog::logger> globalPureLogger;
+extern NAVP_EXPORT std::shared_ptr<spdlog::logger> globalPureLogger;
 
 // create a global data logger, output to file, with non-format
 // filepath -> {workspace}/data/data_$date$.txt
-extern std::shared_ptr<spdlog::logger> globalDataLogger;
+extern NAVP_EXPORT std::shared_ptr<spdlog::logger> globalDataLogger;
 }  // namespace details
 
 }  // namespace navp

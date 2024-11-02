@@ -1,9 +1,12 @@
 #pragma once
 
 #include <cstdint>
+
+#include "utils/macro.hpp"
+
 namespace navp::errors {
 
-struct NavError {
+struct NAVP_EXPORT NavError {
   struct Initalize {
     struct GetArguments {
       enum : uint16_t {
@@ -15,16 +18,21 @@ struct NavError {
 
     struct Configuration {
       enum : uint16_t {
-        NoSppConfigurationFile = 100,
-        ParseSppConfigurationError,
+        NoConfigurationFile = 100,
+        ParseConfigurationError,
       };
     };
 
-    struct ReadEphemerisFile {};
+    struct Io {
+      enum : uint16_t {
+        ReceiveWrongStream = 300,
+      };
+      struct Rinex {
+        enum : uint16_t {
 
-    struct ReadGnssObservationFile {};
-
-    struct ReadImuRawFile {};
+        };
+      };
+    };
   };
 
   struct Utils {

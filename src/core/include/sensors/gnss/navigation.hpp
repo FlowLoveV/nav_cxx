@@ -1,16 +1,18 @@
 #pragma once
 
-#include "ephemeris.hpp"
 #include "ginan/erp.hpp"
+#include "io/record.hpp"
+#include "sensors/gnss/ephemeris.hpp"
 #include "utils/gTime.hpp"
+#include "utils/macro.hpp"
 
 namespace navp::sensors::gnss {
 
-class RecordGnssNav;
+class NAVP_EXPORT GnssNavRecord;
 
 /** navigation data type
  */
-struct Navigation {
+struct NAVP_EXPORT Navigation {
   std::map<std::string, std::map<utils::GTime, Pclk>> pclkMap;  ///< precise clock
 
   std::map<Sv, std::map<NavMsgTypeEnum, std::map<utils::GTime, Eph, std::less<utils::GTime>>>>
@@ -31,14 +33,16 @@ struct Navigation {
   ginan::ERP erp;       /* earth rotation parameters */
   i32 leaps = -1;       /* leap seconds (s) */
   char glo_fcn[27 + 1]; /* glonass frequency channel number + 8 */
-  f64 glo_cpbias[4]; /* glonass code-phase bias {1C,1P,2C,2P} (m) */
+  f64 glo_cpbias[4];    /* glonass code-phase bias {1C,1P,2C,2P} (m) */
 };
 
-class RecordGnssNav {
+class GnssNavRecord : public io::Record {
  public:
-  RecordGnssNav() = default;
-  RecordGnssNav(Navigation&& _nav) noexcept;
-  RecordGnssNav(std::unique_ptr<Navigation>&& _nav_ptr) noexcept;
+  GnssNavRecord();
+  GnssNavRecord(Navigation&& _nav) noexcept;
+  GnssNavRecord(std::unique_ptr<Navigation>&& _nav_ptr) noexcept;
+
+  virtual ~GnssNavRecord() override;
 
   std::shared_ptr<Navigation> nav;
 };

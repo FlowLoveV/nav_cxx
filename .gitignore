@@ -30,3 +30,5 @@ test_resources
 # cpp modules
 gcm.cache
 
+/readme
+/scripts

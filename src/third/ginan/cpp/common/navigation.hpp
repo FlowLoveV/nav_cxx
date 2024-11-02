@@ -113,14 +113,6 @@ struct Navigation
 };
 
 
-namespace boost::serialization
-{
-	template<class ARCHIVE>
-	void serialize(ARCHIVE& ar, Navigation& nav)
-	{
-// 		ar & nav.ephMap;
-	}
-}
 
 
 extern map<E_Sys, E_NavMsgType> defNavMsgType;

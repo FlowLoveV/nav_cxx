@@ -596,7 +596,7 @@ typedef struct { /* almanac type */
 
 typedef struct {  /* GPS/QZS/GAL broadcast ephemeris type */
   int sat;        /* satellite number */
-  int iode, iodc; /* IODE,IODC */
+  int iode, iodc; /* IODE,IODC */ 
   int sva;        /* SV accuracy (URA index) */
   int svh;        /* SV health (0:ok) */
   int week;       /* GPS/QZS: gps week, GAL: galileo week */

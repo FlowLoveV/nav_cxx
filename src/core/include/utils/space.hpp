@@ -5,11 +5,12 @@
 
 #include "utils/eigen.hpp"
 #include "utils/types.hpp"
+#include "utils/macro.hpp"
 
 namespace navp::utils {
 using coordinate_t = NavVector3f64;
 
-enum CoordSystemEnum : u8 {
+enum NAVP_EXPORT CoordSystemEnum : u8 {
   XYZ,
   BLH,
   ENU,
@@ -35,7 +36,7 @@ struct CoordinatePayload : public coordinate_t {
 }  // namespace details
 
 template <>
-class Coordinate<XYZ> : public details::CoordinatePayload {
+class NAVP_EXPORT Coordinate<XYZ> : public details::CoordinatePayload {
  public:
   using details::CoordinatePayload::CoordinatePayload;
   Coordinate(const Coordinate&) = default;
@@ -57,7 +58,7 @@ class Coordinate<XYZ> : public details::CoordinatePayload {
 };
 
 template <>
-class Coordinate<BLH> : public details::CoordinatePayload {
+class NAVP_EXPORT Coordinate<BLH> : public details::CoordinatePayload {
  public:
   using details::CoordinatePayload::CoordinatePayload;
   Coordinate(const Coordinate&) = default;
@@ -79,7 +80,7 @@ class Coordinate<BLH> : public details::CoordinatePayload {
 };
 
 template <>
-class Coordinate<ENU> : public details::CoordinatePayload {
+class NAVP_EXPORT Coordinate<ENU> : public details::CoordinatePayload {
  public:
   using details::CoordinatePayload::CoordinatePayload;
   Coordinate(const Coordinate&) = default;
@@ -91,8 +92,8 @@ class Coordinate<ENU> : public details::CoordinatePayload {
 };
 
 // convariance of enu to convariance xyz
-extern NavMatrix33f64 conv_xyz(const Coordinate<BLH>&, const NavMatrix33f64&);
+extern NAVP_EXPORT NavMatrix33f64 conv_xyz(const Coordinate<BLH>&, const NavMatrix33f64&);
 // convariance of enu to convariance xyz
-extern NavMatrix33f64 conv_xyz(const Coordinate<XYZ>&, const NavMatrix33f64&);
+extern NAVP_EXPORT NavMatrix33f64 conv_xyz(const Coordinate<XYZ>&, const NavMatrix33f64&);
 
 }  // namespace navp::utils

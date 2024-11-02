@@ -6,6 +6,7 @@
 #include "sensors/gnss/sv.hpp"
 #include "utils/time.hpp"
 #include "utils/types.hpp"
+#include "utils/macro.hpp"
 
 namespace navp::filter {
 
@@ -13,7 +14,7 @@ using sensors::gnss::Carrier;
 using sensors::gnss::Constellation;
 using sensors::gnss::Sv;
 
-enum class CompareOperatorEnum : u8 {
+enum class NAVP_EXPORT CompareOperatorEnum : u8 {
   Greater,
   Less,
   Equal,
@@ -22,7 +23,7 @@ enum class CompareOperatorEnum : u8 {
   NotEqual,
 };
 
-struct FilterOperand {
+struct NAVP_EXPORT FilterOperand {
   CompareOperatorEnum op;
 
   static NavResult<FilterOperand> from_str(const char* str) {
@@ -46,7 +47,7 @@ struct FilterOperand {
   }
 };
 
-using EpochItem = navp::Epoch<UTC>;                                         /// ID 0
+using EpochItem = navp::EpochUtc;                                         /// ID 0
 using CarrierItem = std::vector<navp::sensors::gnss::Carrier>;              /// ID 1
 using ConstellationItem = std::vector<navp::sensors::gnss::Constellation>;  /// ID 2
 using SvItem = std::vector<navp::sensors::gnss::Sv>;                        /// ID 3
@@ -55,7 +56,7 @@ using ElevationItem = f64;                                                  /// 
 using AzimuthItem = f64;                                                    /// ID 6
 using ComplexItem = std::vector<std::string>;                               /// ID 7
 
-class FilterItems : public std::variant<EpochItem, CarrierItem, ConstellationItem, SvItem, SnrItem, ElevationItem,
+class NAVP_EXPORT FilterItems : public std::variant<EpochItem, CarrierItem, ConstellationItem, SvItem, SnrItem, ElevationItem,
                                         AzimuthItem, ComplexItem> {
  public:
   static NavResult<FilterItems> from_str(const char* str) {
@@ -70,7 +71,7 @@ class FilterItems : public std::variant<EpochItem, CarrierItem, ConstellationIte
     /*
      * Epoch
      */
-    auto epoch_res = Epoch<UTC>::from_str("%Y-%m-%d %H:%M:%S", items[0].c_str());
+    auto epoch_res = EpochUtc::from_str("%Y-%m-%d %H:%M:%S", items[0].c_str());
     if (epoch_res.is_ok()) {
       return Ok(FilterItems(epoch_res.unwrap()));
     }

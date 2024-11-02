@@ -1,9 +1,10 @@
-#include "io/rinex/rinex.hpp"
+#include "io/rinex/rinex_reader.hpp"
 
 #include "ginan/common.hpp"
 #include "ginan/constants.hpp"
 #include "sensors/gnss/enums.hpp"
 #include "sensors/gnss/navigation.hpp"
+#include "sensors/gnss/observation.hpp"
 #include "sensors/gnss/sv.hpp"
 
 using namespace navp::sensors::gnss;
@@ -57,6 +58,7 @@ void setstr(char* dst, const char* src, i32 n) {
 
   while (p >= dst && *p == ' ') *p-- = '\0';
 }
+namespace navp::io::rinex {
 
 /** Decode obs header
  */
@@ -811,41 +813,78 @@ i32 decodeObsData(std::istream& inputStream, string& line, f64 ver,
   return 1;
 }
 
-/** Read rinex obs data body
- */
-i32 readRnxObsB(std::istream& inputStream, f64 ver, TimeSystemEnum tsys,
-                std::map<ConstellationEnum, std::map<i32, CodeType>>& sysCodeTypes, i32& flag, ObsList& obsList) {
+/// read observation at next epoch
+int readNextRnxObsB(std::istream& inputStream, double ver, TimeSystemEnum tsys,
+                    std::map<ConstellationEnum, std::map<int, CodeType>>& sysCodeTypes, int& flag, ObsList& obsList) {
   GTime time = {};
-  i32 i = 0;
-  i32 nSats = 0;
+  int i = 0;
+  int nSats = 0;  // cant replace with sats.size()
   std::vector<Sv> sats;
 
+  // read record
   string line;
-  while (std::getline(inputStream, line)) {
-    if (line[0] == '>') {
-      i = 0;
-      sats.clear();
+  std::streampos pos;
+  while (pos = inputStream.tellg(), std::getline(inputStream, line)) {
+    // decode obs epoch
+    if (i == 0) {
       nSats = decodeObsEpoch(inputStream, line, ver, tsys, time, flag, sats);
       if (nSats <= 0) {
         continue;
       }
+    } else if (line[0] == '>') {
+      inputStream.seekg(pos);
+      return obsList.size();
     } else if (flag <= 2 || flag == 6) {
-      if (i < nSats) {
-        GObs rawObs = {};
-        rawObs.time = time;
-
-        bool pass = decodeObsData(inputStream, line, ver, sysCodeTypes, rawObs, sats[i]);
-        if (pass) {
-          obsList.emplace_back(std::make_shared<GObs>(rawObs));
-        }
-        i++;
-      } else {
-        continue;
+      GObs rawObs = {};
+      rawObs.time = time;
+      // decode obs data
+      bool pass = decodeObsData(inputStream, line, ver, sysCodeTypes, rawObs, sats[i - 1]);
+      if (pass) {
+        // save obs data
+        obsList.push_back((std::shared_ptr<GObs>)rawObs);
       }
     }
+    i++;
+    if (i > nSats) return obsList.size();
   }
-  return obsList.size();
+  return -1;
 }
+
+/** Read rinex obs data body
+ */
+// i32 readAllRnxObsB(std::istream& inputStream, f64 ver, TimeSystemEnum tsys,
+//                    std::map<ConstellationEnum, std::map<i32, CodeType>>& sysCodeTypes, i32& flag, ObsList& obsList) {
+//   GTime time = {};
+//   i32 i = 0;
+//   i32 nSats = 0;
+//   std::vector<Sv> sats;
+
+//   string line;
+//   while (std::getline(inputStream, line)) {
+//     if (line[0] == '>') {
+//       i = 0;
+//       sats.clear();
+//       nSats = decodeObsEpoch(inputStream, line, ver, tsys, time, flag, sats);
+//       if (nSats <= 0) {
+//         continue;
+//       }
+//     } else if (flag <= 2 || flag == 6) {
+//       if (i < nSats) {
+//         GObs rawObs = {};
+//         rawObs.time = time;
+
+//         bool pass = decodeObsData(inputStream, line, ver, sysCodeTypes, rawObs, sats[i]);
+//         if (pass) {
+//           obsList.emplace_back(std::make_shared<GObs>(rawObs));
+//         }
+//         i++;
+//       } else {
+//         continue;
+//       }
+//     }
+//   }
+//   return obsList.size();
+// }
 
 /** Read rinex obs
  */
@@ -855,10 +894,8 @@ i32 readRnxObs(std::istream& inputStream, f64 ver, TimeSystemEnum tsys,
   i32 flag = 0;
   i32 stat = 0;
 
-  //	BOOST_LOG_TRIVIAL(debug) << __FUNCTION__ 	<< ": ver=" << ver << " tsys=" << tsys;
-
   // read rinex obs data body
-  i32 n = readRnxObsB(inputStream, ver, tsys, sysCodeTypes, flag, obsList);
+  i32 n = readNextRnxObsB(inputStream, ver, tsys, sysCodeTypes, flag, obsList);
 
   if (n >= 0) stat = 1;
 
@@ -1705,8 +1742,6 @@ i32 readRnxClk(std::istream& inputStream, f64 ver, Navigation& nav) {
 
   return nav.pclkMap.size() > 0;
 }
-
-namespace navp::io::rinex::details {
 
 /** Read rinex file
  */

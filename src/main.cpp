@@ -1,14 +1,9 @@
-#include "utils/option.hpp"
+#include <print>
 
-using namespace navp;
+#include "io/stream.hpp"
 
 int main() {
-  struct item {};
-  struct some {
-    explicit some(const item& _item){};
-  };
-
-  item i1;
-  some s1( std::move(i1));
+  std::println("sizeof std::fstream is {}", sizeof(std::fstream));
+  std::println("sizeof Stream is {}", sizeof(navp::io::Stream));
   return 0;
 }

@@ -158,4 +158,11 @@ std::map<FreTypeEnum, f64> genericWavelength = {
     {FreTypeEnum::G2, CLIGHT / FREQ2_GLO}, {FreTypeEnum::G3, CLIGHT / FREQ3_GLO}, {FreTypeEnum::G4, CLIGHT / FREQ4_GLO},
     {FreTypeEnum::G6, CLIGHT / FREQ6_GLO}};
 
+std::map<FreTypeEnum, f64> roughFrequency = {
+    {FreTypeEnum::F1, FREQ1},     {FreTypeEnum::F2, FREQ1},     {FreTypeEnum::F5, FREQ5},
+    {FreTypeEnum::F6, FREQ6},     {FreTypeEnum::F7, FREQ7},     {FreTypeEnum::F8, FREQ8},
+    {FreTypeEnum::G1, FREQ1_GLO}, {FreTypeEnum::G2, FREQ2_GLO}, {FreTypeEnum::G3, FREQ3_GLO},
+    {FreTypeEnum::G4, FREQ4_GLO}, {FreTypeEnum::G6, FREQ6_GLO}, {FreTypeEnum::B1, FREQ1_CMP},
+    {FreTypeEnum::B3, FREQ3_CMP}, {FreTypeEnum::I9, FREQ9_IRN}};
+
 }  // namespace navp::ginan

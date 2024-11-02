@@ -4,6 +4,7 @@
 #include <variant>
 
 #include "template_utils.hpp"
+#include "utils/macro.hpp"
 
 namespace navp {
 
@@ -119,11 +120,11 @@ struct result_construct_assgin_base {
 };  // namespace details
 
 template <typename T>
-struct Ok : public details::result_construct_assgin_base<T, details::ok_tag_t> {
+struct NAVP_EXPORT Ok : public details::result_construct_assgin_base<T, details::ok_tag_t> {
   using details::result_construct_assgin_base<T, details::ok_tag_t>::result_construct_assgin_base;
 };
 template <typename E>
-struct Err : public details::result_construct_assgin_base<E, details::err_tag_t> {
+struct NAVP_EXPORT Err : public details::result_construct_assgin_base<E, details::err_tag_t> {
   using details::result_construct_assgin_base<E, details::err_tag_t>::result_construct_assgin_base;
 };
 
@@ -134,7 +135,7 @@ template <typename E>
 Err(E) -> Err<E>;
 
 template <typename T, typename E>
-class Result : private std::variant<Ok<T>, Err<E>> {
+class NAVP_EXPORT Result : private std::variant<Ok<T>, Err<E>> {
  private:
   template <typename _Up>
   using __not_self = std::__not_<std::is_same<Result, std::__remove_cvref_t<_Up>>>;

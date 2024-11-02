@@ -1,8 +1,6 @@
 #include "plot.hpp"
 
-#include <matplot/matplot.h>
-
-namespace nav::plotter {
+namespace navp::plotter {
 
 void example_01() {
   using namespace matplot;

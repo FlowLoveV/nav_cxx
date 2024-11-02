@@ -4,6 +4,7 @@
 #include "utils/space.hpp"
 #include "utils/time.hpp"
 #include "utils/types.hpp"
+#include "utils/macro.hpp"
 
 namespace navp::solution {
 
@@ -12,7 +13,7 @@ using utils::Coordinate;
 using utils::NavMatrix33f64;
 using utils::XYZ;
 
-enum class PositioningMode : u8 {
+enum class NAVP_EXPORT PositioningMode : u8 {
   SPP = 0,
   RTK = 1,
   PPP = 2,
@@ -21,8 +22,8 @@ enum class PositioningMode : u8 {
   FGO = 5,
 };
 
-struct PositioningResult {
-  Epoch<UTC> time;
+struct NAVP_EXPORT PositioningResult {
+  EpochUtc time;
   Coordinate<XYZ> position;
   Coordinate<XYZ> velicity;
   Attitude attitude;

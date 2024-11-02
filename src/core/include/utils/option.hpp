@@ -4,6 +4,7 @@
 #include <variant>
 
 #include "template_utils.hpp"
+#include "utils/macro.hpp"
 
 namespace navp {
 
@@ -38,7 +39,7 @@ using __converts_from_option =
                std::is_convertible<const Option<_Up>&&, _Tp>, std::is_convertible<Option<_Up>&&, _Tp>>;
 
 template <typename T>
-class Option : private std::variant<T, details::NoneType> {
+class NAVP_EXPORT Option : private std::variant<T, details::NoneType> {
  private:
   template <typename _Up>
   using __not_self = std::__not_<std::is_same<Option, std::__remove_cvref_t<_Up>>>;
@@ -465,26 +466,26 @@ class Option : private std::variant<T, details::NoneType> {
 
 // from r value
 template <typename T>
-constexpr Option<T> Some(T&& _val) noexcept {
+NAVP_EXPORT constexpr Option<T> Some(T&& _val) noexcept {
   return Option<T>(_val);
 }
 
 // from l value
 template <typename T>
-constexpr Option<T> Some(const T& _val) noexcept {
+NAVP_EXPORT constexpr Option<T> Some(const T& _val) noexcept {
   return Option<T>(std::move(_val));
 }
 
 // construct in_place
 template <typename T, typename... Args>
   requires std::is_constructible_v<T, Args...>
-constexpr Option<T> Some(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>) {
+NAVP_EXPORT constexpr Option<T> Some(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>) {
   return Option<T>(std::forward<Args>(args)...);
 }
 
 template <typename T, typename U, typename... Args>
   requires std::is_constructible_v<T, std::initializer_list<U>&, Args...>
-constexpr Option<T> Some(std::initializer_list<U> list, Args&&... args) noexcept(
+NAVP_EXPORT constexpr Option<T> Some(std::initializer_list<U> list, Args&&... args) noexcept(
     std::is_nothrow_constructible_v<T, std::initializer_list<U>&, Args...>) {
   return Option<T>(list, std::forward<Args>(args)...);
 }
