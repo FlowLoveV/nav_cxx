@@ -8,6 +8,7 @@
 #include "sensors/gnss/navigation.hpp"
 #include "sensors/gnss/observation.hpp"
 
+using namespace navp;
 using namespace navp::io::rinex;
 using namespace navp::sensors::gnss;
 
@@ -32,23 +33,17 @@ TEST_CASE("GPS BDS BRDC") {
     obs.get_record(obs_stream);
   }
 
-  BrdcEphSolver bds_eph_solver(bds_nav);
-  BrdcEphSolver gps_eph_solver(gps_nav);
+  BrdcEphSolver eph_solver(std::vector<const GnssNavRecord*>{&bds_nav, &gps_nav});
 
   auto beg_time = obs.begin_time();
   navp::utils::GTime ref_gtime;
   ref_gtime.bigTime = 2184.0 * 604800.0 + 26700.0;
-  auto ref_epoch = Epoch<navp::UTC>(ref_gtime);
-  auto sv_vec = obs.sv(ref_epoch).unwrap();
-  auto bds_sv_known = bds_eph_solver.solve_sv_stat(ref_epoch, sv_vec);
-  auto gps_sv_known = gps_eph_solver.solve_sv_stat(ref_epoch, sv_vec);
-  auto bds_sv_status = bds_eph_solver.quary_sv_status_unchecked(ref_epoch, bds_sv_known);
-  auto gps_sv_status = gps_eph_solver.quary_sv_status_unchecked(ref_epoch, gps_sv_known);
+  auto ref_epoch = static_cast<EpochUtc>(ref_gtime);
+  auto sv_vec = obs.sv_at(ref_epoch);
+  auto sv_known = eph_solver.solve_sv_status(ref_epoch, sv_vec);
+  auto sv_status = eph_solver.quary_sv_status_unchecked(ref_epoch, sv_known);
   // output
-  for (auto sv : bds_sv_status) {
-    std::println("{}", sv->format_as_string());
-  }
-  for (auto sv : gps_sv_status) {
+  for (auto sv : sv_status) {
     std::println("{}", sv->format_as_string());
   }
 }

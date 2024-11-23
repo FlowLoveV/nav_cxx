@@ -1,3 +1,5 @@
+/// fixed sized float matrix based eigen
+
 #pragma once
 
 #include <Eigen/Eigen>
@@ -6,6 +8,8 @@
 
 namespace navp::utils {
 
+template <size_t Row, size_t Col>
+using NavMatrixf128 = Eigen::Matrix<f128, Row, Col>;
 template <size_t Row, size_t Col>
 using NavMatrixf64 = Eigen::Matrix<f64, Row, Col>;
 template <size_t Row, size_t Col>

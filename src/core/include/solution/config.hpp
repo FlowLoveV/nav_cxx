@@ -1,19 +1,31 @@
 #pragma once
 
 #include "utils/macro.hpp"
-
 namespace navp::solution {
 
-class Config;
+namespace details {
+#define REGISTER_CONFIG_ITEM(name, id) inline constexpr auto name = id;
+}  // namespace details
 
-class NAVP_EXPORT Config {
- public:
-  Config();
-  virtual ~Config() = 0;
+// project configuration
+REGISTER_CONFIG_ITEM(ProjCfg, "meta");
+REGISTER_CONFIG_ITEM(TaskName, "task");
+REGISTER_CONFIG_ITEM(ProjectName, "project");
+REGISTER_CONFIG_ITEM(ExecuteTime, "time");
+REGISTER_CONFIG_ITEM(Executor, "executor");
 
-  virtual void from(const char* path) = 0;
+// io config
+REGISTER_CONFIG_ITEM(IoCfg, "io");
+REGISTER_CONFIG_ITEM(NavPath, "nav_path");
+REGISTER_CONFIG_ITEM(ObsPath, "obs_path");
+REGISTER_CONFIG_ITEM(OutputPath, "out_path");
+REGISTER_CONFIG_ITEM(ReferencePath, "ref_path");
 
-  virtual const Config* get() = 0;
-};
+// model config
+REGISTER_CONFIG_ITEM(TropModel, "trop");
+REGISTER_CONFIG_ITEM(IonoModel, "iono");
+
+// complex filter
+REGISTER_CONFIG_ITEM(FilterCfg, "filter")
 
 }  // namespace navp::solution

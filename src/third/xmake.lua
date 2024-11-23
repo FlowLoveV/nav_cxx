@@ -71,6 +71,13 @@ add_requires("flatbuffers",{
         cppstd = "c++23",
     }
 })
+add_requires("fmt",{
+    version = "11.0.2",
+    configs = {
+        shared = true,
+        cppstd = "c++23",
+    }
+})
 
 
 

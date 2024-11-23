@@ -1,9 +1,16 @@
-filters = ['=GPS', '>=2023-10-11 20:08:03']
-minimum_elevation = 10.0
-minimum_snr = 30.0
-navigation_files_path = [
-    '/root/project/nav_cxx/test_resources/SPP/NovatelOEM20211114-01.nav',
-    '/root/project/nav_cxx/test_resources/SPP/NovatelOEM20211114-01.21N',
-]
-observation_path = '/root/project/nav_cxx/test_resources/SPP/NovatelOEM20211114-01.obs'
-output_path = '/root/project/nav_cxx/test_resources/SPP/res.txt'
+[meta]
+task = "spp"
+project = "spp-test"
+executor = "mashuo"
+time = "2024-11-20 11:20:00"
+
+[io]
+nav_path = [""]
+
+[model]
+
+
+[filter]
+
+
+

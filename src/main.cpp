@@ -1,9 +1,10 @@
-#include <print>
+#include <iostream>
+#include <toml++/toml.hpp>
 
-#include "io/stream.hpp"
+using namespace std::literals;
 
 int main() {
-  std::println("sizeof std::fstream is {}", sizeof(std::fstream));
-  std::println("sizeof Stream is {}", sizeof(navp::io::Stream));
-  return 0;
+  int a = 10;
+  bool b = ((a = 20) > 10);
+  std::cout << b;
 }

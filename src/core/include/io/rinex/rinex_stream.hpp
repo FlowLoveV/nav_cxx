@@ -4,6 +4,11 @@
 #include "io/stream.hpp"
 #include "utils/macro.hpp"
 
+// forward declaration
+namespace navp::sensors::gnss {
+class GnssObsRecord;
+}
+
 namespace navp::io::rinex {
 
 class RinexStream;

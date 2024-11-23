@@ -168,8 +168,9 @@ std::vector<Sv> get_sv_sats(ConstellationEnum cons);
 
 }  // namespace navp::sensors::gnss
 
+namespace std {
 template <>
-struct NAVP_EXPORT std::formatter<navp::sensors::gnss::Constellation, char> {
+struct NAVP_EXPORT formatter<navp::sensors::gnss::Constellation, char> {
   template <class ParseContext>
   constexpr auto parse(ParseContext& ctx) {
     return ctx.begin();
@@ -203,7 +204,7 @@ struct NAVP_EXPORT std::formatter<navp::sensors::gnss::Constellation, char> {
 };
 
 template <>
-struct NAVP_EXPORT std::formatter<navp::sensors::gnss::Sv, char> {
+struct NAVP_EXPORT formatter<navp::sensors::gnss::Sv, char> {
   template <class ParseContext>
   constexpr auto parse(ParseContext& ctx) {
     return ctx.begin();
@@ -217,7 +218,6 @@ struct NAVP_EXPORT std::formatter<navp::sensors::gnss::Sv, char> {
   }
 };
 
-namespace std {
 template <>
 struct NAVP_EXPORT hash<navp::sensors::gnss::Sv> {
   size_t operator()(const navp::sensors::gnss::Sv& sv) const {

@@ -14,6 +14,7 @@ class NAVP_EXPORT GnssNavRecord;
  */
 struct NAVP_EXPORT Navigation {
   std::map<std::string, std::map<utils::GTime, Pclk>> pclkMap;  ///< precise clock
+  std::map<Sv, std::map<utils::GTime, Peph>> pephMap;           ///< precise ephemeris
 
   std::map<Sv, std::map<NavMsgTypeEnum, std::map<utils::GTime, Eph, std::less<utils::GTime>>>>
       ephMap;  ///< GPS/QZS/GAL/BDS ephemeris

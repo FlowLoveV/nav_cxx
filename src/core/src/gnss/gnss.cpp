@@ -72,7 +72,7 @@ std::vector<Sv> get_sv_sats(ConstellationEnum cons) {
 };
 
 EpochUtc GnssObsRecord::begin_time() const noexcept {
-  if (auto gobs_itr = obs_map.begin(); gobs_itr != obs_map.end()) {
+  if (auto gobs_itr = obs_map_.begin(); gobs_itr != obs_map_.end()) {
     return EpochUtc{(*gobs_itr).first};
   } else {
     nav_warn("error pointer_cast from Observation to GObs");
@@ -82,7 +82,7 @@ EpochUtc GnssObsRecord::begin_time() const noexcept {
 }
 
 EpochUtc GnssObsRecord::end_time() const noexcept {
-  if (auto gobs_itr = obs_map.begin(); gobs_itr != obs_map.end()) {
+  if (auto gobs_itr = obs_map_.rbegin(); gobs_itr != obs_map_.rend()) {
     return EpochUtc{(*gobs_itr).first};
   } else {
     nav_warn("error pointer_cast from Observation to GObs");
@@ -94,52 +94,41 @@ EpochUtc GnssObsRecord::end_time() const noexcept {
 std::tuple<EpochUtc, EpochUtc> GnssObsRecord::period() const noexcept { return {begin_time(), end_time()}; }
 
 std::vector<EpochUtc> GnssObsRecord::epoches() const noexcept {
-  return obs_map | std::views::keys | std::ranges::to<std::vector>();
+  return obs_map_ | std::views::keys | std::ranges::to<std::vector>();
 }
 
-Option<std::vector<Sv>> GnssObsRecord::sv(EpochUtc time) const noexcept {
-  if (obs_map.contains(time)) {
-    return obs_map.at(time) | std::views::keys | std::ranges::to<std::vector>();
+std::vector<Sv> GnssObsRecord::sv_at(EpochUtc time) const noexcept {
+  if (obs_map_.contains(time)) {
+    return obs_map_.at(time) | std::views::keys | std::ranges::to<std::vector>();
   } else {
-    return None;
+    return {};
   }
 }
 
-// void GnssObsRecord::generate_obs_map() const noexcept {
-//   for (const auto& obs_ptr : *obs_list) {
-//     EpochUtc epoch(obs_ptr->time);
-//     obs_map[epoch][obs_ptr->Sat] = obs_ptr;
-//   }
-// }
-
-auto GnssObsRecord::query(EpochUtc time) const noexcept -> Option<std::map<Sv, std::shared_ptr<GObs>>> {
-  if (obs_map.contains(time)) {
-    return obs_map.at(time);
+auto GnssObsRecord::query(EpochUtc time) const noexcept -> const std::map<Sv, std::shared_ptr<GObs>>* {
+  if (obs_map_.contains(time)) {
+    return &obs_map_.at(time);
   } else {
-    return None;
+    return nullptr;
   }
 }
 
-auto GnssObsRecord::query(EpochUtc time, Sv sv) const noexcept -> Option<std::shared_ptr<GObs>> {
-  if (obs_map.contains(time) && obs_map.at(time).contains(sv)) {
-    return obs_map.at(time).at(sv);
+auto GnssObsRecord::query(EpochUtc time, Sv sv) const noexcept -> const std::shared_ptr<GObs> {
+  if (obs_map_.contains(time) && obs_map_.at(time).contains(sv)) {
+    return obs_map_.at(time).at(sv);
   } else {
-    return None;
+    return nullptr;
   }
 }
 
 void GnssObsRecord::add_obs_list(ObsList&& obs_list) noexcept {
   for (const auto& obs_ptr : obs_list) {
     EpochUtc epoch(obs_ptr->time);
-    obs_map[epoch][obs_ptr->Sat] = obs_ptr;
+    obs_map_[epoch][obs_ptr->Sat] = obs_ptr;
   }
 }
 
-void GnssObsRecord::add_record(GnssObsRecord&& record) noexcept {
-  for (auto& [epoch, obs] : obs_map) {
-    obs_map[epoch] = std::move(obs);
-  }
-}
+void GnssObsRecord::merge_record(GnssObsRecord&& record) noexcept { obs_map_.merge(std::move(record.obs_map_)); }
 
 GnssObsRecord::~GnssObsRecord() = default;
 

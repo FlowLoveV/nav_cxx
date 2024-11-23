@@ -74,3 +74,8 @@ GTSAM 是一个用于处理大规模非线性优化和图优化的库，适用�
 ### 2024-11-2
 #### QCustomPlot [教程](https://lancelot-yagami.github.io/QCustomPlot-Manual/#/README)
 
+### 2024-11-12
+#### 精密星历解算，pcv,pco,dcb改正文件读取及改正
+#### 因子图优化引入
+
+

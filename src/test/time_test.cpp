@@ -1,111 +1,145 @@
 #include <chrono>
-#include <map>
 #include <print>
 
-#include "utils/macro.hpp"
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include <thread>
+
 #include "doctest.h"
-#include "rfl/json.hpp"
-#include "utils/gTime.hpp"
 #include "utils/time.hpp"
 
 using namespace navp;
 using namespace std::chrono;
 using namespace navp::details;
-typedef Epoch<UTC> Utc;
-typedef Epoch<GPST> Gpst;
-typedef Epoch<BDT> Bdt;
+
+TEST_CASE("clock") {
+  constexpr Date bds_begin_epoch = Date{
+      .year = 2006,
+      .month = 1,
+      .day = 1,
+  };
+  EpochUtc EpochUtc0;
+  EpochUtc EpochUtc1 = EpochUtc::from_date(bds_begin_epoch);
+  auto dur = (EpochUtc1 - EpochUtc0).seconds();
+  CHECK(dur == 1136073623);
+}
+
+TEST_CASE("now") {
+  std::println("UTC date now : {}", EpochUtc::now());
+  std::println("SYS date now : {}", EpochSys::now());
+  std::println("TAI date now : {}", EpochTai::now());
+  std::println("GPS date now : {}", EpochGps::now());
+  std::println("BDS date now : {}", EpochBds::now());
+}
 
 TEST_CASE("constructors") {
   // default
-  Utc utc0;
-  Gpst gpst0;
-  Bdt bdt0;
-  NAV_PRINT("Default UTC {}\nDefault GPST {}\nDefault BDT {}\n", utc0, gpst0, bdt0);
+  constexpr EpochSys EpochSys0;
+  constexpr EpochUtc EpochUtc0;
+  constexpr EpochTai EpochTai0;
+  constexpr EpochGps EpochGps0;
+  constexpr EpochBds EpochBds0;
+  std::println("Default EpochSys date : {}", EpochSys0);
+  std::println("Default EpochUtc date : {}", EpochUtc0);
+  std::println("Default EpochTai date : {}", EpochTai0);
+  std::println("Default EpochGps date : {}", EpochGps0);
+  std::println("Default EpochBds date : {}", EpochBds0);
+
+  // create a gps time
+  constexpr auto gps_time = GpsTime{
+      .weeks = 2000,
+      .integer_second = 4000,
+      .decimal_second = 0.3,
+  };
 
   // gps time constructor
-  Gpst gpst1 = Gpst::from_gps_time(2000, 6040);
-  Bdt bdt1 = Bdt::from_gps_time(800, 2004, 3e8);
-  auto gps_time_info = gpst1.gps_time();
-  CHECK(std::get<0>(gps_time_info) == 2000);
-  CHECK(std::get<1>(gps_time_info) == 6040);
-  auto bds_time_info = bdt1.gps_time();
-  CHECK(std::get<0>(bds_time_info) == 800);
-  CHECK(std::get<1>(bds_time_info) == 2004.3);
+  EpochGps EpochGps1 = EpochGps::from_gps_time(gps_time);
+  EpochBds EpochBds1 = EpochBds::from_gps_time(gps_time);
+  auto gps_time_info = EpochGps1.gps_time();
+  CHECK(gps_time_info.weeks == 2000);
+  CHECK(gps_time_info.decimal_second == (f128)0.3);
+  auto bds_time_info = EpochBds1.gps_time();
+  CHECK(bds_time_info.weeks == 2000);
+  CHECK(bds_time_info.integer_second == (f128)4000);
 
-  // utc constructor
-  Utc utc1 = Utc::from_local_date(2018, 5, 6, 1, 40, 22.001);
-  auto [y1, m1, d1, H1, M1, S1, N1] = utc1.local_date();
-  CHECK(y1 == 2018);
-  CHECK(m1 == 5);
-  CHECK(d1 == 6);
-  CHECK(H1 == 1);
-  CHECK(M1 == 40);
-  CHECK(S1 == 22);
-  CHECK(N1 == 1E6);
-  Utc utc2 = Utc::from_utc_date(2018, 5, 6, 1, 40, 22, 1E6);
-  auto [y2, m2, d2, H2, M2, S2, N2] = utc2.utc_date();
-  CHECK(y2 == 2018);
-  CHECK(m2 == 5);
-  CHECK(d2 == 6);
-  CHECK(H2 == 1);
-  CHECK(M2 == 40);
-  CHECK(S2 == 22);
-  CHECK(N2 == 1E6);
+  // create a utc date
+  constexpr Date date0 = Date{
+      .year = 2018,
+      .month = 5,
+      .day = 6,
+      .hour = 1,
+      .minute = 40,
+      .integer_second = 22,
+      .decimal_second = 0.001,
+  };
 
-  // from str,the str should be expresed in utc style
-  // the date in string is utc date
-  Utc utc3 = Utc::from_str("%Y-%m-%d %H:%M:%S", "2024-7-23 17:32:30.1").unwrap();
-  auto [y3, m3, d3, H3, M3, S3, N3] = utc3.utc_date();
-  CHECK(y3 == 2024);
-  CHECK(m3 == 7);
-  CHECK(d3 == 23);
-  CHECK(H3 == 17);
-  CHECK(M3 == 32);
-  CHECK(S3 == 30);
-  CHECK(N3 == 1E8);
+  EpochUtc EpochUtc2 = EpochUtc::from_date(date0);
+  auto date0_ = EpochUtc2.date();
+  CHECK(date0_.year == date0.year);
+  CHECK(date0_.month == date0.month);
+  CHECK(date0_.day == date0.day);
+  CHECK(date0_.hour == date0.hour);
+  CHECK(date0_.minute == date0.minute);
+  CHECK(date0_.integer_second == date0.integer_second);
+  CHECK(date0_.decimal_second == date0.decimal_second);
 
-  Gpst gpst2 = Gpst::from_str("%Y-%m-%d %H:%M:%S", "2024-7-23 17:32:30.1").unwrap();
-  // As of July 23, 2024, GPST is 18 seconds offset from UTC
-  CHECK_EQ(NAV_FORMAT("{}", gpst2), "2024-07-23 17:32:48.100000000");
-  Bdt bdt2 = Bdt::from_str("%Y-%m-%d %H:%M:%S", "2024-7-23 17:32:30.1").unwrap();
-  // As of July 23, 2024, BDT is 4 seconds offset from UTC
-  CHECK_EQ(NAV_FORMAT("{}", bdt2), "2024-07-23 17:32:34.100000000");
+  // create a utc date with time zone local offset
+  Date date1 = Date{
+      .year = 2018,
+      .month = 5,
+      .day = 6,
+      .hour = 1,
+      .minute = 40,
+      .integer_second = 22,
+      .seconds_offset = TimeZoneOffset::local_offset(),
+      .decimal_second = 0.001,
+  };
+
+  EpochUtc EpochUtc3 = EpochUtc::from_date(date1);
+  // note: no time zone offset parameter means using passing zero time zone
+  // if runs `auto date1_ = EpochUtc3.date();`
+  // the date_1's hour、day and seconds_offset may be different from date1's,cause they may be at different time zone.
+  auto date1_ = EpochUtc3.date(TimeZoneOffset::local_offset());
+  CHECK(date1_.year == date1.year);
+  CHECK(date1_.month == date1.month);
+  CHECK(date1_.day == date1.day);
+  CHECK(date1_.hour == date1.hour);
+  CHECK(date1_.minute == date1.minute);
+  CHECK(date1_.integer_second == date1.integer_second);
+  CHECK(date1_.decimal_second == date1.decimal_second);
+  CHECK(date1_.seconds_offset == date1.seconds_offset);
+
+  EpochGps gps0 = EpochGps::from_date(date0);
 }
 
-TEST_CASE("cast") {
-  Utc utc0 = Utc::now();
-  NAV_PRINT("{}\n", utc0);
-  NAV_PRINT("{}\n", epoch_cast<GPST>(utc0));
-  NAV_PRINT("{}\n", epoch_cast<BDT>(utc0));
+TEST_CASE("operator") {
+  using namespace std::literals;
+  auto date = Date{
+      .year = 2024,
+      .month = 1,
+      .day = 1,
+  };
+  auto EpochUtc0 = EpochUtc::from_date(date);
+  auto EpochUtc1 = EpochUtc0 + 0.5s;
 
-  auto utc_tp = utc0.tp;
-  NAV_PRINT("{}\n", utc_tp);
-  NAV_PRINT("{}\n", clock_cast<gps_clock>(utc_tp));
-  NAV_PRINT("{}\n", clock_cast<bds_clock>(utc_tp));
+  auto diff_mills = (EpochUtc1 - EpochUtc0).fractional_milliseconds();
+  CHECK(diff_mills == 500);
+  auto diff_second = (EpochUtc1 - EpochUtc0).scale_fractional_seconds();
+  CHECK(diff_second == 0.5);
 }
 
 TEST_CASE("hash") {
-  Utc utc0 = Utc::now();
-  std::map<Utc, int> mp;
-  mp.insert({utc0, 20});
-  CHECK(mp.at(utc0) == 20);
+  EpochUtc EpochUtc0 = EpochUtc::now();
+  std::map<EpochUtc, int> mp;
+  mp.insert({EpochUtc0, 20});
+  CHECK(mp.at(EpochUtc0) == 20);
 }
 
 TEST_CASE("formatter") {
-  Gpst gpst0;
-  NAV_PRINT("{:%Y-%m-%d %H:%M:%S}\n", gpst0);
+  EpochGps EpochGps0;
+  std::println("{:%Y-%m-%d %H:%M:%S}\n", EpochGps0);
 }
 
-TEST_CASE("reflect") {
-  auto utc = Epoch<UTC>::now();
-  auto json = rfl::json::write(utc);
-  std::println("{}", json);
-}
-
-TEST_CASE("gtime") {
-  auto utc = Epoch<UTC>::from_str("%Y-%m-%d %H:%M:%S", "2021-11-14 07:00:00").unwrap();
-  utils::GTime gtime = utc;
-  Epoch<UTC> utc_verse(gtime);
-  NAV_PRINTLN("{}", utc_verse);
+TEST_CASE("parse") {
+  auto EpochUtc = Epoch<gps_clock>::from_str("%Y-%m-%d %H:%M:%S", "2021-11-14 07:00:00").unwrap();
+  std::println("{}", EpochUtc);
 }

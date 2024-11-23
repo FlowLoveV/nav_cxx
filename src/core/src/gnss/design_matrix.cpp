@@ -1,5 +1,7 @@
 #include "sensors/gnss/design_matrix.hpp"
 
+#include <ranges>
+
 #include "sensors/gnss/analysis.hpp"
 #include "sensors/gnss/broadcast_eph.hpp"
 #include "utils/option.hpp"
@@ -24,7 +26,6 @@ Option<DesignMatrix> DesignMatrixBuilder::spp_design_matrix(const MetaVec& meta_
   auto col = cons.size() + 3;
   auto res = DesignMatrix{
       .matrix = utils::NavMatrixDf64::Zero(row, col),
-      // .col_name = generate_spp_col_name(cons),
   };
   // assign design matrix
   for (auto index = 0; index < row; index++) {

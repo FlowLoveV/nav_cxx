@@ -1,10 +1,12 @@
 #include "io/sp3/sp3_stream.hpp"
 #include "sensors/gnss/enums.hpp"
 #include "sensors/gnss/ephemeris.hpp"
+#include "sensors/gnss/navigation.hpp"
 #include "sensors/gnss/sv.hpp"
 #include "utils/gTime.hpp"
 
 using navp::sensors::gnss::ConstellationEnum;
+using navp::sensors::gnss::GnssNavRecord;
 using navp::sensors::gnss::Peph;
 using navp::sensors::gnss::Sv;
 using navp::sensors::gnss::TimeSystemEnum;
@@ -30,7 +32,7 @@ bool readsp3(std::istream& fileStream,     ///< stream to read content from
              std::vector<Peph>& pephList,  ///< vector of precise ephemerides for one epoch
              int opt,                      ///< options options (1: only observed + 2: only predicted + 4: not combined)
              TimeSystemEnum& tsys,         ///< time system
-             double* bfact)                ///< bfact values from header
+             f64* bfact)                   ///< bfact values from header
 {
   GTime time = {};
 
@@ -96,8 +98,8 @@ bool readsp3(std::istream& fileStream,     ///< stream to read content from
         if (j < 3 && (opt & 1) && pred_p) continue;
         if (j < 3 && (opt & 2) && !pred_p) continue;
 
-        double val = str2num(buff, 4 + j * 14, 14);
-        double std = str2num(buff, 61 + j * 3, 2);
+        f64 val = str2num(buff, 4 + j * 14, 14);
+        f64 std = str2num(buff, 61 + j * 3, 2);
 
         if (buff[0] == 'P') {
           /* position */
@@ -107,7 +109,7 @@ bool readsp3(std::istream& fileStream,     ///< stream to read content from
             valid = false;
           }
 
-          double base = bfact[0];
+          f64 base = bfact[0];
           if (base > 0 && std > 0) {
             peph.posStd[j] = pow(base, std) * 1E-3;
           }
@@ -118,7 +120,7 @@ bool readsp3(std::istream& fileStream,     ///< stream to read content from
           // 						peph.vel[j] = val * 0.1;
           // 					}
           //
-          // 					double base = bfact[j < 3 ? 0 : 1];
+          // 					f64 base = bfact[j < 3 ? 0 : 1];
           // 					if	(  base	> 0
           // 						&& std	> 0)
           // 					{
@@ -135,8 +137,8 @@ bool readsp3(std::istream& fileStream,     ///< stream to read content from
 
         std::string checkValue;
         checkValue.assign(buff + 4 + j * 14, 7);
-        double val = str2num(buff, 4 + j * 14, 14);
-        double std = str2num(buff, 61 + j * 3, 3);
+        f64 val = str2num(buff, 4 + j * 14, 14);
+        f64 std = str2num(buff, 61 + j * 3, 3);
 
         if (buff[0] == 'P') {
           /* clock */
@@ -147,7 +149,7 @@ bool readsp3(std::istream& fileStream,     ///< stream to read content from
             // 						valid = false;	//allow clocks to be invalid
           }
 
-          double base = bfact[1];
+          f64 base = bfact[1];
           if (base > 0 && std > 0) {
             peph.clkStd = pow(base, std) * 1E-12;
           }
@@ -159,7 +161,7 @@ bool readsp3(std::istream& fileStream,     ///< stream to read content from
           // 						peph.dCk = val * 1E-10;
           // 					}
           //
-          // 					double base = bfact[j < 3 ? 0 : 1];
+          // 					f64 base = bfact[j < 3 ? 0 : 1];
           // 					if	(  base	> 0
           // 						&& std	> 0)
           // 					{
@@ -180,7 +182,7 @@ Quick and dirty read of the velocities
     */
     if (buff[0] == 'V') {
       for (int i = 0; i < 3; i++) {
-        double val = str2num(buff, 4 + i * 14, 14);
+        f64 val = str2num(buff, 4 + i * 14, 14);
         pephList.back().vel[i] = val * 0.1;
       }
     }
@@ -269,7 +271,15 @@ Quick and dirty read of the velocities
 }
 
 void Sp3Stream::decode_record(Record& record) {
-    
+  if (auto nav_record = dynamic_cast<GnssNavRecord*>(&record); nav_record) {
+    std::vector<Peph> eph_vec;
+    TimeSystemEnum tsys;
+    f64 bfact[2];
+    readsp3(*this, eph_vec, 0, tsys, bfact);
+    std::ranges::for_each(eph_vec, [&](const Peph& peh) { nav_record->nav->pephMap[peh.Sat][peh.time] = peh; });
+  } else {
+    nav_warn("Sp3Stream decode unmatched record");
+  }
 };
 
 void Sp3Stream::encode_record(Record& record) {

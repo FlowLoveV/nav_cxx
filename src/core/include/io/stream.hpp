@@ -18,13 +18,9 @@ class NAVP_EXPORT Stream : public std::fstream {
 
   virtual ~Stream();
 
-  Stream(const char* filename, std::ios::openmode mode = std::ios::in);
+  Stream(std::string_view filename, std::ios::openmode mode = std::ios::in);
 
-  Stream(const std::string& filename, std::ios::openmode mode = std::ios::in);
-
-  virtual void open(const char* filename, std::ios::openmode mode);
-
-  virtual void open(const std::string& filename, std::ios::openmode mode);
+  virtual void open(std::string_view filename, std::ios::openmode mode);
 
   std::string filename;
   i32 record_number;
@@ -32,7 +28,7 @@ class NAVP_EXPORT Stream : public std::fstream {
   friend class Record;
 
  protected:
-  void reset(const char* filename, std::ios::openmode mode);
+  void reset(std::string_view filename, std::ios::openmode mode);
 
   virtual void decode_record(Record& record) = 0;
 

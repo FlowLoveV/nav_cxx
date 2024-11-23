@@ -175,8 +175,8 @@ auto GFobsMeta::pseudorange(const GObs& obs1, const GObs obs2) const noexcept ->
 auto GFobsMeta::carrier(const GObs& obs1, const GObs obs2, const Navigation* nav) const noexcept -> f64 {
   auto meta = NdCombineObsMeta{.code1 = code1, .code2 = code2};
   meta.get_sigs(obs1, obs2);
-  auto f1 = freq(meta.obs1->Sat, meta.obs1->time, code1, nav).unwrap();
-  auto f2 = freq(meta.obs2->Sat, meta.obs2->time, code2, nav).unwrap();
+  auto f1 = freq(meta.obs1->Sat, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
+  auto f2 = freq(meta.obs2->Sat, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
   return meta.combine_carrier(Constants::CLIGHT / f1, -Constants::CLIGHT / f2);
 }
 
@@ -184,16 +184,16 @@ auto GFobsMeta::pseudorange_carrier(const GObs& obs1, const GObs& obs2,
                                     const Navigation* nav) const noexcept -> std::tuple<f64, f64> {
   auto meta = NdCombineObsMeta{.code1 = code1, .code2 = code2};
   meta.get_sigs(obs1, obs2);
-  auto f1 = freq(meta.obs1->Sat, meta.obs1->time, code1, nav).unwrap();
-  auto f2 = freq(meta.obs2->Sat, meta.obs2->time, code2, nav).unwrap();
+  auto f1 = freq(meta.obs1->Sat, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
+  auto f2 = freq(meta.obs2->Sat, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
   return {meta.combine_pseudorange(1, -1), meta.combine_carrier(Constants::CLIGHT / f1, -Constants::CLIGHT / f2)};
 }
 
 auto IFobsMeta::pseudorange(const GObs& obs1, const GObs obs2, const Navigation* nav) const noexcept -> f64 {
   auto meta = NdCombineObsMeta{.code1 = code1, .code2 = code2};
   meta.get_sigs(obs1, obs2);
-  auto f1 = freq(meta.obs1->Sat, meta.obs1->time, code1, nav).unwrap();
-  auto f2 = freq(meta.obs2->Sat, meta.obs2->time, code2, nav).unwrap();
+  auto f1 = freq(meta.obs1->Sat, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
+  auto f2 = freq(meta.obs2->Sat, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
   auto f1_2 = f1 * f1, f2_2 = f2 * f2;
   auto f = f1_2 - f2_2;
   return meta.combine_pseudorange(f1_2 / f, -f2_2 / f);
@@ -202,8 +202,8 @@ auto IFobsMeta::pseudorange(const GObs& obs1, const GObs obs2, const Navigation*
 auto IFobsMeta::carrier(const GObs& obs1, const GObs obs2, const Navigation* nav) const noexcept -> f64 {
   auto meta = NdCombineObsMeta{.code1 = code1, .code2 = code2};
   meta.get_sigs(obs1, obs2);
-  auto f1 = freq(meta.obs1->Sat, meta.obs1->time, code1, nav).unwrap();
-  auto f2 = freq(meta.obs2->Sat, meta.obs2->time, code2, nav).unwrap();
+  auto f1 = freq(meta.obs1->Sat, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
+  auto f2 = freq(meta.obs2->Sat, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
   auto f1_2 = f1 * f1, f2_2 = f2 * f2;
   auto f = f1_2 - f2_2;
   return meta.combine_carrier(f1_2 / f, -f1 * f2 / f);
@@ -213,8 +213,8 @@ auto IFobsMeta::pseudorange_carrier(const GObs& obs1, const GObs& obs2,
                                     const Navigation* nav) const noexcept -> std::tuple<f64, f64> {
   auto meta = NdCombineObsMeta{.code1 = code1, .code2 = code2};
   meta.get_sigs(obs1, obs2);
-  auto f1 = freq(meta.obs1->Sat, meta.obs1->time, code1, nav).unwrap();
-  auto f2 = freq(meta.obs2->Sat, meta.obs2->time, code2, nav).unwrap();
+  auto f1 = freq(meta.obs1->Sat, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
+  auto f2 = freq(meta.obs2->Sat, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
   auto f1_2 = f1 * f1, f2_2 = f2 * f2;
   auto f = f1_2 - f2_2;
   return {meta.combine_pseudorange(f1_2 / f, -f2_2 / f), meta.combine_carrier(f1_2 / f, -f1 * f2 / f)};
@@ -246,15 +246,15 @@ auto GRobsMeta::combine(const GObs& obs, const Navigation* nav) const noexcept -
     nav_debug("{} {} missing {} carrier", EpochUtc(obs.time), obs.Sat, magic_enum::enum_name(code));
     return 0.0;
   }
-  auto f = freq(obs.Sat, obs.time, code, nav).unwrap();
+  auto f = freq(obs.Sat, static_cast<EpochUtc>(obs.time), code, nav).unwrap();
   return 0.5 * (Constants::CLIGHT / f * sig->L + sig->P);
 }
 
 auto MWobsMeta::wl_ambiguity(const GObs& obs1, const GObs obs2, const Navigation* nav) const noexcept -> f64 {
   auto meta = NdCombineObsMeta{.code1 = code1, .code2 = code2};
   meta.get_sigs(obs1, obs2);
-  auto f1 = freq(meta.obs1->Sat, meta.obs1->time, code1, nav).unwrap();
-  auto f2 = freq(meta.obs2->Sat, meta.obs2->time, code2, nav).unwrap();
+  auto f1 = freq(meta.obs1->Sat, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
+  auto f2 = freq(meta.obs2->Sat, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
   auto lambda_wl = Constants::CLIGHT / (f1 - f2);
   auto combine_pse = meta.combine_pseudorange(f1 / (f1 + f2) / lambda_wl, f2 / (f1 + f2) / lambda_wl);
   auto combine_car = meta.combine_carrier(1, -1);

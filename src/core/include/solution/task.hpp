@@ -1,16 +1,17 @@
 #pragma once
 
-#include <mutex>
-#include <string>
+#include <toml++/toml.hpp>
+
 #include "utils/macro.hpp"
 
 namespace navp::solution {
 
 class Task;
-class Config;
+
+using Config = toml::parse_result;
 
 class NAVP_EXPORT Task {
-public:
+ public:
   Task();
   virtual ~Task() = 0;
 
@@ -19,17 +20,14 @@ public:
 
 class NAVP_EXPORT ConfigTask {
  public:
-  ConfigTask();
-  virtual ~ConfigTask() = 0;
+  virtual ~ConfigTask();
 
-  ConfigTask(const char* cfg_path);
-  ConfigTask(const std::string& cfg_path);
+  ConfigTask(std::string_view cfg_path);
 
   virtual void solve() = 0;
 
  protected:
-  std::string config_path_;
-  Config* config_;
+  Config config_;
 };
 
 class NAVP_EXPORT ConcurrentTask : public ConfigTask {

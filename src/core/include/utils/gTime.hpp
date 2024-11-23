@@ -5,9 +5,10 @@
 #include <iostream>
 #include <string>
 
-#include "utils/types.hpp"
 #include "sensors/gnss/enums.hpp"
 #include "utils/macro.hpp"
+#include "utils/time.hpp"
+#include "utils/types.hpp"
 
 namespace navp::utils {
 
@@ -146,6 +147,12 @@ struct GTime {
 
   GTime(RTod tod, GTime nearTime);
 
+  template <typename clock_type>
+  GTime(Epoch<clock_type> epoch) {
+    EpochGps gps_epoch = clock_cast<std::chrono::gps_clock>(epoch);
+    bigTime = gps_epoch.seconds() + epoch.scale_fractional_seconds();
+  }
+
   string to_string(i32 n = 2) const;
 
   string to_ISOstring(i32 n = 2) const;
@@ -267,6 +274,16 @@ struct GTime {
   operator PTime() const;
   operator string() const;
   operator RTod() const;
+
+  template <typename clock_type>
+  explicit operator Epoch<clock_type>() const noexcept {
+    auto sec = static_cast<i64>(bigTime);
+    auto fractional = bigTime - sec;
+    EpochGps gps_epoch;
+    gps_epoch.__dur._m_seconds = Seconds<i64>(sec);
+    gps_epoch.__dur._m_attos = Attoseconds<i64>(static_cast<i64>(fractional * attos_per_second));
+    return clock_cast<clock_type>(gps_epoch);
+  }
 };
 
 struct PTime {
@@ -311,7 +328,7 @@ struct MjDateTT {
 
 struct NAVP_EXPORT UtcTime {
   f128 bigTime;  // Eugene: bigTime can be ambiguous, e.g. 1167264000.5, never know if GPST is 2017-01-01
-                        // 00:00:17.5 or 2017-01-01 00:00:18.5
+                 // 00:00:17.5 or 2017-01-01 00:00:18.5
 
   UtcTime operator+(const f64 t) const {
     UtcTime time = *this;
@@ -354,8 +371,7 @@ struct GEpoch : array<f64, 6> {
   f64& min;
   f64& sec;
 
-  GEpoch(f64 yearVal = 0, f64 monthVal = 0, f64 dayVal = 0, f64 hourVal = 0, f64 minVal = 0,
-         f64 secVal = 0)
+  GEpoch(f64 yearVal = 0, f64 monthVal = 0, f64 dayVal = 0, f64 hourVal = 0, f64 minVal = 0, f64 secVal = 0)
       : year{(*this)[0]}, month{(*this)[1]}, day{(*this)[2]}, hour{(*this)[3]}, min{(*this)[4]}, sec{(*this)[5]} {
     year = yearVal;
     month = monthVal;

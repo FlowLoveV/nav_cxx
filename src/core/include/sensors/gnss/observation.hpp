@@ -3,9 +3,14 @@
 #include "io/record.hpp"
 #include "sensors/gnss/enums.hpp"
 #include "sensors/gnss/sv.hpp"
-#include "utils/option.hpp"
-#include "utils/time.hpp"
+#include "utils/gTime.hpp"
 #include "utils/macro.hpp"
+#include "utils/option.hpp"
+
+// forward declaration
+namespace navp::io::rinex {
+class RinexStream;
+}
 
 namespace navp::sensors::gnss {
 
@@ -68,11 +73,8 @@ class GnssObsRecord : public io::Record {
 
   operator std::shared_ptr<GnssObsRecord>() noexcept;
 
-  // add obs list and update obs_map
-  void add_obs_list(ObsList&& obs_list) noexcept;
-
   // add another obs_map and update obs_map
-  void add_record(GnssObsRecord&& record) noexcept;
+  void merge_record(GnssObsRecord&& record) noexcept;
 
   // analysis observation time
   auto begin_time() const noexcept -> EpochUtc;
@@ -81,14 +83,19 @@ class GnssObsRecord : public io::Record {
   auto epoches() const noexcept -> std::vector<EpochUtc>;
 
   // analysis sv at target time
-  auto sv(EpochUtc time) const noexcept -> Option<std::vector<Sv>>;
+  auto sv_at(EpochUtc time) const noexcept -> std::vector<Sv>;
 
   // get target observation
-  auto query(EpochUtc time) const noexcept -> Option<std::map<Sv, std::shared_ptr<GObs>>>;
-  auto query(EpochUtc time, Sv sv) const noexcept -> Option<std::shared_ptr<GObs>>;
+  auto query(EpochUtc time) const noexcept -> const std::map<Sv, std::shared_ptr<GObs>>*;
+  auto query(EpochUtc time, Sv sv) const noexcept -> const std::shared_ptr<GObs>;
+
+  friend class io::rinex::RinexStream;
 
  protected:
-  std::map<EpochUtc, std::map<Sv, std::shared_ptr<GObs>>> obs_map;
+  // add obs list and update obs_map
+  void add_obs_list(ObsList&& obs_list) noexcept;
+
+  std::map<EpochUtc, std::map<Sv, std::shared_ptr<GObs>>> obs_map_;
 };
 
 }  // namespace navp::sensors::gnss
