@@ -4,18 +4,11 @@
 #include <boost/bimap.hpp>
 #include <format>
 
-#include "utils/error.hpp"
+#include "magic_enum.hpp"
+#include "sensors/gnss/gnss_exception.hpp"
 #include "utils/macro.hpp"
 #include "utils/result.hpp"
 #include "utils/types.hpp"
-
-namespace navp::sensors::gnss {
-enum class NAVP_EXPORT CarrierEnum : u8;
-}
-
-namespace navp::sensors::gnss {
-NAVP_EXPORT extern const boost::bimap<std::string, navp::sensors::gnss::CarrierEnum> CARRIER_TABLE;
-}
 
 namespace navp::sensors::gnss {
 
@@ -62,6 +55,8 @@ enum class CarrierEnum : u8 {
   B2A,
   /// B2b: BeiDou 2b
   B2B,
+  /// B2(B2a + B2b): Beidou 3
+  B2AB,
   /// B3
   B3,
   /// B3A
@@ -78,18 +73,18 @@ struct NAVP_EXPORT Carrier {
   // Carrier() : id(CarrierEnum::L1) {}
   // Carrier(CarrierEnum carrier) : id(carrier) {}
   // from_str
-  static NavResult<Carrier> from_str(const char* str) {
+  static Result<Carrier, GnssParseCarrierError> from_str(const char* str) {
     std::string s(str);
     boost::algorithm::to_upper(s);
     boost::algorithm::trim(s);
     /*
      * GPS, Galieo
      */
-    auto it = navp::sensors::gnss::CARRIER_TABLE.left.find(s);
-    if (it != navp::sensors::gnss::CARRIER_TABLE.left.end()) {
-      return Ok(Carrier{it->second});
+    auto result = magic_enum::enum_cast<CarrierEnum>(str);
+    if (result.has_value()) {
+      return result.value();
     }
-    return Err(errors::NavError::Utils::Gnss::ParseCarrierStringError);
+    return Err(GnssParseCarrierError(std::format("can't parse unknown Carrier \'{}\'", str)));
   }
 
   CarrierEnum id;
@@ -106,11 +101,6 @@ struct NAVP_EXPORT std::formatter<navp::sensors::gnss::Carrier, char> {
 
   template <class FormatContext>
   auto format(navp::sensors::gnss::Carrier carrier, FormatContext& ctx) const {
-    try {
-      const std::string& carrier_str = navp::sensors::gnss::CARRIER_TABLE.right.at(carrier.id);
-      return std::format_to(ctx.out(), "{}", carrier_str);
-    } catch (const std::out_of_range&) {
-      return std::format_to(ctx.out(), "Unknown Carrier");
-    }
+    return std::format_to(ctx.out(), "{}", magic_enum::enum_name(carrier.id));
   }
 };

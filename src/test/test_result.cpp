@@ -4,6 +4,7 @@
 #include "doctest.h"
 #include "utils/option.hpp"
 #include "utils/result.hpp"
+#include <Eigen/Eigen>
 
 using navp::Err;
 using navp::Ok;
@@ -234,4 +235,11 @@ TEST_CASE("Extension") {
   auto x3 = u13.map_or_else<bool>([](const std::string& str) { return str == "Error"; },
                                   [](const double& val) { return val >= 0.0; });
   CHECK(x3 == true);
+}
+
+TEST_CASE("Ambiguous") {
+  typedef std::runtime_error exception;
+  typedef Eigen::Matrix3<double> Matrix;
+  typedef Result<Matrix, exception> Result_t;
+  Result_t result1 = exception("dsaa");
 }

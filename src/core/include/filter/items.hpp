@@ -2,17 +2,23 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include "filter/filter_exception.hpp"
 #include "sensors/gnss/carrier.hpp"
 #include "sensors/gnss/sv.hpp"
+#include "utils/macro.hpp"
 #include "utils/time.hpp"
 #include "utils/types.hpp"
-#include "utils/macro.hpp"
 
 namespace navp::filter {
 
 using sensors::gnss::Carrier;
 using sensors::gnss::Constellation;
 using sensors::gnss::Sv;
+
+class NavFilterError : public std::runtime_error {
+ public:
+  using std::runtime_error::runtime_error;
+};
 
 enum class NAVP_EXPORT CompareOperatorEnum : u8 {
   Greater,
@@ -26,28 +32,28 @@ enum class NAVP_EXPORT CompareOperatorEnum : u8 {
 struct NAVP_EXPORT FilterOperand {
   CompareOperatorEnum op;
 
-  static NavResult<FilterOperand> from_str(const char* str) {
+  static Result<FilterOperand, FilterParseOperatorError> from_str(const char* str) {
     std::string s(str);
     boost::algorithm::trim(s);
     if (s.starts_with(">=")) {
-      return Ok(CompareOperatorEnum::GreaterEqual);
+      return FilterOperand{CompareOperatorEnum::GreaterEqual};
     } else if (s.starts_with(">")) {
-      return Ok(CompareOperatorEnum::Greater);
+      return FilterOperand{CompareOperatorEnum::Greater};
     } else if (s.starts_with("<=")) {
-      return Ok(CompareOperatorEnum::LessEqual);
+      return FilterOperand{CompareOperatorEnum::LessEqual};
     } else if (s.starts_with("<")) {
-      return Ok(CompareOperatorEnum::Less);
+      return FilterOperand{CompareOperatorEnum::Less};
     } else if (s.starts_with("!=")) {
-      return Ok(CompareOperatorEnum::NotEqual);
+      return FilterOperand{CompareOperatorEnum::NotEqual};
     } else if (s.starts_with("=")) {
-      return Ok(CompareOperatorEnum::Equal);
+      return FilterOperand{CompareOperatorEnum::Equal};
     } else {
-      return Err(errors::NavError::Utils::Filter::ParseOperandError);
+      return FilterParseOperatorError(std::format("Can't parse {} into \'FilterOperand\'", str));
     }
   }
 };
 
-using EpochItem = navp::EpochUtc;                                         /// ID 0
+using EpochItem = navp::EpochUtc;                                           /// ID 0
 using CarrierItem = std::vector<navp::sensors::gnss::Carrier>;              /// ID 1
 using ConstellationItem = std::vector<navp::sensors::gnss::Constellation>;  /// ID 2
 using SvItem = std::vector<navp::sensors::gnss::Sv>;                        /// ID 3
@@ -56,24 +62,25 @@ using ElevationItem = f64;                                                  /// 
 using AzimuthItem = f64;                                                    /// ID 6
 using ComplexItem = std::vector<std::string>;                               /// ID 7
 
-class NAVP_EXPORT FilterItems : public std::variant<EpochItem, CarrierItem, ConstellationItem, SvItem, SnrItem, ElevationItem,
-                                        AzimuthItem, ComplexItem> {
+class NAVP_EXPORT FilterItems : public std::variant<EpochItem, CarrierItem, ConstellationItem, SvItem, SnrItem,
+                                                    ElevationItem, AzimuthItem, ComplexItem> {
  public:
-  static NavResult<FilterItems> from_str(const char* str) {
+  // todo
+  static Result<FilterItems, FilterParseItemError> from_str(const char* str) {
     /*
      * type guessing
      */
     std::string s(str);
     boost::algorithm::trim(s);
     std::vector<std::string> items;
-    static auto is_comma = [](char c) {return c == 'c';};
+    static auto is_comma = [](char c) { return c == 'c'; };
     boost::algorithm::split(items, s, is_comma);
     /*
      * Epoch
      */
     auto epoch_res = EpochUtc::from_str("%Y-%m-%d %H:%M:%S", items[0].c_str());
     if (epoch_res.is_ok()) {
-      return Ok(FilterItems(epoch_res.unwrap()));
+      return Ok(FilterItems(epoch_res.unwrap_unchecked()));
     }
     /*
      * Carrier
@@ -111,6 +118,5 @@ class NAVP_EXPORT FilterItems : public std::variant<EpochItem, CarrierItem, Cons
     return Ok(FilterItems(items));
   }
 };
-
 
 }  // namespace navp::filter

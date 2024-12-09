@@ -126,9 +126,9 @@ target("reflect-cpp")
     add_packages("flatbuffers",{public = true})
 target_end()
 
-
 target("exprtk")
     set_kind("phony")
+    set_pcxxheader("exprtk/exprtk.hpp")
     add_includedirs("exprtk",{public = true})
     add_linkdirs("exprtk",{public = true})
 target_end()

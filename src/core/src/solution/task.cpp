@@ -6,6 +6,8 @@ Task::Task() = default;
 
 ConfigTask::~ConfigTask() = default;
 
-ConfigTask::ConfigTask(std::string_view cfg_path) : config_(toml::parse_file(cfg_path)) {}
+ConfigTask::ConfigTask(std::string_view cfg_path) : config_(cfg_path) {}
+
+void ConfigTask::export_config(std::ostream& os) const noexcept { os << config_; }
 
 }  // namespace navp::solution

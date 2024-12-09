@@ -1,23 +1,19 @@
 #pragma once
 
-#include "utils/types.hpp"
 #include "utils/macro.hpp"
+#include "utils/types.hpp"
 
 namespace navp::sensors::gnss {
 
 enum class NAVP_EXPORT ConstellationEnum : u8 {
-  NONE,
   GPS,
+  BDS,
   GAL,
   GLO,
   QZS,
-  SBS,
-  BDS,
-  LEO,
-  SUPPORTED,
   IRN,
-  IMS,
-  COMB,
+  SBS,
+  LEO,
 
   WAAS,
   EGNOS,
@@ -33,6 +29,10 @@ enum class NAVP_EXPORT ConstellationEnum : u8 {
   NSAS,
   ASAL,
   Mixed,
+
+  IMS,
+  COMB,
+  NONE,
 };
 
 enum class NAVP_EXPORT TimeSystemEnum : u8 {
@@ -113,106 +113,170 @@ enum class NAVP_EXPORT StoCodeEnum : u8 {
 
 enum class NAVP_EXPORT SbasIdEnum : u8 { NONE, WAAS, EGNOS, MSAS, GAGAN, SDCM, BDSBAS, KASS, A_SBAS, SPAN };
 
-enum class NAVP_EXPORT UtcIdEnum : u8 { NONE, UTC_USNO, UTC_SU, UTCGAL, UTC_NTSC, UTC_NICT, UTC_NPLI, UTCIRN, UTC_OP, UTC_NIST };
-
-enum class NAVP_EXPORT ObsCodeEnum : u16 {
-  NONE = 0,  ///< none or unknown
-  L1C = 1,   ///< L1C/A,G1C/A,E1C		(GPS,GLO,GAL,QZS,SBS)
-  L1P = 2,   ///< L1P,G1P    			(GPS,GLO)
-  L1W = 3,   ///< L1 Z-track 			(GPS)
-  L1Y = 4,   ///< L1Y        			(GPS)
-  L1M = 5,   ///< L1M        			(GPS)
-  L1N = 6,   ///< L1codeless 			(GPS)
-  L1S = 7,   ///< L1C(D)     			(GPS,QZS)
-  L1L = 8,   ///< L1C(P)     			(GPS,QZS)
-  L1E = 9,   ///< L1C/B      			(QZS)
-  L1A = 10,  ///< E1A        			(GAL)
-  L1B = 11,  ///< E1B        			(GAL)
-  L1X = 12,  ///< E1B+C,L1C(D+P)			(GAL,QZS)
-  L1Z = 13,  ///< E1A+B+C,L1-SAIF		(GAL,QZS)
-  L2C = 14,  ///< L2C/A,G1C/A			(GPS,GLO)
-  L2D = 15,  ///< L2 L1C/A-(P2-P1)		(GPS)
-  L2S = 16,  ///< L2C(M)     			(GPS,QZS)
-  L2L = 17,  ///< L2C(L)     			(GPS,QZS)
-  L2X = 18,  ///< L2C(M+L),B1-2I+Q		(GPS,QZS,BDS)
-  L2P = 19,  ///< L2P,G2P    			(GPS,GLO)
-  L2W = 20,  ///< L2 Z-track 			(GPS)
-  L2Y = 21,  ///< L2Y        			(GPS)
-  L2M = 22,  ///< L2M        			(GPS)
-  L2N = 23,  ///< L2codeless 			(GPS)
-  L5I = 24,  ///< L5/E5aI    			(GPS,GAL,QZS,SBS)
-  L5Q = 25,  ///< L5/E5aQ    			(GPS,GAL,QZS,SBS)
-  L5X = 26,  ///< L5/E5aI+Q  			(GPS,GAL,QZS,SBS)
-  L7I = 27,  ///< E5bI,B2aI  			(GAL,BDS)
-  L7Q = 28,  ///< E5bQ,B2aQ  			(GAL,BDS)
-  L7X = 29,  ///< E5bI+Q,B2aI+Q			(GAL,BDS)
-  L6A = 30,  ///< E6A, L2OCd       		(GAL,GLO)
-  L6B = 31,  ///< E6B, L2OCp        		(GAL,GLO)
-  L6C = 32,  ///< E6C, L2OCd+L2OCp       (GAL,GLO)
-  L6X = 33,  ///< E6B+C,LEXS+L,B3I+Q 	(GAL,QZS,BDS)
-  L6Z = 34,  ///< E6A+B+C    			(GAL)
-  L6S = 35,  ///< L6S    				(QZS)
-  L6L = 36,  ///< L6L    				(QZS)
-  L8I = 37,  ///< E5(a+b)I   			(GAL)
-  L8Q = 38,  ///< E5(a+b)Q   			(GAL)
-  L8X = 39,  ///< E5(a+b)I+Q 			(GAL)
-  L2I = 40,  ///< B1-2I      			(BDS)
-  L2Q = 41,  ///< B1-2Q      			(BDS)
-  L6I = 42,  ///< B3I        			(BDS)
-  L6Q = 43,  ///< B3Q        			(BDS)
-  L3I = 44,  ///< G3I        			(GLO)
-  L3Q = 45,  ///< G3Q        			(GLO)
-  L3X = 46,  ///< G3I+Q      			(GLO)
-  L1I = 47,  ///< B1I        			(BDS)
-  L1Q = 48,  ///< B1Q        			(BDS)
-  L4A = 49,  ///< L1OCd					(GLO)
-  L4B = 50,  ///< L1OCp					(GLO)
-  L4X = 51,  ///< L1OCd+L1OCp			(GLO)
-  L6E = 52,  ///< L6E					(QZS)
-  L1D = 53,  ///< B1D        			(BDS)
-  L5D = 54,  ///< B2aD       			(BDS)
-  L5P = 55,  ///< B2aP       			(BDS)
-  L9A = 57,  ///< S9 A SPS				(IRN)
-  L9B = 58,  ///< S9 B RS(D)        		(IRN)
-  L9C = 59,  ///< S9 C RS(P)       		(IRN)
-  L9X = 60,  ///< S9 B+C       			(IRN)
-  L5A = 61,  ///< L5 A SPS				(IRN)
-  L5B = 62,  ///< L5 B RS(D)				(IRN)
-  L5C = 63,  ///< L5 C RS(P)				(IRN)
-  L5Z = 64,  ///< L5 B+C       			(IRN)
-  L6D = 65,  ///< L6 Data       			(BDS)
-  L6P = 66,  ///< L6 Pilot       		(BDS)
-  L7D = 67,  ///< L7 Data       			(BDS)
-  L7P = 68,  ///< L7 Pilot       		(BDS)
-  L7Z = 69,  ///< L7 Data+Pilot       	(BDS)
-  L8D = 70,  ///< L8 Data       			(BDS)
-  L8P = 71,  ///< L8 Pilot       		(BDS)
-  L8Z = 72,  ///< L8 Data+Pilot       	(BDS)
-  AUTO = 200,
+enum class NAVP_EXPORT UtcIdEnum : u8 {
+  NONE,
+  UTC_USNO,
+  UTC_SU,
+  UTCGAL,
+  UTC_NTSC,
+  UTC_NICT,
+  UTC_NPLI,
+  UTCIRN,
+  UTC_OP,
+  UTC_NIST
 };
 
-enum class NAVP_EXPORT ObsCode2Enum : u8 { NONE, P1, P2, C1, C2, C3, C4, C5, C6, C7, C8, L1, L2, L3, L4, L5, L6, L7, L8, LA };
+enum class NAVP_EXPORT ObsCodeEnum : u16 {
+  NONE,  ///< none or unknown
+  L1C,   ///< L1C/A,G1C/A,E1C		(GPS,GLO,GAL,QZS,SBS)
+  L1P,   ///< L1P,G1P    			(GPS,GLO)
+  L1W,   ///< L1 Z-track 			(GPS)
+  L1Y,   ///< L1Y        			(GPS)
+  L1M,   ///< L1M        			(GPS)
+  L1N,   ///< L1codeless 			(GPS)
+  L1S,   ///< L1C(D)     			(GPS,QZS)
+  L1L,   ///< L1C(P)     			(GPS,QZS)
+  L1E,   ///< L1C/B      			(QZS)
+  L1A,   ///< E1A        			(GAL)
+  L1B,   ///< E1B        			(GAL)
+  L1X,   ///< E1B+C,L1C(D+P)			(GAL,QZS)
+  L1Z,   ///< E1A+B+C,L1-SAIF		(GAL,QZS)
+  L1R,   ///< M (RMP antenna) (GPS) from rinex 4.01
+  L1I,   ///< B1I        			(BDS)
+  L1D,   ///< B1D        			(BDS)
+  L1Q,   ///< B1Q        			(BDS)
+
+  L2C,  ///< L2C/A,G1C/A			(GPS,GLO)
+  L2D,  ///< L2 L1C/A-(P2-P1)		(GPS)
+  L2S,  ///< L2C(M)     			(GPS,QZS)
+  L2L,  ///< L2C(L)     			(GPS,QZS)
+  L2X,  ///< L2C(M+L),B1-2I+Q		(GPS,QZS,BDS)
+  L2P,  ///< L2P,G2P    			(GPS,GLO)
+  L2W,  ///< L2 Z-track 			(GPS)
+  L2Y,  ///< L2Y        			(GPS)
+  L2M,  ///< L2M        			(GPS)
+  L2N,  ///< L2codeless 			(GPS)
+  L2R,  ///< M (RMP antenna) (GPS) from rinex 4.01
+  L2I,  ///< B1-2I      			(BDS)
+  L2Q,  ///< B1-2Q      			(BDS)
+
+  L3I,  ///< G3I        			(GLO)
+  L3Q,  ///< G3Q        			(GLO)
+  L3X,  ///< G3I+Q      			(GLO)
+
+  L4A,  ///< L1OCd					(GLO)
+  L4B,  ///< L1OCp					(GLO)
+  L4X,  ///< L1OCd+L1OCp			(GLO)
+
+  L5I,  ///< L5/E5aI    			(GPS,GAL,QZS,SBS)
+  L5Q,  ///< L5/E5aQ    			(GPS,GAL,QZS,SBS)
+  L5X,  ///< L5/E5aI+Q  			(GPS,GAL,QZS,SBS)
+  L5D,  ///< B2aD       			(BDS)
+  L5P,  ///< B2aP       			(BDS)
+  L5A,  ///< L5 A SPS				(IRN)
+  L5B,  ///< L5 B RS(D)				(IRN)
+  L5C,  ///< L5 C RS(P)				(IRN)
+  L5Z,  ///< L5 B+C       			(IRN)
+
+  L6A,  ///< E6A, L2OCd       		(GAL,GLO)
+  L6B,  ///< E6B, L2OCp        		(GAL,GLO)
+  L6C,  ///< E6C, L2OCd+L2OCp       (GAL,GLO)
+  L6X,  ///< E6B+C,LEXS+L,B3I+Q 	(GAL,QZS,BDS)
+  L6Z,  ///< E6A+B+C    			(GAL)
+  L6S,  ///< L6S    				(QZS)
+  L6L,  ///< L6L    				(QZS)
+  L6I,  ///< B3I        			(BDS)
+  L6Q,  ///< B3Q        			(BDS)
+  L6E,  ///< L6E					(QZS)
+  L6D,  ///< L6 Data       			(BDS)
+  L6P,  ///< L6 Pilot       		(BDS)
+
+  L7D,  ///< L7 Data       			(BDS)
+  L7P,  ///< L7 Pilot       		(BDS)
+  L7Z,  ///< L7 Data+Pilot       	(BDS)
+  L7I,  ///< E5bI,B2aI  			(GAL,BDS)
+  L7Q,  ///< E5bQ,B2aQ  			(GAL,BDS)
+  L7X,  ///< E5bI+Q,B2aI+Q			(GAL,BDS)
+
+  L8I,  ///< E5(a+b)I   			(GAL)
+  L8Q,  ///< E5(a+b)Q   			(GAL)
+  L8X,  ///< E5(a+b)I+Q 			(GAL)
+  L8D,  ///< L8 Data       			(BDS)
+  L8P,  ///< L8 Pilot       		(BDS)
+  L8Z,  ///< L8 Data+Pilot       	(BDS)
+
+  L9A,  ///< S9 A SPS				(IRN)
+  L9B,  ///< S9 B RS(D)        		(IRN)
+  L9C,  ///< S9 C RS(P)       		(IRN)
+  L9X,  ///< S9 B+C       			(IRN)
+
+  AUTO,
+};
+
+enum class NAVP_EXPORT ObsCode2Enum : u8 {
+  NONE,
+  P1,
+  P2,
+  C1,
+  C2,
+  C3,
+  C4,
+  C5,
+  C6,
+  C7,
+  C8,
+  L1,
+  L2,
+  L3,
+  L4,
+  L5,
+  L6,
+  L7,
+  L8,
+  LA
+};
 
 enum class NAVP_EXPORT TrigTypeEnum : u16 { COS, SIN };
 
 enum class NAVP_EXPORT FreTypeEnum : u8 {
   FTYPE_NONE,
   /* Base carrier frequencies */
-  F1 = 1,   //  1575.42  MHz: GPS L1, GAL E1,  BDS B1C,  QZS L1,  SBS L1,
-  F2 = 2,   //  1227.60  MHz: GPS L2, QZS L2,
-  F5 = 5,   //  1176.45  MHz: GPS L5, GAL E5A, BDS B2A, QZS L5, SBS L5
-  F6 = 6,   //  1278.75  MHz: GAL E6, QZS L6,
-  F7 = 7,   //  1207.14  MHz: GAL E5B, BDS B2B
-  F8 = 8,   //  1191.795 MHz: GAL E5, BDS B2,
-  G1 = 11,  // ~1602     MHz: GLO G1,
-  G2 = 12,  // ~1246     MHz: GLO G2,
-  G3 = 13,  //  1202.025 MHz: GLO G3,
-  G4 = 14,  //  1600.995 MHz  GLO G1A
-  G6 = 16,  //  1248.08  MHz: GLO G2A,
-  B1 = 21,  //  1561.098 MHz: BDS B1I,
-  B3 = 23,  //  1268.52  MHz: BDS B3I,
-  I9 = 39,  //  2492.028 MHz: IRN S9
-  NUM_FTYPES,
+  F1,   //  1575.42  MHz: GPS L1, GAL E1,  BDS-3 B1C,  QZS L1,  SBS L1,
+  F2,   //  1227.60  MHz: GPS L2, QZS L2,
+  F5,   //  1176.45  MHz: GPS L5, GAL E5A, BDS-3 B2A, QZS L5, SBS L5
+  F6,   //  1278.75  MHz: GAL E6, QZS L6,
+  F7,   //  1207.14  MHz: GAL E5B, BDS-3 B2B, BDS-2 B2I
+  F8,   //  1191.795 MHz: GAL E5
+  G1,   // ~1602     MHz: GLO G1,
+  G2,   // ~1246     MHz: GLO G2,
+  G3,   //  1202.025 MHz: GLO G3,
+  G1A,  //  1600.995 MHz  GLO G1A
+  G2A,  //  1248.06  MHz: GLO G2A,
+  B1,   //  1561.098 MHz: BDS-2/3 B1I,
+  B3,   //  1268.52  MHz: BDS-2/3 B3I,
+  I9,   //  2492.028 MHz: IRN S9
+  // NUM_FTYPES,
+
+  // alias
+  L1 = F1,  // GPS/SBAS/QZS L1
+  L2 = F2,  // GPS/QZS L2
+  L5 = F5,  // GPS/SBAS/QZS L5
+
+  E1 = F1,   // GAL E1
+  E5A = F5,  // GAL E5a
+  E5B = F7,  // GAL E5b
+  E5 = F8,   // GAL E5(E5a+E5b)
+  E6 = F6,   // GAL E6
+
+  L6 = F6,  // QZS F6
+
+  B1C = F1,   // BDS-3 B1c
+  B1A = F1,   // BDS-3 B1a
+  B2A = F5,   // BDS-3 B2a
+  B2 = F7,    // BDS-2
+  B2B = F7,   // BDS-3 B2b
+  B2AB = F8,  // BDS-3 B2(B2a+B2b)
+  B3A = B3,   // BDS-3 B3A
 };
 
 /// unused
@@ -232,15 +296,21 @@ enum class NAVP_EXPORT IonoModeEnum : u8 {
 enum class NAVP_EXPORT IonoModelEnum : u8 { NONE, MEAS_OUT, BSPLINE, SPHERICAL_CAPS, SPHERICAL_HARMONICS, LOCAL };
 
 /// unused
-enum class NAVP_EXPORT NoiseModelEnum : u8 {
-  EQUAL_WEIGHT,         /// Equal Weight Model
+enum class NAVP_EXPORT RandomModelEnum : u8 {
+  STANDARD,             /// Setting fixed error
   ELEVATION_DEPENDENT,  /// Elevation model
   SNR_DEPENDENT,        /// SNR model
   CUSTOM,               /// Custom Model(not support now)
 };
 
 /// unused
-enum class NAVP_EXPORT TropModelEnum : u8 { STANDARD, SBAS, VMF3, GPT2, CSSR };
+enum class NAVP_EXPORT TropModelEnum : u8 {
+  STANDARD,  ///< Saastamoinen model
+  SBAS,
+  VMF3,
+  GPT2,
+  CSSR
+};
 
 /// unused
 enum class NAVP_EXPORT IonoMapFnEnum : u8 {

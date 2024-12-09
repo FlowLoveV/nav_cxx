@@ -1,13 +1,13 @@
 #include <ranges>
 
-#include "ginan/constants.hpp"
+#include "sensors/gnss/constants.hpp"
 #include "sensors/gnss/navigation.hpp"
 #include "sensors/gnss/observation.hpp"
 
 namespace navp::sensors::gnss {
 
 const Sig* GObs::find_code(ObsCodeEnum code) const noexcept {
-  auto freq = ginan::code2Freq[Sat.constellation.id][code];
+  auto freq = Constants::code_to_freq_enum(Sat.constellation.id, code);
   if (sigsLists.contains(freq)) {
     for (const auto& sig : sigsLists.at(freq)) {
       if (sig.code == code) {
@@ -72,21 +72,19 @@ std::vector<Sv> get_sv_sats(ConstellationEnum cons) {
 };
 
 EpochUtc GnssObsRecord::begin_time() const noexcept {
-  if (auto gobs_itr = obs_map_.begin(); gobs_itr != obs_map_.end()) {
+  if (auto gobs_itr = obs_map_.begin(); gobs_itr != obs_map_.end()) [[likely]] {
     return EpochUtc{(*gobs_itr).first};
   } else {
-    nav_warn("error pointer_cast from Observation to GObs");
-    cpptrace::generate_trace(1).print();
+    nav_error("No observation in GnssObsRecord!");
     return {};
   }
 }
 
 EpochUtc GnssObsRecord::end_time() const noexcept {
-  if (auto gobs_itr = obs_map_.rbegin(); gobs_itr != obs_map_.rend()) {
+  if (auto gobs_itr = obs_map_.rbegin(); gobs_itr != obs_map_.rend()) [[likely]] {
     return EpochUtc{(*gobs_itr).first};
   } else {
-    nav_warn("error pointer_cast from Observation to GObs");
-    cpptrace::generate_trace(1).print();
+    nav_error("No observation in GnssObsRecord!");
     return {};
   }
 }
@@ -105,7 +103,7 @@ std::vector<Sv> GnssObsRecord::sv_at(EpochUtc time) const noexcept {
   }
 }
 
-auto GnssObsRecord::query(EpochUtc time) const noexcept -> const std::map<Sv, std::shared_ptr<GObs>>* {
+auto GnssObsRecord::query(EpochUtc time) const noexcept -> const ObsMap* {
   if (obs_map_.contains(time)) {
     return &obs_map_.at(time);
   } else {
@@ -126,9 +124,60 @@ void GnssObsRecord::add_obs_list(ObsList&& obs_list) noexcept {
     EpochUtc epoch(obs_ptr->time);
     obs_map_[epoch][obs_ptr->Sat] = obs_ptr;
   }
+  erase();
 }
 
-void GnssObsRecord::merge_record(GnssObsRecord&& record) noexcept { obs_map_.merge(std::move(record.obs_map_)); }
+GnssObsRecord& GnssObsRecord::merge_record(GnssObsRecord&& record) noexcept {
+  obs_map_.merge(std::move(record.obs_map_));
+  return *this;
+}
+
+void GnssObsRecord::erase() noexcept {
+  if (storage_ < 0) return;
+  while (obs_map_.size() > storage_) {
+    obs_map_.erase(obs_map_.begin());
+  }
+}
+
+i32 GnssObsRecord::storage() const noexcept { return storage_; }
+
+GnssObsRecord& GnssObsRecord::set_storage(i32 storage) noexcept {
+  storage_ = storage;
+  return *this;
+}
+
+u32 GnssObsRecord::frequency() const noexcept { return frequceny_; }
+
+GnssObsRecord& GnssObsRecord::set_frequcney(u32 frequency) noexcept {
+  frequceny_ = frequency;
+  return *this;
+}
+
+auto GnssObsRecord::operator[](i64 index) const -> const ObsMap* {
+  if (obs_map_.empty()) {
+    throw std::out_of_range("GnssObsRecord is empty");
+  }
+
+  if (index >= 0) {
+    // Positive index
+    auto it = obs_map_.begin();
+    std::advance(it, index);
+    if (it == obs_map_.end()) {
+      throw std::out_of_range("Index out of range");
+    }
+    return &it->second;
+  } else {
+    // Negative index
+    auto it = obs_map_.rbegin();
+    std::advance(it, -index - 1);
+    if (it == obs_map_.rend()) {
+      throw std::out_of_range("Index out of range");
+    }
+    return &it->second;
+  }
+}
+
+auto GnssObsRecord::latest() const -> const StorageType::value_type& { return *obs_map_.rend(); }
 
 GnssObsRecord::~GnssObsRecord() = default;
 

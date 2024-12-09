@@ -2,9 +2,8 @@
 #include <print>
 
 #include "../doctest.h"
-#include "io/rinex/rinex_record.hpp"
 #include "io/rinex/rinex_stream.hpp"
-#include "sensors/gnss/broadcast_eph.hpp"
+#include "sensors/gnss/ephemeris_solver.hpp"
 #include "sensors/gnss/navigation.hpp"
 #include "sensors/gnss/observation.hpp"
 
@@ -17,7 +16,6 @@ TEST_CASE("GPS BDS BRDC") {
   std::string nav_gps_path = "../test_resources/SPP/NovatelOEM20211114-01.21N";
   std::string obs_path = "../test_resources/SPP/NovatelOEM20211114-01-GPS&BDS-Double.obs";
 
-  CHECK(sizeof(navp::io::Stream) == 568);
   RinexStream bds_nav_stream(nav_bds_path, std::ios::in);
   RinexStream gps_nav_stream(nav_gps_path, std::ios::in);
   RinexStream obs_stream(obs_path, std::ios::in);
@@ -25,6 +23,7 @@ TEST_CASE("GPS BDS BRDC") {
   // decode navigation record
   GnssNavRecord bds_nav, gps_nav;
   GnssObsRecord obs;
+  obs.set_storage(-1);
   bds_nav.get_record(bds_nav_stream);
   gps_nav.get_record(gps_nav_stream);
 
@@ -33,7 +32,9 @@ TEST_CASE("GPS BDS BRDC") {
     obs.get_record(obs_stream);
   }
 
-  BrdcEphSolver eph_solver(std::vector<const GnssNavRecord*>{&bds_nav, &gps_nav});
+  EphemerisSolver eph_solver;
+  eph_solver.add_ephemeris(bds_nav.nav.get());
+  eph_solver.add_ephemeris(gps_nav.nav.get());
 
   auto beg_time = obs.begin_time();
   navp::utils::GTime ref_gtime;

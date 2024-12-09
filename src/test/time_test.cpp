@@ -2,7 +2,6 @@
 #include <print>
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-#include <thread>
 
 #include "doctest.h"
 #include "utils/time.hpp"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils/attitude.hpp"
+#include "io/record.hpp"
 #include "utils/macro.hpp"
 #include "utils/space.hpp"
 #include "utils/time.hpp"
@@ -8,13 +8,7 @@
 
 namespace navp::solution {
 
-using utils::Attitude;
-using utils::Coordinate;
-using utils::NavMatrix33f64;
-
-using utils::XYZ;
-
-enum class NAVP_EXPORT SolutionMode : u8 {
+enum class NAVP_EXPORT SolutionModeEnum : u8 {
   NONE = 0,
   FIXED = 1,
   FLOAT = 2,
@@ -24,15 +18,16 @@ enum class NAVP_EXPORT SolutionMode : u8 {
   PPP = 6,
   DR_LOOSE = 7,
   DR_TIGHT = 8,
+  FGO = 9,
 };
 
-struct NAVP_EXPORT PvtSolution {
+struct NAVP_EXPORT PvtSolutionRecord : public io::Record {
   EpochUtc time;
-  Coordinate<XYZ> position, velicity; /* position/velocity (m|m/s) */
-  f32 qr[6];                          /* position variance/covariance (m^2) */
-  f32 qv[6];                          /* velocity variance/covariance (m^2/s^2) */
-  f64 dtr[6];                         /* receiver clock bias to time systems (s) */
-  SolutionMode mode = SolutionMode::NONE;
+  utils::CoordinateXyz position, velicity; /* position/velocity (m|m/s) */
+  f32 qr[6];                               /* position variance/covariance (m^2) */
+  f32 qv[6];                               /* velocity variance/covariance (m^2/s^2) */
+  f64 dtr[6];                              /* receiver clock bias to time systems (s) */
+  SolutionModeEnum mode = SolutionModeEnum::NONE;
   u8 type;   /* type (0:xyz-ecef,1:enu-baseline) */
   u8 ns;     /* number of valid satellites */
   f32 age;   /* age of differential (s) */

@@ -14,6 +14,9 @@
 using std::ostream;
 
 #define S_IN_DAY 86400.0 /* Number of seconds in a day */
+#define GPS_SUB_UTC_2000 +13
+#define GPS_SUB_UTC_2006 +14
+#define GPS_SUB_TAI -19
 
 namespace navp::utils {
 

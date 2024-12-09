@@ -25,8 +25,9 @@
 #define NAV_PRINTLN std::println
 
 // some alias
-#define NAV_NODISCARD [[nodiscard]]
-#define NAV_NODISCARD_WITHMSG(msg) [[nodiscard(msg)]]
+#define NAV_NODISCARD_UNUNSED [[__nodiscard__("unused result")]]
+#define NAV_NODISCARD_ERROR_HANDLE [[__nodiscard__("the returning may contain an exception to be handled")]]
+#define NAV_NODISCARD_WITHMSG(msg) [[__nodiscard__(msg)]]
 #define NAV_NOEXCEPT noexcept
 #define NAV_UNUSED [[maybe_unused]]
 
@@ -44,15 +45,14 @@
 // export
 #ifdef NAVP_LIBRARY
 #ifdef _WIN32
-    #define NAVP_EXPORT __declspec(dllexport)
+#define NAVP_EXPORT __declspec(dllexport)
 #else
-    #define NAVP_EXPORT __attribute__((visibility("default")))
+#define NAVP_EXPORT __attribute__((visibility("default")))
 #endif
 #else
 #ifdef _WIN32
-    #define NAVP_EXPORT __declspec(dllimport)
+#define NAVP_EXPORT __declspec(dllimport)
 #else
-    #define NAVP_EXPORT
+#define NAVP_EXPORT
 #endif
 #endif
-

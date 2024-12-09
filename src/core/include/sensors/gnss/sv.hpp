@@ -1,13 +1,12 @@
 #pragma once
 
 #include <boost/algorithm/string.hpp>
+#include <magic_enum.hpp>
 #include <string>
 #include <string_view>
 
-#include "enums.hpp"
-#include "magic_enum.hpp"
-#include "utils/error.hpp"
-#include "utils/logger.hpp"
+#include "sensors/gnss/enums.hpp"
+#include "sensors/gnss/gnss_exception.hpp"
 #include "utils/macro.hpp"
 #include "utils/result.hpp"
 #include "utils/types.hpp"
@@ -24,9 +23,7 @@ inline auto constexpr NSATBDS = 62;  ///< potential number of Beidou satellites,
 inline auto constexpr NSATSBS = 39;  ///< potential number of SBAS satellites, PRN goes from 1 to this number
 
 struct NAVP_EXPORT Constellation {
-  // constexpr Constellation() : id(ConstellationEnum::GPS) {}
-  // constexpr Constellation(ConstellationEnum id) : id(id) {}
-  static NavResult<Constellation> form_str(const char* str) {
+  static Result<Constellation, GnssParseConstellationError> form_str(const char* str) {
     std::string s(str);
     boost::algorithm::trim(s);
     boost::algorithm::to_lower(s);
@@ -90,7 +87,7 @@ struct NAVP_EXPORT Constellation {
     else if (s.find("mix") != std::string::npos)
       result = ConstellationEnum::Mixed;
     else {
-      return Err(errors::NavError::Utils::Gnss::ParseConstellationStringError);
+      return Err(GnssParseConstellationError(std::format("can't parse unknwon Constellation \'{}\'", str)));
     }
 
     return Ok(Constellation(result));
@@ -112,18 +109,15 @@ struct NAVP_EXPORT Constellation {
 };
 
 struct NAVP_EXPORT Sv {
-  // Sv(u8 prn, ConstellationEnum cons_enum) : prn(prn), constellation(cons_enum) {}
-  // Sv(u8 prn, Constellation cons) : prn(prn), constellation(cons) {}
-  // Sv(ConstellationEnum cons_enum) : prn(0), constellation(cons_enum) {}
-  // Sv(Constellation cons) : prn(0), constellation(cons) {}
-  static NavResult<Sv> from_str(const char* str) {
+  // runtime error may contain :
+  // - GnssParseConstellationError
+  // - GnssParseSvError
+  static Result<Sv, GnssRuntimeError> from_str(const char* str) {
     std::string_view view(&str[1]);
     char first[] = {str[0], '\0'};
     auto constellation = Constellation::form_str(first);
     if (constellation.is_err()) {
-      auto error_msg = std::format("Unable to parse string \"{}\" to Constellation", &str[0]);
-      nav_error(error_msg);
-      throw std::runtime_error(error_msg);
+      return constellation.unwrap_err();
     }
     u8 prn;
     if (std::all_of(view.begin(), view.end(), [](char c) { return std::isspace(c); })) {
@@ -131,10 +125,7 @@ struct NAVP_EXPORT Sv {
     } else {
       auto [ptr, ec] = std::from_chars(view.data(), view.data() + view.size(), prn);
       if (ec != std::errc()) {
-        // auto error_msg = std::format("Unable to parse string \"{}\" to Sv", std::string(str.data() + 1));
-        // nav_error(error_msg);
-        // throw std::runtime_error(error_msg);
-        return Err(errors::NavError::Utils::Gnss::ParseSvStringError);
+        return Err(GnssParseSvError(std::format("can't parse unknown Sv \'{}\'", str)));
       }
     }
     return Ok(Sv{prn, constellation.unwrap_unchecked()});
@@ -151,9 +142,6 @@ struct NAVP_EXPORT Sv {
   constexpr inline auto operator<=>(const Sv& rhs) const {
     if (rhs.constellation != constellation) {
       return rhs.constellation.id <=> constellation.id;
-      // auto error_msg = "Cannot compare prn of Sv with different systems.";
-      // nav_error(error_msg);
-      // throw std::runtime_error(error_msg);
     }
     return prn <=> rhs.prn;
   }

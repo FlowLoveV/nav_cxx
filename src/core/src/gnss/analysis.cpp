@@ -1,6 +1,6 @@
 #include "sensors/gnss/analysis.hpp"
 
-#include "ginan/constants.hpp"
+#include "utils/option.hpp"
 #include "sensors/gnss/constants.hpp"
 #include "sensors/gnss/navigation.hpp"
 #include "sensors/gnss/observation.hpp"
@@ -27,26 +27,23 @@ u8 glonass_freq_bias(const Navigation* nav, Sv sv, EpochUtc t) noexcept {
 }
 
 Option<f64> freq(Sv sv, EpochUtc t, ObsCodeEnum code, const Navigation* nav) noexcept {
-  using ginan::code2Freq;
-  using ginan::roughFrequency;
   static constexpr f64 DFRQ1_GLO = 0.56250E6;
   static constexpr f64 DFRQ2_GLO = 0.43750E6;
-  auto constellation = sv.constellation.id;
-  if (code2Freq.contains(constellation) && code2Freq[constellation].contains(code)) {
-    auto freq_id = code2Freq[constellation][code];
-    auto frequency = roughFrequency[freq_id];
+  FreTypeEnum freq_id = Constants::code_to_freq_enum(sv.constellation.id, code);
+  if (freq_id != FreTypeEnum::FTYPE_NONE) {
+    auto freq = Constants::frequency(freq_id);
     // handle glonass freq bias
-    if (constellation == ConstellationEnum::GLO) {
+    if (sv.constellation.id == ConstellationEnum::GLO) {
       if (freq_id == FreTypeEnum::G1 || freq_id == FreTypeEnum::G2) {
         auto fcn = glonass_freq_bias(nav, sv, t);
         if (fcn == 0) {
           return None;
         } else {
-          return freq_id == FreTypeEnum::G1 ? frequency + DFRQ1_GLO * fcn : frequency + DFRQ2_GLO * fcn;
+          return freq_id == FreTypeEnum::G1 ? freq + DFRQ1_GLO * fcn : freq + DFRQ2_GLO * fcn;
         }
       }
     } else {
-      return frequency;
+      return freq;
     }
   }
   return None;

@@ -91,8 +91,8 @@ void ecef2enu(const f64* pos, const f64* r, f64* e) {
 }
 
 TEST_CASE("crs2crs") {
-  Coordinate<BLH> blh{to_radians(30.13145), to_radians(114.13145), 20};
-  Coordinate<BLH> blh1{to_radians(30.131456), to_radians(114.131456), 19};
+  CoordinateBlh blh{to_radians(30.13145), to_radians(114.13145), 20};
+  CoordinateBlh blh1{to_radians(30.131456), to_radians(114.131456), 19};
   // blh->xyz
   auto xyz = blh.to_xyz();
   f64 p_xyz[3];

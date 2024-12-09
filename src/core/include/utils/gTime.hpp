@@ -27,10 +27,6 @@ struct GTow;
 struct MjDateTT;
 struct MjDateUtc;
 
-#define GPS_SUB_UTC_2000 +13
-#define GPS_SUB_UTC_2006 +14
-#define GPS_SUB_TAI -19
-
 extern const GTime GPS_t0;
 extern const f64 MJD_j2000;
 extern const i32 secondsInDay;

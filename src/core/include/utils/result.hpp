@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cpptrace/cpptrace.hpp>
+#include <stdexcept>
 #include <variant>
 
 #include "template_utils.hpp"
@@ -74,9 +74,6 @@ struct result_construct_assgin_base {
       std::is_nothrow_constructible_v<T, const U&>)
     requires(!std::is_same_v<U, T>) && std::is_constructible_v<T, U> && (!std::is_convertible_v<U, T>)
       : val(std::move(other.val)) {}
-
-  template <typename U>
-  constexpr result_construct_assgin_base(result_construct_assgin_base<U, TagArgs...>&& other) noexcept {}
 
   template <typename... Args>
   constexpr result_construct_assgin_base(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
@@ -230,25 +227,32 @@ class NAVP_EXPORT Result : private std::variant<Ok<T>, Err<E>> {
   constexpr ~Result() = default;
 
   // construct from ok_t or err_t
-  template <typename U, _Requires<not_result<U>, not_variant<U>, std::is_constructible<ok_t, U>,
-                                  std::is_convertible<U, ok_t>> = true>
-  constexpr Result(U&& ok_val) noexcept(std::is_nothrow_constructible_v<T, U>) : _Base(std::forward<U>(ok_val)) {}
+  template <typename U, _Requires<not_result<U>, not_variant<U>,
+                                  std::conditional_t<std::is_same_v<T, E>, std::true_type, _not<std::is_same<U, E>>>,
+                                  std::is_constructible<ok_t, U>, std::is_convertible<U, ok_t>> = true>
+  constexpr Result(U&& ok_val) noexcept(std::is_nothrow_constructible_v<ok_t, U>)
+      : _Base(ok_t(std::forward<U>(ok_val))) {}
 
   template <typename U, _Requires<not_result<U>, not_variant<U>, std::is_constructible<ok_t, U>,
+                                  std::conditional_t<std::is_same_v<T, E>, std::true_type, _not<std::is_same<U, E>>>,
                                   _not<std::is_same<ok_t, err_t>>, _not<std::is_convertible<U, ok_t>>> = false>
   explicit constexpr Result(U&& ok_val) noexcept(std::is_nothrow_constructible_v<ok_t, U>)
-      : _Base(std::forward<U>(ok_val)) {}
+      : _Base(ok_t(std::forward<U>(ok_val))) {}
 
-  template <typename G, _Requires<not_result<G>, not_variant<G>, std::is_constructible<err_t, G>,
-                                  std::is_convertible<G, err_t>> = true>
-  constexpr Result(G&& err_val) noexcept(std::is_nothrow_constructible_v<err_t, G>) : _Base(std::forward<G>(err_val)) {}
+  template <typename G, _Requires<not_result<G>, not_variant<G>,
+                                  std::conditional_t<std::is_same_v<T, E>, std::true_type, _not<std::is_same<G, T>>>,
+                                  std::is_constructible<err_t, G>, std::is_convertible<G, err_t>> = true>
+  constexpr Result(G&& err_val) noexcept(std::is_nothrow_constructible_v<err_t, G>)
+      : _Base(err_t(std::forward<G>(err_val))) {}
 
-  template <typename G, _Requires<not_result<G>, not_variant<G>, std::is_constructible<err_t, G>,
-                                  _not<std::is_same<ok_t, err_t>>, _not<std::is_convertible<G, err_t>>> = false>
+  template <typename G, _Requires<not_result<G>, not_variant<G>,
+                                  std::conditional_t<std::is_same_v<T, E>, std::true_type, _not<std::is_same<G, T>>>,
+                                  std::is_constructible<err_t, G>, _not<std::is_same<ok_t, err_t>>,
+                                  _not<std::is_convertible<G, err_t>>> = false>
   explicit constexpr Result(G&& err_val) noexcept(std::is_nothrow_constructible_v<err_t, G>)
-      : _Base(std::forward<G>(err_val)) {}
+      : _Base(err_t(std::forward<G>(err_val))) {}
 
-  // assign operator from Ok<U>,Err<G>
+  // assign operator from Ok<U>, Err<G>
   template <typename U, _Requires<not_result<U>, not_variant<U>, std::is_constructible<ok_t, U>,
                                   std::is_assignable<ok_t, U>> = true>
   constexpr Result& operator=(U&& ok_val) noexcept(std::is_nothrow_constructible_v<ok_t, U> &&
@@ -351,7 +355,6 @@ class NAVP_EXPORT Result : private std::variant<Ok<T>, Err<E>> {
     if (is_ok()) {
       return const_cast<T&>(_m_get_ok_value());
     } else {
-      cpptrace::generate_trace(1).print_with_snippets();
       throw result_error(msg);
     }
   }
@@ -359,7 +362,6 @@ class NAVP_EXPORT Result : private std::variant<Ok<T>, Err<E>> {
     if (is_ok()) {
       return std::move(_m_get_ok_value());
     } else {
-      cpptrace::generate_trace(1).print_with_snippets();
       throw result_error(msg);
     }
   }
@@ -369,7 +371,6 @@ class NAVP_EXPORT Result : private std::variant<Ok<T>, Err<E>> {
     if (is_err()) {
       return const_cast<E&>(_m_get_err_value());
     } else {
-      cpptrace::generate_trace(1).print_with_snippets();
       throw result_error(msg);
     }
   }
@@ -377,7 +378,6 @@ class NAVP_EXPORT Result : private std::variant<Ok<T>, Err<E>> {
     if (is_err()) {
       return std::move(_m_get_err_value());
     } else {
-      cpptrace::generate_trace(1).print_with_snippets();
       throw result_error(msg);
     }
   }
@@ -427,7 +427,6 @@ class NAVP_EXPORT Result : private std::variant<Ok<T>, Err<E>> {
     if (is_ok()) [[likely]] {
       return const_cast<T&>(_m_get_ok_value());
     } else {
-      cpptrace::generate_trace(1).print_with_snippets();
       throw result_error("unwrap a result with err value!");
     }
   }
@@ -435,7 +434,6 @@ class NAVP_EXPORT Result : private std::variant<Ok<T>, Err<E>> {
     if (is_ok()) [[likely]] {
       return std::move(_m_get_ok_value());
     } else {
-      cpptrace::generate_trace(1).print_with_snippets();
       throw result_error("unwrap a result with err value!");
     }
   }
@@ -445,7 +443,6 @@ class NAVP_EXPORT Result : private std::variant<Ok<T>, Err<E>> {
     if (is_err()) [[likely]] {
       return const_cast<E&>(_m_get_err_value());
     } else {
-      cpptrace::generate_trace(1).print_with_snippets();
       throw result_error("unwrap_err a result with ok value!");
     }
   }
@@ -453,7 +450,6 @@ class NAVP_EXPORT Result : private std::variant<Ok<T>, Err<E>> {
     if (is_err()) [[likely]] {
       return std::move(_m_get_err_value());
     } else {
-      cpptrace::generate_trace(1).print_with_snippets();
       throw result_error("unwrap_err a result with ok value!");
     }
   }
@@ -536,8 +532,5 @@ class NAVP_EXPORT Result : private std::variant<Ok<T>, Err<E>> {
   constexpr inline E&& _m_get_err_value() && { return std::get<err_t>(*this).val; }
   constexpr inline const E&& _m_get_err_value() const&& { return std::get<err_t>(*this).val; }
 };
-
-template <typename T>
-using NavResult = Result<T, uint16_t>;
 
 }  // namespace navp

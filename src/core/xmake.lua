@@ -20,11 +20,14 @@ target("nav_core")
     add_packages("spdlog","magic_enum","cpptrace",{public = true})    
     add_includedirs("include",{public = true})
     add_deps("reflect-cpp",{public = true})
+    add_deps("exprtk")
+    add_deps_ceres(target)
     add_files("src/ginan/*.cpp")
     add_files("src/utils/*.cpp")
     add_files("src/gnss/*.cpp")
     add_files("src/io/*.cpp")
     add_files("src/solution/*.cpp")
+    add_files("src/algorithm/*.cpp")
     add_rpathdirs("$(projectdir)/bin")
 target_end()
 
@@ -36,6 +39,13 @@ target("spp")
     add_files("solver/spp.cpp")
 target_end()
 
+target("rtk")
+    set_kind("binary")
+    set_languages("c++23")
+    add_cxxflags("-fpie")
+    add_deps("nav_core")
+    add_files("solver/rtk.cpp")
+target_end()
 
 
 

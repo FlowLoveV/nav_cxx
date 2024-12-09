@@ -1,7 +1,6 @@
-#include "io/rinex/rinex_reader.hpp"
-
 #include "ginan/common.hpp"
-#include "ginan/constants.hpp"
+#include "io/rinex/rinex_reader.hpp"
+#include "sensors/gnss/constants.hpp"
 #include "sensors/gnss/enums.hpp"
 #include "sensors/gnss/navigation.hpp"
 #include "sensors/gnss/observation.hpp"
@@ -116,14 +115,11 @@ void decodeObsH(std::istream& inputStream, string& line, f64 ver, TimeSystemEnum
     char code[] = "x00";
     code[0] = buff[0];
 
-    Sv Sat = Sv::from_str(code).unwrap();
-
-    if (Sat.constellation.id == ConstellationEnum::NONE) {
-      // BOOST_LOG_TRIVIAL(debug)
-      // << "invalid system code: sys=" << code[0];
-
+    auto sat_res = Sv::from_str(code);
+    if (sat_res.is_err()) {
       return;
     }
+    auto Sat = sat_res.unwrap_unchecked();
 
     i32 n = (i32)str2num(buff, 3, 3);
 
@@ -336,6 +332,8 @@ void decodeNavH(string& line,           ///< Line to decode
       case ConstellationEnum::GAL:
         code = StoCodeEnum::GAUT;
         break;
+      default:
+        break;
     }
 
     GTow tow = str2num(buff, 31, 9);
@@ -378,37 +376,35 @@ void decodeNavH(string& line,           ///< Line to decode
     strncpy(codeStr, buff, 4);
     StoCodeEnum code = magic_enum::enum_cast<StoCodeEnum>(codeStr).value();
 
-    char id[8] = "";
-    strncpy(id, buff + 51, 5);
-    Sv Sat = Sv::from_str(id).unwrap();
+    Sv Sat;
 
-    if (Sat.constellation.id == ConstellationEnum::NONE) {
-      switch (code) {
-        case StoCodeEnum::GPUT:
-          Sat.constellation.id = ConstellationEnum::GPS;
-          break;
-        case StoCodeEnum::GLUT:
-          Sat.constellation.id = ConstellationEnum::GLO;
-          break;
-        case StoCodeEnum::GAUT:
-          Sat.constellation.id = ConstellationEnum::GAL;
-          break;
-        case StoCodeEnum::BDUT:
-          Sat.constellation.id = ConstellationEnum::BDS;
-          break;
-        case StoCodeEnum::QZUT:
-          Sat.constellation.id = ConstellationEnum::QZS;
-          break;
-        case StoCodeEnum::SBUT:
-          Sat.constellation.id = ConstellationEnum::SBS;
-          break;
-        case StoCodeEnum::GAGP:
-          Sat.constellation.id = ConstellationEnum::GAL;
-          break;
-        case StoCodeEnum::QZGP:
-          Sat.constellation.id = ConstellationEnum::QZS;
-          break;
-      }
+    switch (code) {
+      case StoCodeEnum::GPUT:
+        Sat.constellation.id = ConstellationEnum::GPS;
+        break;
+      case StoCodeEnum::GLUT:
+        Sat.constellation.id = ConstellationEnum::GLO;
+        break;
+      case StoCodeEnum::GAUT:
+        Sat.constellation.id = ConstellationEnum::GAL;
+        break;
+      case StoCodeEnum::BDUT:
+        Sat.constellation.id = ConstellationEnum::BDS;
+        break;
+      case StoCodeEnum::QZUT:
+        Sat.constellation.id = ConstellationEnum::QZS;
+        break;
+      case StoCodeEnum::SBUT:
+        Sat.constellation.id = ConstellationEnum::SBS;
+        break;
+      case StoCodeEnum::GAGP:
+        Sat.constellation.id = ConstellationEnum::GAL;
+        break;
+      case StoCodeEnum::QZGP:
+        Sat.constellation.id = ConstellationEnum::QZS;
+        break;
+      default:
+        break;
     }
     // UTC ID skipped
 
@@ -543,13 +539,10 @@ i32 readRnxH(std::istream& inputStream, f64& ver, char& type, ConstellationEnum&
           tsys = TimeSystemEnum::BDT;
           break;  // v.2.12
         case 'M':
-          sys = ConstellationEnum::NONE;
+          sys = ConstellationEnum::Mixed;
           tsys = TimeSystemEnum::GPST;
           break;  // mixed
         default:
-          // BOOST_LOG_TRIVIAL(debug)
-          // << "unsupported satellite system: " << sysChar;
-
           break;
       }
       continue;
@@ -641,6 +634,8 @@ i32 readRnxH(std::istream& inputStream, f64& ver, char& type, ConstellationEnum&
       case 'L':
         decodeNavH(line, ConstellationEnum::GAL, nav);
         break;  // extension
+      default:
+        break;
     }
     if (strstr(label, "END OF HEADER")) return 1;
 
@@ -761,7 +756,7 @@ i32 decodeObsData(std::istream& inputStream, string& line, f64 ver,
       j = 0;
     }
 
-    FreTypeEnum ft = code2Freq[obs.Sat.constellation.id][codeType.code];
+    FreTypeEnum ft = Constants::code_to_freq_enum(obs.Sat.constellation.id, codeType.code);
 
     RawSig* rawSig = nullptr;
     auto& sigList = obs.sigsLists[ft];
@@ -800,6 +795,8 @@ i32 decodeObsData(std::istream& inputStream, string& line, f64 ver,
           break;
         case 'S':
           sig.snr = val;
+          break;
+        default:
           break;
       }
 
@@ -1769,6 +1766,9 @@ i32 readRnx(std::istream& inputStream, char& type, ObsList& obsList, Navigation&
       return readRnxNav(inputStream, ver, ConstellationEnum::GAL, nav);  // extension
     case 'C':
       return readRnxClk(inputStream, ver, nav);
+    default: {
+      nav_error("Not implmentted");
+    }
   }
 
   // BOOST_LOG_TRIVIAL(debug)
@@ -1776,4 +1776,4 @@ i32 readRnx(std::istream& inputStream, char& type, ObsList& obsList, Navigation&
 
   return 0;
 }
-}  // namespace navp::io::rinex::details
+}  // namespace navp::io::rinex

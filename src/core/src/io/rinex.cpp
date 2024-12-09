@@ -19,8 +19,7 @@ RinexStream::~RinexStream() = default;
 void RinexStream::decode_record(Record& record) {
   // decode header
   if (tellg() == 0) {
-    readRnxH(*this, _version, _type, _sys, _tsys,
-             _sys_code_types, *_nav, *_station);
+    readRnxH(*this, _version, _type, _sys, _tsys, _sys_code_types, *_nav, *_station);
   }
   if (_type == ' ') {
     nav_warn("RinexStream receive an empty stream!");
@@ -31,8 +30,7 @@ void RinexStream::decode_record(Record& record) {
     case 'O': {
       if (auto gnss_obs = dynamic_cast<GnssObsRecord*>(&record); gnss_obs) {
         ObsList obs_list;
-        stat = readRnxObs(*this, _version, _tsys, _sys_code_types, obs_list,
-                          *_station);
+        stat = readRnxObs(*this, _version, _tsys, _sys_code_types, obs_list, *_station);
         gnss_obs->add_obs_list(std::move(obs_list));
         break;
       } else {
@@ -94,6 +92,11 @@ void RinexStream::decode_record(Record& record) {
       }
       return;
     }
+
+    default: {
+      nav_error("Unknown rinex file type {}", _type);
+      return;
+    }
   }
 
   if (stat) {
@@ -106,6 +109,5 @@ void RinexStream::encode_record(Record& record) {
   nav_error("Not implentted yet!");
   exit(-1);
 }
-
 
 }  // namespace navp::io::rinex

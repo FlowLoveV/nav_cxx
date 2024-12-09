@@ -183,7 +183,7 @@ struct NAVP_EXPORT Ceph : KeplerEph {
   f64 ura[4] = {};  ///< user range accuracy
                        ///< GPS/QZS: ura[0]=URAI_NED0, ura[1]=URAI_NED1, ura[2]=URAI_NED2, ura[3]=URAI_ED
   f64 isc[6] =
-      {};  ///< inter-signal corrections
+      {};  ///< inter-signal corrections 
            ///< GPS/QZS CNAV: isc[0]=ISC_L1CA, isc[1]=ISC_L2C, isc[2]=ISC_L5I5, isc[3]=ISC_L5Q5
            ///< GPS/QZS CNV2: isc[0]=ISC_L1CA, isc[1]=ISC_L2C, isc[2]=ISC_L5I5, isc[3]=ISC_L5Q5, isc[4]=ISC_L1Cd,
            ///< isc[5]=ISC_L1Cp BDS	 CNV1: isc[0]=ISC_B1Cd BDS	 CNV2: isc[1]=ISC_B2ad

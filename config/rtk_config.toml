@@ -1,0 +1,43 @@
+[meta]
+task = "rtk"
+project = "rtk-fgo-test"
+executor = "mashuo"
+time = "2024-11-20 11:20:00"
+
+[io]
+# navigation path should be a string vector, meaning you can input multiple ephemeris files
+rover_nav_path = ["/mnt/e/mashuo/project/data/nav_test/rtk/02/Rove2-Double.nav"]
+base_nav_path = ["/mnt/e/mashuo/project/data/nav_test/rtk/02/Base2-Double.nav"]
+
+# observation path should be a string, meaning it only accepts one file 
+base_obs_path = "/mnt/e/mashuo/project/data/nav_test/rtk/02/Base2-Double.obs"
+rover_obs_path = "/mnt/e/mashuo/project/data/nav_test/rtk/02/Rove2-Double.obs"
+
+# output path 
+out_path = "/mnt/e/mashuo/project/data/nav_test/rtk/02/result.pos"
+
+# reference base position should be a float[3] (if not set, baseline will be output)
+base_ref_pos_style = 0                                     # 0-XYZ 1-BLH 
+base_ref_pos = [-2267804.5263, 5009342.3723, 3220991.8632]
+# reference rover position should be a float[3] (if set, meaning the rover is fixed, baseline will be output)
+rover_ref_pos_style = 0                                     # 0-XYZ 1-BLH
+rover_ref_pos = [-2267804.5263, 5009342.3723, 3220991.8632]
+
+[model]
+# GPS / BDS / GLO / GAL / QZS / IRN / SBS / LEO
+# See sensors/gnss/enums.hpp `ConstellationEnum` and `ObsCodeEnum`
+enabled_code = { GPS = ["L1C", "L1P"], BDS = ["L1C", "L1P"] }
+
+# trop model  
+trop = 0
+
+# iono model
+iono = 0
+
+# random model
+random = 0
+
+# solution mode 
+solution_mode = 9
+
+[filter]

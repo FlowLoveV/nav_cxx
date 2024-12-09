@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cpptrace/cpptrace.hpp>
+#include <stdexcept>
 #include <variant>
 
 #include "template_utils.hpp"
@@ -335,7 +335,6 @@ class NAVP_EXPORT Option : private std::variant<T, details::NoneType> {
     if (is_some()) {
       return const_cast<T&>(_m_get_some_value());
     } else {
-      cpptrace::generate_trace(1).print_with_snippets();
       throw option_error("unwrap a none option!");
     }
   }
@@ -343,7 +342,6 @@ class NAVP_EXPORT Option : private std::variant<T, details::NoneType> {
     if (is_some()) {
       return std::move(_m_get_some_value());
     } else {
-      cpptrace::generate_trace(1).print_with_snippets();
       throw option_error("unwrap a none option!");
     }
   }
@@ -391,14 +389,12 @@ class NAVP_EXPORT Option : private std::variant<T, details::NoneType> {
     if (is_some()) {
       return const_cast<T&>(_m_get_some_value());
     }
-    cpptrace::generate_trace(1).print_with_snippets();
     throw option_error(msg);
   }
   constexpr T&& expect(const char* msg) && {
     if (is_some()) {
       return std::move(_m_get_some_value());
     }
-    cpptrace::generate_trace(1).print_with_snippets();
     throw option_error(msg);
   }
 

@@ -1,14 +1,13 @@
 #pragma once
 
-#include <toml++/toml.hpp>
+#include <iostream>
+#include <solution/config.hpp>
 
 #include "utils/macro.hpp"
 
 namespace navp::solution {
 
 class Task;
-
-using Config = toml::parse_result;
 
 class NAVP_EXPORT Task {
  public:
@@ -26,8 +25,10 @@ class NAVP_EXPORT ConfigTask {
 
   virtual void solve() = 0;
 
+  void export_config(std::ostream& os = std::cout) const noexcept;
+
  protected:
-  Config config_;
+  NavConfigManger config_;
 };
 
 class NAVP_EXPORT ConcurrentTask : public ConfigTask {

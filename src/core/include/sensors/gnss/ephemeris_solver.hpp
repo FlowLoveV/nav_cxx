@@ -1,8 +1,8 @@
 #pragma once
 
 #include "sensors/gnss/navigation.hpp"
-#include "utils/eigen.hpp"
 #include "utils/macro.hpp"
+#include "utils/space.hpp"
 #include "utils/time.hpp"
 
 namespace navp::sensors::gnss {
@@ -10,7 +10,7 @@ namespace navp::sensors::gnss {
 // forward declaration
 struct GObs;
 
-class NAVP_EXPORT BrdcEphSolver;
+class NAVP_EXPORT EphemerisSolver;
 
 // Group Delay and Inter-Satellite Clock
 struct NAVP_EXPORT BdsGroupDelay;
@@ -19,13 +19,16 @@ struct NAVP_EXPORT GalGroupDelay;
 struct NAVP_EXPORT QzsGroupDelay;
 struct NAVP_EXPORT GloGroupDelay;
 // A structure representing satellite status information
-struct NAVP_EXPORT BrdcEphResult {
+struct NAVP_EXPORT EphemerisResult {
   Sv sv;
-  utils::NavVector3f64 pos, vel;  // default xyz
-  f64 dt_trans, dtsv, fd_dtsv;    // signal transmission time 、 clock bias 、 clock speed
-  f64 elevation, azimuth;
+  utils::CoordinateXyz pos, vel;  // satellite position (ecef) {x,y,z} (m)
+  f64 var;                        // satellite position and clock variance (m^2)
+  f64 dt_trans, dtsv, fd_dtsv;    // signal transmission time(s) 、 clock bias(s) 、 clock speed
+  f64 elevation, azimuth;         // satellite elevation、azimuth （rad)
 
   void rotate_correct() noexcept;
+
+  void calculate_ea_from(const utils::CoordinateXyz& pos) noexcept;
 
   std::string format_as_string() const noexcept;
 };
@@ -34,11 +37,13 @@ struct NAVP_EXPORT BrdcEphResult {
 // 1. solve broadcast ephemeris and quary
 // 2. quary tgd parameters
 // 3. can be inheritted to reuse
-class BrdcEphSolver {
+class EphemerisSolver {
  public:
-  BrdcEphSolver() noexcept;
-  explicit BrdcEphSolver(const std::vector<const Navigation*>& nav) noexcept;
-  explicit BrdcEphSolver(const std::vector<const GnssNavRecord*>& gnss_record_nav) noexcept;
+  using SvMap = std::map<Sv, EphemerisResult>;
+
+  EphemerisSolver() noexcept;
+  explicit EphemerisSolver(const std::vector<const Navigation*>& nav) noexcept;
+  explicit EphemerisSolver(const std::vector<GnssNavRecord>& gnss_record_nav) noexcept;
 
   // add new navigation
   void add_ephemeris(const Navigation* nav) noexcept;
@@ -48,11 +53,11 @@ class BrdcEphSolver {
   // calculate sv status at given time, without any corrected
   auto solve_sv_status(EpochUtc tr, const std::vector<Sv>& svs) noexcept -> std::vector<Sv>;
 
-  auto quary_sv_status(EpochUtc tr) const noexcept -> const std::map<Sv, BrdcEphResult>*;
-  auto quary_sv_status(EpochUtc tr, Sv sv) const noexcept -> const BrdcEphResult*;
-  auto quary_sv_status(EpochUtc tr, const std::vector<Sv>& sv) const noexcept -> std::vector<const BrdcEphResult*>;
-  auto quary_sv_status_unchecked(EpochUtc tr, Sv sv) const -> const BrdcEphResult*;
-  auto quary_sv_status_unchecked(EpochUtc tr, const std::vector<Sv>& sv) const -> std::vector<const BrdcEphResult*>;
+  auto quary_sv_status(EpochUtc tr) const noexcept -> const SvMap*;
+  auto quary_sv_status(EpochUtc tr, Sv sv) const noexcept -> const EphemerisResult*;
+  auto quary_sv_status(EpochUtc tr, const std::vector<Sv>& sv) const noexcept -> std::vector<const EphemerisResult*>;
+  auto quary_sv_status_unchecked(EpochUtc tr, Sv sv) const -> const EphemerisResult*;
+  auto quary_sv_status_unchecked(EpochUtc tr, const std::vector<Sv>& sv) const -> std::vector<const EphemerisResult*>;
 
   auto quary_gps_tgd(EpochUtc tr) noexcept -> const GpsGroupDelay*;
   auto quary_bds_tgd(EpochUtc tr) noexcept -> const BdsGroupDelay*;
@@ -61,10 +66,10 @@ class BrdcEphSolver {
   auto quary_qzs_tgd(EpochUtc tr) noexcept -> const QzsGroupDelay*;
 
  protected:
-  // bool update_sv_status_pos_vel(EpochUtc t, Sv sv,
-  //                               Option<std::tuple<utils::NavVector3f64, utils::NavVector3f64>>&& pv) noexcept;
-  // bool update_sv_status_clock(EpochUtc t, Sv sv, const Option<std::tuple<f64, f64>>& clock) noexcept;
+  bool brdc_solve_sv_status(EpochUtc tr, Sv sv, f64 pr) noexcept;
+  bool precise_solve_sv_status(EpochUtc tr, Sv sv, f64 pr) noexcept;
 
+  // tgd helper functions
   bool update_newest_gps_lnav(const utils::GTime& t) noexcept;
   bool update_newest_gps_cnav(const utils::GTime& t) noexcept;
   bool update_newest_gps_cnv2(const utils::GTime& t) noexcept;
@@ -80,7 +85,7 @@ class BrdcEphSolver {
   // Update tgd parameters
   void update_tgd(ConstellationEnum sys, const utils::GTime& t) noexcept;
 
-  // lanuch solver functions for different systems and ephemeris
+  // lanuch brdc solver functions for different systems and ephemeris
   bool launch_ceph_solver(const utils::GTime& tr, Sv sv, f64 pr, bool correct_transmission = false) noexcept;
   bool launch_eph_solver(const utils::GTime& tr, Sv sv, f64 pr, bool correct_transmission = false) noexcept;
   bool launch_geph_solver(const utils::GTime& tr, Sv sv, f64 pr, bool correct_transmission = false) noexcept;
@@ -89,7 +94,7 @@ class BrdcEphSolver {
   std::vector<const Navigation*> nav;
 
   // sv status
-  std::shared_ptr<std::map<EpochUtc, std::map<Sv, BrdcEphResult>>> sv_status = nullptr;
+  std::shared_ptr<std::map<EpochUtc, std::map<Sv, EphemerisResult>>> sv_status = nullptr;
 
   // cache newest ephemeris of different versions and system
   Eph *cache_bds_d1d2, *cache_gps_lnav, *cache_qzs_lnav, *cache_gal_ifnav;

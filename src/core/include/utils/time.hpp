@@ -3,7 +3,7 @@
 #include <chrono>
 #include <compare>
 
-#include "utils/error.hpp"
+#include "utils/exception.hpp"
 #include "utils/hash.hpp"
 #include "utils/logger.hpp"
 #include "utils/macro.hpp"
@@ -76,6 +76,8 @@ struct NAVP_EXPORT std::formatter<navp::details::bds_time<_Duration>, _CharT> : 
 };
 
 namespace navp {
+
+REGISTER_NAV_RUNTIME_ERROR_CHILD(TimeParseError, NavRuntimeError);
 
 inline constexpr i64 millis_per_second = 1'000;
 inline constexpr i64 micros_per_second = 1'000'000;
@@ -198,7 +200,7 @@ struct NAVP_EXPORT Date {
   u16 day;
   u16 hour;
   u16 minute;
-  u16 integer_second; 
+  u16 integer_second;
   Seconds<i32> seconds_offset;  // default zero time zone
   i64 attoseconds;              // i64 attoseconds(1e-18s)
   f_least64 decimal_second;     // float decimal second
@@ -563,15 +565,15 @@ class NAVP_EXPORT Epoch {
   typedef details::Duration::integer_duration_type integer_duration_type;
   typedef details::Duration::decimal_duration_type decimal_duration_type;
 
-  // todo 
+  // todo
   // now only works for utc_clock
-  constexpr static NavResult<Epoch> from_str(const char* fmt, const char* ctx) {
+  constexpr static Result<Epoch, TimeParseError> from_str(const char* fmt, const char* ctx) {
     using duration_type = std::chrono::duration<details::_format_parse_rep, details::_format_parse_ratio>;
     std::chrono::time_point<clock_type, duration_type> base_tp;
     details::istringstream ss(ctx);
     ss >> std::chrono::parse(fmt, base_tp);
     if (ss.fail()) {
-      return Err(errors::NavError::Utils::Time::ParseEpochError);
+      return Err(TimeParseError(std::format("Can't parse \'{}\' into Epoch with format \'{}\'", ctx, fmt)));
     }
     // adjust
     if constexpr (!std::is_same_v<clock_type, std::chrono::utc_clock>) {
