@@ -1,9 +1,13 @@
 #include "solution/config.hpp"
 
+#include <spdlog/sinks/daily_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+
 #include "io/rinex/rinex_stream.hpp"
 #include "sensors/gnss/navigation.hpp"
 #include "sensors/gnss/observation.hpp"
 #include "solution/config.hpp"
+#include "spdlog/sinks/basic_file_sink.h"
 
 namespace navp::solution {
 
@@ -106,6 +110,104 @@ auto get_u8_enum_class(const toml::node* node) noexcept -> ConfigResult<T> {
     return ConfigParseError(std::format("Parsing error at {}, should be a integer", node->source()));
   }
   return static_cast<T>(node->as_integer()->get());
+}
+
+/*
+ * logger config reading
+ */
+struct FileLoggerConfig {
+  u8 type;
+  bool enable_multithread;
+  spdlog::level::level_enum level;
+  std::string pattern;
+  std::string path;
+
+  spdlog::sink_ptr create_file_sink() const noexcept {
+    switch (type) {
+      case 0:
+        return create_basic_file_sink();
+      case 1:
+        return create_daily_file_sink();
+      default:
+        return spdlog::sink_ptr();
+    }
+  }
+
+  spdlog::sink_ptr create_basic_file_sink() const noexcept {
+    spdlog::sink_ptr sink;
+    if (enable_multithread) {
+      sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path);
+    } else {
+      sink = std::make_shared<spdlog::sinks::basic_file_sink_st>(path);
+    }
+    sink->set_level(level);
+    sink->set_pattern(std::move(pattern));
+    return std::move(sink);
+  }
+
+  spdlog::sink_ptr create_daily_file_sink() const noexcept {
+    spdlog::sink_ptr sink;
+    if (enable_multithread) {
+      sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(path, 2, 0);
+    } else {
+      sink = std::make_shared<spdlog::sinks::daily_file_sink_st>(path, 2, 0);
+    }
+    sink->set_level(level);
+    sink->set_pattern(std::move(pattern));
+    return std::move(sink);
+  }
+};
+
+struct LoggerConfig {
+  bool enable_console;
+  spdlog::level::level_enum console_level, flush_on_level;
+  std::string name;
+  std::string console_pattern;
+  std::vector<FileLoggerConfig> file_loggers;
+
+  std::shared_ptr<spdlog::logger> create_logger() const noexcept {
+    Logger logger(name);
+    // depoy console
+    if (enable_console) {
+      auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+      console_sink->set_level(console_level);
+      console_sink->set_pattern(std::move(console_pattern));
+      logger.depoy_sink(std::move(console_sink));
+    }
+    // depoy files
+    for (auto& file_cfg : file_loggers) {
+      logger.depoy_sink(file_cfg.create_file_sink());
+    }
+    return logger.set_level(spdlog::level::trace).flush_on(flush_on_level).register_self();
+  }
+};
+
+auto get_logger(const toml::node* node) noexcept -> ConfigResult<std::shared_ptr<spdlog::logger>> {
+  LoggerConfig log_cfg;
+  if (auto _log = node->as_table()) {
+    log_cfg.name = _log->get_as<std::string>("name")->value_or("empty");
+    log_cfg.enable_console = _log->get_as<bool>("enable_console")->value_or(false);
+    log_cfg.console_level = static_cast<spdlog::level::level_enum>(_log->get_as<int64_t>("console_level")->value_or(0));
+    log_cfg.console_pattern = _log->get_as<std::string>("console_pattern")->value_or("");
+
+    if (auto file_log_array = _log->get_as<toml::array>("file")) {
+      log_cfg.file_loggers.reserve(file_log_array->size());
+      for (const auto& file_log : *file_log_array) {
+        if (auto _file = file_log.as_table()) {
+          FileLoggerConfig fileLoggerConfig;
+          fileLoggerConfig.level = static_cast<spdlog::level::level_enum>(_file->get_as<int64_t>("level")->value_or(0));
+          fileLoggerConfig.enable_multithread = _file->get_as<bool>("enable_multithread")->value_or(false);
+          fileLoggerConfig.pattern = _file->get_as<std::string>("pattern")->value_or("");
+          fileLoggerConfig.path = _file->get_as<std::string>("path")->value_or("");
+          fileLoggerConfig.type = static_cast<u8>(_file->get_as<int64_t>("type")->value_or(0));
+          log_cfg.file_loggers.emplace_back(fileLoggerConfig);
+        }
+      }
+    }
+  } else {
+    return ConfigParseError(std::format("Parsing error at {}, should be a table", node->source()));
+  }
+  return log_cfg.create_logger();
 }
 
 NavConfigManger::NavConfigManger(std::string_view cfg_path) : toml::parse_result(toml::parse_file(cfg_path)) {}
@@ -232,6 +334,55 @@ auto NavConfigManger::solution_mode() const noexcept -> ConfigResult<SolutionMod
     return std::move(node.unwrap_err_unchecked());
   }
   return get_u8_enum_class<SolutionModeEnum>(node.unwrap_unchecked());
+}
+
+auto NavConfigManger::main_logger() const noexcept -> ConfigResult<std::shared_ptr<spdlog::logger>> {
+  auto logger_name = task_name();
+  if (logger_name.is_err()) {
+    return std::move(logger_name.unwrap_err_unchecked());
+  }
+  auto node = get_node(this, LoggerCfg, logger_name.unwrap_unchecked().c_str());
+  if (node.is_err()) [[unlikely]] {
+    return std::move(node.unwrap_err_unchecked());
+  }
+  return get_logger(node.unwrap_unchecked());
+}
+
+auto NavConfigManger::task_name() const noexcept -> ConfigResult<std::string> {
+  auto node = get_node(this, ProjCfg, TaskNameCfg);
+  if (node.is_err()) [[unlikely]] {
+    return std::move(node.unwrap_err_unchecked());
+  }
+  return std::string(node.unwrap_unchecked()->as_string()->get());
+}
+
+auto NavConfigManger::proj_name() const noexcept -> ConfigResult<std::string> {
+  auto node = get_node(this, ProjCfg, ProjectNameCfg);
+  if (node.is_err()) [[unlikely]] {
+    return std::move(node.unwrap_err_unchecked());
+  }
+  return std::string(node.unwrap_unchecked()->as_string()->get());
+}
+
+auto NavConfigManger::executor_name() const noexcept -> ConfigResult<std::string> {
+  auto node = get_node(this, ProjCfg, ExecutorCfg);
+  if (node.is_err()) [[unlikely]] {
+    return std::move(node.unwrap_err_unchecked());
+  }
+  return std::string(node.unwrap_unchecked()->as_string()->get());
+}
+
+auto NavConfigManger::executor_time() const noexcept -> ConfigResult<EpochUtc> {
+  auto node = get_node(this, ProjCfg, ExecuteTimeCfg);
+  if (node.is_err()) [[unlikely]] {
+    return std::move(node.unwrap_err_unchecked());
+  }
+  auto& str = node.unwrap_unchecked()->as_string()->get();
+  auto utc = EpochUtc::from_str("%Y-%m-%d %H:%M:%S", str.c_str());
+  if (utc.is_err()) {
+    return ConfigParseError(utc.unwrap_err_unchecked().what());
+  }
+  return utc.unwrap_unchecked();
 }
 
 }  // namespace navp::solution

@@ -22,6 +22,15 @@ TEST_CASE("config") {
       std::cout << std::endl;
     }
   }
-
   std::cout << "Parse enabled_code done!\n";
+
+  auto logger_result = std::move(cfg.main_logger());
+  if (logger_result.is_err()) {
+    throw logger_result.unwrap_err_unchecked();
+  } else {
+    auto logger = logger_result.unwrap_unchecked();
+    logger->warn("This is warn message!");
+  }
+
+  auto prj = cfg["meta"]["prject_"].as_string()->get();
 }

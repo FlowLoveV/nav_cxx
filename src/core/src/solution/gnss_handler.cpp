@@ -19,6 +19,8 @@ void GnssHandler::initialize(const NavConfigManger& config, bool is_rover) {
   initialize_obs_code(config);
   initialize_random_model(config);
   initialize_solution_mode(config);
+  initialize_logger(config);
+  logger_->info("Initialize {} gnss station succeed!", is_rover ? "rover" : "base");
 }
 
 void GnssHandler::initialize_navigation(const NavConfigManger& config, bool is_rover) {
@@ -85,20 +87,29 @@ void GnssHandler::initialize_random_model(const NavConfigManger& config) {
 
 void GnssHandler::initialize_solution_mode(const NavConfigManger& config) {
   auto solution_mode = config.solution_mode();
-  if (solution_mode.is_err()) {
+  if (solution_mode.is_err()) [[unlikely]] {
     throw solution_mode.unwrap_err_unchecked();
   } else {
     solution_mode_ = solution_mode.unwrap_unchecked();
   }
 }
 
-EphemerisSolver& GnssHandler::ephemeris_solver() noexcept { return *eph_solver_; }
+void GnssHandler::initialize_logger(const NavConfigManger& config) {
+  auto logger = config.main_logger();
+  if (logger.is_err()) [[unlikely]] {
+    throw logger.unwrap_err_unchecked();
+  } else {
+    logger_ = std::move(logger.unwrap_unchecked());
+  }
+}
 
-GnssObsRecord& GnssHandler::observation() noexcept { return *obs_; }
+// EphemerisSolver& GnssHandler::ephemeris_solver() noexcept { return *eph_solver_; }
 
-TropModel& GnssHandler::trop_model() noexcept { return *trop_model_; }
+// GnssObsRecord& GnssHandler::observation() noexcept { return *obs_; }
 
-bool GnssHandler::get_next_observation() noexcept {
+// TropModel& GnssHandler::trop_model() noexcept { return *trop_model_; }
+
+bool GnssHandler::load_next_observation() noexcept {
   if (!obs_stream_->eof()) [[likely]] {
     obs_->get_record(*obs_stream_);
     return true;
@@ -106,7 +117,7 @@ bool GnssHandler::get_next_observation() noexcept {
   return false;
 }
 
-auto GnssHandler::current_available_satellites() noexcept -> std::vector<Sv> {
+auto GnssHandler::available_satellites() noexcept -> std::vector<Sv> {
   auto& [time, obs] = obs_->latest();
   return eph_solver_->solve_sv_status(time, obs);
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <spdlog/logger.h>
+
 #include <unordered_set>
 
 #include "sensors/gnss/enums.hpp"
@@ -35,9 +37,12 @@ REGISTER_CONFIG_ITEM(RoverRefPosCfg, "rover_ref_pos");             // array[f64]
 REGISTER_CONFIG_ITEM(BaseRefPosStyleCfg, "base_ref_pos_style");    // 0-XYZ 1-BLH 2-ENU
 REGISTER_CONFIG_ITEM(BaseRefPosCfg, "base_ref_pos");               // array[f64]
 
+// logger config
+REGISTER_CONFIG_ITEM(LoggerCfg, "log");
+
 // model config
 REGISTER_CONFIG_ITEM(ModelCfg, "model")
-REGISTER_CONFIG_ITEM(EnabledCodeCfg, "enabled_code");    // table 
+REGISTER_CONFIG_ITEM(EnabledCodeCfg, "enabled_code");    // table
 REGISTER_CONFIG_ITEM(TropModelCfg, "trop");              // integer (u8)
 REGISTER_CONFIG_ITEM(IonoModelCfg, "iono");              // integer (u8)
 REGISTER_CONFIG_ITEM(SolutionModeCfg, "solution_mode");  // integer (u8)
@@ -114,6 +119,21 @@ class NAVP_EXPORT NavConfigManger : public toml::parse_result {
 
   // solution mode
   NAV_NODISCARD_ERROR_HANDLE auto solution_mode() const noexcept -> ConfigResult<SolutionModeEnum>;
+
+  // logger
+  NAV_NODISCARD_ERROR_HANDLE auto main_logger() const noexcept -> ConfigResult<std::shared_ptr<spdlog::logger>>;
+
+  // task name
+  NAV_NODISCARD_ERROR_HANDLE auto task_name() const noexcept -> ConfigResult<std::string>;
+
+  // project name
+  NAV_NODISCARD_ERROR_HANDLE auto proj_name() const noexcept -> ConfigResult<std::string>;
+
+  // executor name
+  NAV_NODISCARD_ERROR_HANDLE auto executor_name() const noexcept -> ConfigResult<std::string>;
+
+  // executor time
+  NAV_NODISCARD_ERROR_HANDLE auto executor_time() const noexcept -> ConfigResult<EpochUtc>;
 };
 
 }  // namespace navp::solution

@@ -4,10 +4,12 @@
 
 #include "utils/eigen.hpp"
 #include "utils/macro.hpp"
+#include "sensors/gnss/observation.hpp"
 
 namespace navp::fgo {
 
 using utils::NavVector3f64;
+using sensors::gnss::Sig;
 
 // - Residual dimension = 1
 // - First parameter(position xyz) dimension = 3

@@ -1210,7 +1210,7 @@ auto EphemerisSolver::solve_sv_status(EpochUtc tr, const std::map<Sv, std::share
     const GObs& obs = *kv.second;
 
     f64 pr = 0.0;
-    for (const auto& sig : obs.sigsLists | std::views::values | std::views::join) {
+    for (const auto& sig : obs.sigs_list | std::views::values | std::views::join) {
       if (sig.P != 0.0) {
         pr = sig.P;
         break;

@@ -44,24 +44,23 @@ bool GnssRandomHandler::handlable() const noexcept { return obs_map_ && eph_resu
 
 const Sig* GnssRandomHandler::handle(Sv sv, ObsCodeEnum code) {
   if (!handlable()) return nullptr;
-  auto freq = Constants::code_to_freq_enum(sv.constellation.id, code);
-  auto& obs = (*obs_map_)[sv]->sigsLists[freq];
-  auto sig = std::find_if(obs.begin(), obs.end(), [&](Sig& sig) { return sig.code == code; });
-  if (sig != obs.end()) {
+  auto& obs = obs_map_->at(sv);
+  auto sig = const_cast<Sig*>(obs->find_code(code));  // safe and necessary const_cast here
+  if (sig) {
     switch (type_) {
       case RandomModelEnum::STANDARD: {
         sig->code_var = details::stardand_pseudorange_var;
         sig->phase_var = details::stardand_carrier_var;
-        return std::addressof(*sig);
+        return sig;
       }
       case RandomModelEnum::ELEVATION_DEPENDENT: {
-        return std::addressof(*sig);
+        return sig;
       }
       case RandomModelEnum::SNR_DEPENDENT: {
-        return std::addressof(*sig);
+        return sig;
       }
       case RandomModelEnum::CUSTOM: {
-        return std::addressof(*sig);
+        return sig;
       }
       default: {
         nav_error("Encountering an unexpected branch in RandomModelEnum");

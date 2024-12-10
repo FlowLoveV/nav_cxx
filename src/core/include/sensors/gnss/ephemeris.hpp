@@ -4,8 +4,8 @@
 
 #include "enums.hpp"
 #include "sv.hpp"
-#include "utils/gTime.hpp"
 #include "utils/eigen.hpp"
+#include "utils/gTime.hpp"
 #include "utils/macro.hpp"
 
 namespace navp::sensors::gnss {
@@ -34,7 +34,7 @@ struct NAVP_EXPORT BrdcEph {};
 
 struct NAVP_EXPORT Eph : BrdcEph, KeplerEph {
   NavMsgTypeEnum type = NavMsgTypeEnum::NONE;  ///< message type
-  Sv Sat;                                      ///< satellite number
+  Sv sv;                                       ///< satellite number
   i32 iode = -1;                               ///< GPS/QZS: IODE, GAL: IODnav
   i32 iodc = 0;                                ///< IODC
   i32 aode;                                    ///< BDS AODE
@@ -55,41 +55,39 @@ struct NAVP_EXPORT Eph : BrdcEph, KeplerEph {
   f64 f1;           ///< SV clock parameter (af1)
   f64 f2;           ///< SV clock parameter (af2)
   f64 tgd[4] = {};  ///< group delay parameters
-                       ///< GPS/QZS:tgd[0]=TGD
-                       ///< GAL    :tgd[0]=BGD E5a/E1,tgd[1]=BGD E5b/E1
-                       ///< BDS    :tgd[0]=BGD1,tgd[1]=BGD2
+                    ///< GPS/QZS:tgd[0]=TGD
+                    ///< GAL    :tgd[0]=BGD E5a/E1,tgd[1]=BGD E5b/E1
+                    ///< BDS    :tgd[0]=BGD1,tgd[1]=BGD2
 
   SatTypeEnum orb = SatTypeEnum::NONE;  ///< BDS sat/orbit type
   utils::GTime top = {};                ///< time of prediction
-  f64 tops = 0;                      ///< t_op (s) in week
-  f64 ura[4] = {};                   ///< user range accuracy or GAL SISA
-                       ///< GPS/QZS CNVX: ura[0]=URAI_NED0, ura[1]=URAI_NED1, ura[2]=URAI_NED2, ura[3]=URAI_ED
-  f64 isc[6] =
-      {};  ///< inter-signal corrections
-           ///< GPS/QZS CNAV: isc[0]=ISC_L1CA, isc[1]=ISC_L2C, isc[2]=ISC_L5I5, isc[3]=ISC_L5Q5
-           ///< GPS/QZS CNV2: isc[0]=ISC_L1CA, isc[1]=ISC_L2C, isc[2]=ISC_L5I5, isc[3]=ISC_L5Q5, isc[4]=ISC_L1Cd,
-           ///< isc[5]=ISC_L1Cp BDS	 CNV1: isc[0]=ISC_B1Cd BDS	 CNV2: isc[1]=ISC_B2ad
-  f64 sis[5] =
-      {};  ///< signal in space accuracy index
-           ///< BDS CNVX sis[0]=SISAI_oe, sis[1]=SISAI_ocb, sis[2]=SISAI_oc1, sis[3]=SISAI_oc2, sis[4]=SISMAI
+  f64 tops = 0;                         ///< t_op (s) in week
+  f64 ura[4] = {};                      ///< user range accuracy or GAL SISA
+                    ///< GPS/QZS CNVX: ura[0]=URAI_NED0, ura[1]=URAI_NED1, ura[2]=URAI_NED2, ura[3]=URAI_ED
+  f64 isc[6] = {};  ///< inter-signal corrections
+                    ///< GPS/QZS CNAV: isc[0]=ISC_L1CA, isc[1]=ISC_L2C, isc[2]=ISC_L5I5, isc[3]=ISC_L5Q5
+                    ///< GPS/QZS CNV2: isc[0]=ISC_L1CA, isc[1]=ISC_L2C, isc[2]=ISC_L5I5, isc[3]=ISC_L5Q5,
+                    ///< isc[4]=ISC_L1Cd, isc[5]=ISC_L1Cp BDS	 CNV1: isc[0]=ISC_B1Cd BDS	 CNV2: isc[1]=ISC_B2ad
+  f64 sis[5] = {};  ///< signal in space accuracy index
+                    ///< BDS CNVX sis[0]=SISAI_oe, sis[1]=SISAI_ocb, sis[2]=SISAI_oc1, sis[3]=SISAI_oc2, sis[4]=SISMAI
 
   // original messages from stream/rinex for debugging
-  f64 tocs;       ///< TOC (s) within week
+  f64 tocs;          ///< TOC (s) within week
   i32 weekRollOver;  ///< week number (rolled over)
-  f64 sqrtA;      ///< sqrt A
+  f64 sqrtA;         ///< sqrt A
   i32 e5a_hs = 0;    ///< GAL E5a signal health status
   i32 e5a_dvs = 0;   ///< GAL E5a data validity status
   i32 e5b_hs = 0;    ///< GAL E5b signal health status
   i32 e5b_dvs = 0;   ///< GAL E5b data validity status
   i32 e1_hs = 0;     ///< GAL E1 signal health status
   i32 e1_dvs = 0;    ///< GAL E1 data validity status
-  f64 ttms = 0;   ///< transmission time (s) within week
+  f64 ttms = 0;      ///< transmission time (s) within week
   i32 fitFlag = 0;   ///< fit flag
 };
 
 struct NAVP_EXPORT Geph : BrdcEph {
   NavMsgTypeEnum type = NavMsgTypeEnum::NONE;  ///< message type
-  Sv Sat;                                      ///< satellite number
+  Sv sv;                                       ///< satellite number
   i32 iode = -1;                               ///< IODE (0-6 bit of tb field)
   i32 frq;                                     ///< satellite frequency number
   SvhEnum svh;                                 ///< satellite health
@@ -97,18 +95,18 @@ struct NAVP_EXPORT Geph : BrdcEph {
   i32 age;                                     ///< age of operation
   utils::GTime toe;                            ///< epoch of epherides (gpst)
   utils::GTime tof;                            ///< message frame time (gpst)
-  utils::NavVector3f64 pos;                         ///< satellite position (ecef) (m)
-  utils::NavVector3f64 vel;                         ///< satellite velocity (ecef) (m/s)
-  utils::NavVector3f64 acc;                         ///< satellite acceleration (ecef) (m/s^2)
-  f64 taun;                                 ///< SV clock bias (s)
-  f64 gammaN;                               ///< SV relative freq bias
-  f64 dtaun;                                ///< delay between L1 and L2 (s)
+  utils::NavVector3f64 pos;                    ///< satellite position (ecef) (m)
+  utils::NavVector3f64 vel;                    ///< satellite velocity (ecef) (m/s)
+  utils::NavVector3f64 acc;                    ///< satellite acceleration (ecef) (m/s^2)
+  f64 taun;                                    ///< SV clock bias (s)
+  f64 gammaN;                                  ///< SV relative freq bias
+  f64 dtaun;                                   ///< delay between L1 and L2 (s)
 
   // original messages from stream/rinex for debugging
-  f64 tofs;    ///< TOF (s) within the current day
+  f64 tofs;       ///< TOF (s) within the current day
   i32 tk_hour;    ///< number of hours of TOF
   i32 tk_min;     ///< number of minutes of TOF
-  f64 tk_sec;  ///< seconds of TOF
+  f64 tk_sec;     ///< seconds of TOF
   i32 tb;         ///< number of 15 min of TOE
   i32 glonassM;   ///< type of GLO satellites
   i32 NT;         ///< calender number of day within 4-year interval
@@ -119,18 +117,18 @@ struct NAVP_EXPORT Geph : BrdcEph {
 struct NAVP_EXPORT Pclk {
   f64 clk = 999999.999999;  ///< satellite clock (s)
   f64 clkStd = 0;           ///< satellite clock std (s)
-  i32 clkIndex;                ///< clock index for multiple files
+  i32 clkIndex;             ///< clock index for multiple files
 };
 
 /** precise ephemeris
  */
 struct NAVP_EXPORT Peph : Pclk {
-  Sv Sat;                                            ///< satellite number
-  utils::GTime time;                                 ///< time (GPST)
-  i32 index;                                         ///< ephemeris index for multiple files
-  utils::NavVector3f64 pos;                               ///< satellite position					(m)
-  utils::NavVector3f64 posStd = utils::NavVector3f64::Zero();  ///< satellite position std				(m)
-  utils::NavVector3f64 vel;                               ///< satellite velocity/clk-rate		(m/s)
+  Sv sv;                                                       ///< satellite number
+  utils::GTime time;                                           ///< time (GPST)
+  i32 index;                                                   ///< ephemeris index for multiple files
+  utils::NavVector3f64 pos;                                    ///< satellite position					(m)
+  utils::NavVector3f64 posStd = utils::NavVector3f64::Zero();  ///< satellite position std (m)
+  utils::NavVector3f64 vel;                                    ///< satellite velocity/clk-rate		(m/s)
   utils::NavVector3f64 velStd = utils::NavVector3f64::Zero();  ///< satellite velocity/clk-rate std	(m/s)
 };
 
@@ -148,16 +146,16 @@ struct NAVP_EXPORT Att {
  */
 struct NAVP_EXPORT Seph : BrdcEph {
   NavMsgTypeEnum type = NavMsgTypeEnum::NONE;  ///< message type
-  Sv Sat;                                      ///< satellite number
+  Sv sv;                                       ///< satellite number
   utils::GTime t0;                             ///< reference epoch time (GPST)
   utils::GTime tof;                            ///< time of message frame (GPST)
   i32 sva;                                     ///< SV accuracy (URA index)
   SvhEnum svh;                                 ///< SV health
-  utils::NavVector3f64 pos;                         ///< satellite position (m) (ecef)
-  utils::NavVector3f64 vel;                         ///< satellite velocity (m/s) (ecef)
-  utils::NavVector3f64 acc;                         ///< satellite acceleration (m/s^2) (ecef)
-  f64 af0 = 0;                              ///< satellite clock-offset/drift (s)
-  f64 af1 = 0;                              ///< satellite clock-drift (s/s)
+  utils::NavVector3f64 pos;                    ///< satellite position (m) (ecef)
+  utils::NavVector3f64 vel;                    ///< satellite velocity (m/s) (ecef)
+  utils::NavVector3f64 acc;                    ///< satellite acceleration (m/s^2) (ecef)
+  f64 af0 = 0;                                 ///< satellite clock-offset/drift (s)
+  f64 af1 = 0;                                 ///< satellite clock-drift (s/s)
   i32 iode = -1;                               // unused, for templating only
   utils::GTime toe;                            // unused, for templating only
 
@@ -169,7 +167,7 @@ struct NAVP_EXPORT Seph : BrdcEph {
 struct NAVP_EXPORT Ceph : KeplerEph {
   NavMsgTypeEnum type = NavMsgTypeEnum::NONE;  ///< message type
   SatTypeEnum orb = SatTypeEnum::NONE;         ///< BDS sat/orbit type
-  Sv Sat;                                      ///< satellite number
+  Sv sv;                                       ///< satellite number
   i32 iode = -1;                               ///< BDS CNAV1/CNV2 IODE
   i32 iodc = -1;                               ///< BDS CNAV1/CNV2 IODC
   SvhEnum svh;                                 ///< SV health
@@ -181,23 +179,22 @@ struct NAVP_EXPORT Ceph : KeplerEph {
   utils::GTime ttm = {};                       ///< transmission time
 
   f64 ura[4] = {};  ///< user range accuracy
-                       ///< GPS/QZS: ura[0]=URAI_NED0, ura[1]=URAI_NED1, ura[2]=URAI_NED2, ura[3]=URAI_ED
-  f64 isc[6] =
-      {};  ///< inter-signal corrections 
-           ///< GPS/QZS CNAV: isc[0]=ISC_L1CA, isc[1]=ISC_L2C, isc[2]=ISC_L5I5, isc[3]=ISC_L5Q5
-           ///< GPS/QZS CNV2: isc[0]=ISC_L1CA, isc[1]=ISC_L2C, isc[2]=ISC_L5I5, isc[3]=ISC_L5Q5, isc[4]=ISC_L1Cd,
-           ///< isc[5]=ISC_L1Cp BDS	 CNV1: isc[0]=ISC_B1Cd BDS	 CNV2: isc[1]=ISC_B2ad
+                    ///< GPS/QZS: ura[0]=URAI_NED0, ura[1]=URAI_NED1, ura[2]=URAI_NED2, ura[3]=URAI_ED
+  f64 isc[6] = {};  ///< inter-signal corrections
+                    ///< GPS/QZS CNAV: isc[0]=ISC_L1CA, isc[1]=ISC_L2C, isc[2]=ISC_L5I5, isc[3]=ISC_L5Q5
+                    ///< GPS/QZS CNV2: isc[0]=ISC_L1CA, isc[1]=ISC_L2C, isc[2]=ISC_L5I5, isc[3]=ISC_L5Q5,
+                    ///< isc[4]=ISC_L1Cd, isc[5]=ISC_L1Cp BDS	 CNV1: isc[0]=ISC_B1Cd BDS	 CNV2: isc[1]=ISC_B2ad
   f64 sis[5] = {};  ///< signal in space accuracy index
-                       ///< BDS sis[0]=SISAI_oe, sis[1]=SISAI_ocb, sis[2]=SISAI_oc1, sis[3]=SISAI_oc2, sis[4]=SISMAI
+                    ///< BDS sis[0]=SISAI_oe, sis[1]=SISAI_ocb, sis[2]=SISAI_oc1, sis[3]=SISAI_oc2, sis[4]=SISMAI
   f64 tops = 0;     ///< t_op (s) in week
   f64 toes = 0;     ///< TOE (s) in week
   f64 f0 = 0;       ///< SV clock parameter (af0)
   f64 f1 = 0;       ///< SV clock parameter (af1)
   f64 f2 = 0;       ///< SV clock parameter (af2)
   f64 tgd[4] = {};  ///< group delay parameters
-                       ///< GPS/QZS:		tgd[0]=TGD
-                       ///< BDS CNAV1/CNV2: tgd[0]=TGD_B1Cp, tgd[1]=TGD_B2ap
-                       ///< BDS CNAV3:	tgd[2]=TGD_B2bI
+                    ///< GPS/QZS:		tgd[0]=TGD
+                    ///< BDS CNAV1/CNV2: tgd[0]=TGD_B1Cp, tgd[1]=TGD_B2ap
+                    ///< BDS CNAV3:	tgd[2]=TGD_B2bI
 
   f64 ttms = 0;  ///< transmission time (s) within week
 };
@@ -206,7 +203,7 @@ struct NAVP_EXPORT Ceph : KeplerEph {
  */
 struct NAVP_EXPORT STO {
   NavMsgTypeEnum type = NavMsgTypeEnum::NONE;  ///< message type
-  Sv Sat;                                      ///< satellite number
+  Sv sv;                                       ///< satellite number
   utils::GTime tot;                            ///< reference epoch for time offset information
   utils::GTime ttm;                            ///< transmission time
   StoCodeEnum code = StoCodeEnum::NONE;        ///< system Time offset code;
@@ -224,7 +221,7 @@ struct NAVP_EXPORT STO {
  */
 struct NAVP_EXPORT EOP {
   NavMsgTypeEnum type = NavMsgTypeEnum::NONE;  ///< message type
-  Sv Sat;                                      ///< satellite number
+  Sv sv;                                       ///< satellite number
   utils::GTime teop;                           ///< reference epoch of EOP data
   utils::GTime ttm;                            ///< transmission time
 
@@ -245,7 +242,7 @@ struct NAVP_EXPORT EOP {
  */
 struct NAVP_EXPORT ION {
   NavMsgTypeEnum type = NavMsgTypeEnum::NONE;  ///< message type
-  Sv Sat;                                      ///< satellite number
+  Sv sv;                                       ///< satellite number
   utils::GTime ttm;                            ///< transmission time
   i32 code = 0;                                ///< rgion code for QZS
   i32 flag = 0;                                ///< disturbance flags for GAL

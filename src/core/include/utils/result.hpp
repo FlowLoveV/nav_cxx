@@ -457,7 +457,7 @@ class NAVP_EXPORT Result : private std::variant<Ok<T>, Err<E>> {
   // unwrap_unchecked()
   // dangerous!!!
   constexpr T& unwrap_unchecked() const& { return const_cast<T&>(_m_get_ok_value()); }
-  constexpr T&& unwrap_unchecked() const&& { return std::move(_m_get_ok_value()); }
+  constexpr T&& unwrap_unchecked() && { return std::move(_m_get_ok_value()); }
 
   // unwrap_err_unchecked()
   // dangerous!!!

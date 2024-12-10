@@ -78,13 +78,13 @@ bool readsp3(std::istream& fileStream,     ///< stream to read content from
       ConstellationEnum sys = code2sys(buff[1]);
       int prn = (int)str2num(buff, 2, 2);
 
-      Sv Sat{.prn = (navp::u8)prn, .constellation = {.id = sys}};
-      if (!Sat) continue;
+      Sv sv{.prn = (navp::u8)prn, .constellation = {.id = sys}};
+      if (!sv) continue;
 
       Peph peph = {};
       peph.time = time;
       peph.index = index;
-      peph.Sat = Sat;
+      peph.sv = sv;
       bool valid = true;
 
       if (buff[0] == 'P') {
@@ -276,7 +276,7 @@ void Sp3Stream::decode_record(Record& record) {
     TimeSystemEnum tsys;
     f64 bfact[2];
     readsp3(*this, eph_vec, 0, tsys, bfact);
-    std::ranges::for_each(eph_vec, [&](const Peph& peh) { nav_record->nav->pephMap[peh.Sat][peh.time] = peh; });
+    std::ranges::for_each(eph_vec, [&](const Peph& peh) { nav_record->nav->pephMap[peh.sv][peh.time] = peh; });
   } else {
     nav_warn("Sp3Stream decode unmatched record");
   }

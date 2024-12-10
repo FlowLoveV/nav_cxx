@@ -1,6 +1,8 @@
 #include "utils/logger.hpp"
 
 #include <spdlog/spdlog-inl.h>
+#include <spdlog/sinks/daily_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 #include <memory>
 #include <source_location>
@@ -10,7 +12,7 @@
 
 namespace navp {
 
-std::shared_ptr<spdlog::logger> createCommonSpdlogger(const std::string& loggerFileName, const std::string& loggerName,
+std::shared_ptr<spdlog::logger> create_common_spdlogger(const std::string& loggerFileName, const std::string& loggerName,
                                                       const std::string& direction) {
   // 查找loggerName,如果已经存在，则直接返回
   if (auto ptr = spdlog::get(loggerName); ptr) {
@@ -33,7 +35,7 @@ std::shared_ptr<spdlog::logger> createCommonSpdlogger(const std::string& loggerF
   return navLogger;
 }
 
-std::shared_ptr<spdlog::logger> createPureSpdlogger(const std::string& loggerFileName, const std::string& loggerName,
+std::shared_ptr<spdlog::logger> create_pure_spdlogger(const std::string& loggerFileName, const std::string& loggerName,
                                                     const std::string& direction) {
   // 查找loggerName,如果已经存在，则直接返回
   if (auto ptr = spdlog::get(loggerName); ptr) {
@@ -56,7 +58,7 @@ std::shared_ptr<spdlog::logger> createPureSpdlogger(const std::string& loggerFil
   return navLogger;
 }
 
-std::shared_ptr<spdlog::logger> createDataSpdlogger(const std::string& loggerFileName, const std::string& loggerName,
+std::shared_ptr<spdlog::logger> create_data_spdlogger(const std::string& loggerFileName, const std::string& loggerName,
                                                     const std::string& direction) {
   // 查找loggerName,如果已经存在，则直接返回
   if (auto ptr = spdlog::get(loggerName); ptr) {
@@ -84,13 +86,12 @@ std::string source_information(std::source_location location) {
 }
 
 namespace details {
-// SPDLOG_LOGGER_CALL(globalLogger, spdlog::level::debug, "this is a debug
-// message");
-std::shared_ptr<spdlog::logger> globalFormattedLogger = createCommonSpdlogger("navlogger.log", "nav_info_logger");
 
-std::shared_ptr<spdlog::logger> globalPureLogger = createPureSpdlogger("navlogger.log", "nav_msg_logger");
+std::shared_ptr<spdlog::logger> globalFormattedLogger = create_common_spdlogger("navlogger.log", "nav_info_logger");
 
-std::shared_ptr<spdlog::logger> globalDataLogger = createDataSpdlogger("data.txt", "datalogger");
+std::shared_ptr<spdlog::logger> globalPureLogger = create_pure_spdlogger("navlogger.log", "nav_msg_logger");
+
+std::shared_ptr<spdlog::logger> globalDataLogger = create_data_spdlogger("data.txt", "datalogger");
 
 }  // namespace details
 

@@ -6,23 +6,21 @@
 #include "sensors/gnss/observation.hpp"
 #include "solution/config.hpp"
 
-using navp::sensors::gnss::Sv;
-
 namespace navp::solution {
 
-Spp::Spp(std::string_view cfg_path) noexcept : ConfigTask(cfg_path) { rover_.initialize(config_); }
+Spp::Spp(std::string_view cfg_path) noexcept : ConfigTask(cfg_path), rover_(std::make_unique<GnssHandler>()) {
+  rover_->initialize(config_);
+}
 
 Spp::~Spp() = default;
 
-void Spp::solve() {
-  while (rover_.get_next_observation()) {
-    PvtSolutionRecord sol;
-    
+void FgoSpp::solve() {
+  while (rover_->load_next_observation()) {
+    auto available_satellite = rover_->available_satellites();
 
-    // solve position
-    sol.mode = SolutionModeEnum::SINGLE;
-    sol_.emplace_back(sol);
   }
 }
+
+FgoSpp::~FgoSpp() = default;
 
 }  // namespace navp::solution

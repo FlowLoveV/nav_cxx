@@ -1,9 +1,12 @@
 #include "spdlog/common.h"
 #include "utils/logger.hpp"
 #include "utils/macro.hpp"
-#include "utils/result.hpp"
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include <spdlog/spdlog-inl.h>
+
 #include "doctest.h"
+
+using namespace navp;
 
 TEST_CASE("test format_num") {
   // float
@@ -26,37 +29,3 @@ TEST_CASE("test logger") {
   nav_error("this is a error message");
   nav_critical("this is a critical message");
 }
-
-/*******************************************************************************************
-test rtklib
-********************************************************************************************/
-
-// TEST_CASE("rtklib rinex version 3.xx ephemeris") {
-//   std::string path = "../test_resources/NAV/V3/AMEL00NLD _R_20210010000_01D_MN.rnx";
-//   obs_t o;
-//   nav_t n;
-//   sta_t s;
-//   auto res = readrnx(path.c_str(), 1, "", &o, &n, &s);
-//   CHECK_EQ(res, 1);
-// }
-
-// from exprtk/exprtk_simple_example_01.cpp
-// TEST_CASE("exprtk using") {
-//   using T = double;
-//   typedef exprtk::symbol_table<T> symbol_table_t;
-//   typedef exprtk::expression<T> expression_t;
-//   typedef exprtk::parser<T> parser_t;
-//   const std::string expression_string =
-//       "clamp(-1.0,sin(2 * pi * x) + cos(x / 2 * pi),+1.0)";
-//   T x;
-//   symbol_table_t symbol_table;
-//   symbol_table.add_variable("x", x);
-//   symbol_table.add_constants();
-//   expression_t expression;
-//   expression.register_symbol_table(symbol_table);
-//   parser_t parser;
-//   parser.compile(expression_string, expression);
-//   x = T{0};
-//   const T y = expression.value();
-//   CHECK_EQ(y, 1.0);
-// }

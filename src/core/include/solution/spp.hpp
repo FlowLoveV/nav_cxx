@@ -12,11 +12,17 @@ class NAVP_EXPORT Spp : public ConfigTask {
  public:
   Spp(std::string_view cfg_path) noexcept;
   virtual ~Spp() override;
-  virtual void solve() override;
 
  protected:
-  GnssHandler rover_;                   ///> rover server
-  std::deque<PvtSolutionRecord> sol_;  ///> solution
+  std::unique_ptr<GnssHandler> rover_;  ///> rover server
+  std::deque<PvtSolutionRecord> sol_;   ///> solution
+};
+
+class NAVP_EXPORT FgoSpp : public Spp {
+ public:
+  using Spp::Spp;
+  virtual void solve() override;
+  virtual ~FgoSpp() override;
 };
 
 }  // namespace navp::solution

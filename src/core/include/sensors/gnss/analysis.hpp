@@ -4,8 +4,8 @@
 
 #include "sensors/gnss/sv.hpp"
 #include "utils/eigen.hpp"
-#include "utils/time.hpp"
 #include "utils/macro.hpp"
+#include "utils/time.hpp"
 
 namespace navp::sensors::gnss {
 
@@ -142,8 +142,6 @@ class ObsMeta : public std::variant<RawObsMeta, SDobsMeta, DDobsMeta, TDobsMeta,
   using base_type::operator=;
   using base_type::emplace;
 
-  auto as_base_ptr() const noexcept -> const base_type*;
-
   auto is_raw_obs() const noexcept -> bool;
   auto is_sd_obs() const noexcept -> bool;
   auto is_dd_obs() const noexcept -> bool;
@@ -157,6 +155,9 @@ class ObsMeta : public std::variant<RawObsMeta, SDobsMeta, DDobsMeta, TDobsMeta,
 
   auto is_difference_obs() const noexcept -> bool;
   auto is_combination_obs() const noexcept -> bool;
+
+ private:
+  auto as_base_ptr() const noexcept -> const base_type*;
 };
 
 struct ObsAnalyzer {

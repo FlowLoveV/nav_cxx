@@ -105,4 +105,17 @@ struct ClockBlock {
   i8 index_[21];
 };
 
+class ParameterBlockHandler {
+ public:
+  void set_clock_block(ClockBlock clock_block) noexcept;
+  const ClockBlock& clock_block() const noexcept;
+
+  void set_parameter_block(ParameterBlcok parameter_block) noexcept;
+  const ParameterBlcok& parameter_block() const noexcept;
+
+ private:
+  ClockBlock clock_block_;          ///> clock block
+  ParameterBlcok parameter_block_;  ///> parameter block
+};
+
 }  // namespace navp

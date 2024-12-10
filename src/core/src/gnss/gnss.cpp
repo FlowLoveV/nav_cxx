@@ -7,9 +7,9 @@
 namespace navp::sensors::gnss {
 
 const Sig* GObs::find_code(ObsCodeEnum code) const noexcept {
-  auto freq = Constants::code_to_freq_enum(Sat.constellation.id, code);
-  if (sigsLists.contains(freq)) {
-    for (const auto& sig : sigsLists.at(freq)) {
+  auto freq = Constants::code_to_freq_enum(sv.constellation.id, code);
+  if (sigs_list.contains(freq)) {
+    for (const auto& sig : sigs_list.at(freq)) {
       if (sig.code == code) {
         return &sig;
       }
@@ -122,7 +122,7 @@ auto GnssObsRecord::query(EpochUtc time, Sv sv) const noexcept -> const std::sha
 void GnssObsRecord::add_obs_list(ObsList&& obs_list) noexcept {
   for (const auto& obs_ptr : obs_list) {
     EpochUtc epoch(obs_ptr->time);
-    obs_map_[epoch][obs_ptr->Sat] = obs_ptr;
+    obs_map_[epoch][obs_ptr->sv] = obs_ptr;
   }
   erase();
 }

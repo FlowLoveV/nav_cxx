@@ -7,7 +7,7 @@ SppFactorGraph::SppFactorGraph() = default;
 SppFactorGraph::~SppFactorGraph() = default;
 
 void SppFactorGraph::assign_latest_state(Parameters& state) noexcept {
-  state = state_.size() ? state_.rbegin()->second : Parameters(clock_block().count());
+  // state = state_.size() ? state_.rbegin()->second : Parameters(clock_block().count());
 }
 
 void SppFactorGraph::init_state_at(EpochUtc time) noexcept { assign_latest_state(state_[time]); }

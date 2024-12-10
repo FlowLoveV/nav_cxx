@@ -48,9 +48,9 @@ struct NAVP_EXPORT Sig : RawSig {
 /** Raw observation data from a receiver. Not to be modified by processing functions
  */
 struct GObs {
-  std::map<FreTypeEnum, std::list<Sig>> sigsLists;  ///> std::map of all signals available in this observation (may
+  std::map<FreTypeEnum, std::list<Sig>> sigs_list;  ///> std::map of all signals available in this observation (may
                                                     /// include multiple per frequency, eg L1X, L1C)
-  Sv Sat = {};                                      ///> Satellite ID (system, prn)
+  Sv sv = {};                                       ///> Satellite ID (system, prn)
   utils::GTime time = {};                           ///< Receiver sampling time (GPST)
 
   const Sig* find_code(ObsCodeEnum code) const noexcept;

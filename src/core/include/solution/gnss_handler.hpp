@@ -37,19 +37,23 @@ class NAVP_EXPORT GnssHandler {
  public:
   void initialize(const NavConfigManger& config, bool is_rover = true);
 
-  EphemerisSolver& ephemeris_solver() noexcept;
+  // EphemerisSolver& ephemeris_solver() noexcept;
 
-  GnssObsRecord& observation() noexcept;
+  // GnssObsRecord& observation() noexcept;
 
-  TropModel& trop_model() noexcept;
+  // TropModel& trop_model() noexcept;
 
-  bool get_next_observation() noexcept;
+  // read next observation, return true if success
+  bool load_next_observation() noexcept;
 
-  auto current_available_satellites() noexcept -> std::vector<Sv>;
+  // get available satellites vector at latest epoch
+  auto available_satellites() noexcept -> std::vector<Sv>;
 
+  // generate a gnss corrections handler to get corrections related to target satellite
   auto generate_corrections_handler(EpochUtc time, const utils::CoordinateXyz& station_pos) noexcept
       -> std::function<GnssCorrections(Sv)>;
 
+  // generate a gnss random model handler to get variance of pseudorange and carrier
   auto generate_random_handler(EpochUtc time) noexcept -> std::function<const Sig*(Sv, ObsCodeEnum)>;
 
  protected:
@@ -82,6 +86,8 @@ class NAVP_EXPORT GnssHandler {
    */
   SolutionModeEnum solution_mode_;
 
+  std::shared_ptr<spdlog::logger> logger_;  ///> handler logger
+
  private:
   void initialize_navigation(const NavConfigManger& config, bool is_rover = true);
   void initialize_observation(const NavConfigManger& config, bool is_rover = true);
@@ -89,6 +95,7 @@ class NAVP_EXPORT GnssHandler {
   void initialize_obs_code(const NavConfigManger& config);
   void initialize_random_model(const NavConfigManger& config);
   void initialize_solution_mode(const NavConfigManger& config);
+  void initialize_logger(const NavConfigManger& config);
 };
 
 }  // namespace navp::solution

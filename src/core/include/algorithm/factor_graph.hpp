@@ -25,19 +25,11 @@ class GnssFactorGraph : public FactorGraph {
   GnssFactorGraph();
   virtual ~GnssFactorGraph() override;
 
-  void set_clock_block(ClockBlock clock_block) noexcept;
-  const ClockBlock& clock_block() const noexcept;
-
-  void set_parameter_block(ParameterBlcok parameter_block) noexcept;
-  const ParameterBlcok& parameter_block() const noexcept;
-
   void set_slide_window_length(u8 length) noexcept;
   u8 slide_window_length() const noexcept;
 
  private:
-  ClockBlock clock_block_;          ///> clock block
-  ParameterBlcok parameter_block_;  ///> parameter block
-  u8 window_length_;                ///> sliding window length
+  u8 window_length_;  ///> sliding window length
 };
 
 }  // namespace navp::fgo

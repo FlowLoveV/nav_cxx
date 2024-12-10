@@ -1,25 +1,23 @@
 #pragma once
 
-#include <spdlog/common.h>
 #include <spdlog/logger.h>
-#include <spdlog/sinks/daily_file_sink.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
 #include <source_location>
+
 #include "utils/macro.hpp"
 namespace navp {
 
 using spdlog::level::level_enum;
 
 namespace constants {
-constexpr std::string logDirection = "../log/nav/";
-constexpr std::string dataDirection = "../log/data/";
+constexpr std::string LogDirection = "../log/nav/";
+constexpr std::string DataDirection = "../log/data/";
 }  // namespace constants
 
 NAVP_EXPORT std::string source_information(std::source_location location = std::source_location::current());
 
-#define nav_log(level, ...)                                                          \
+#define nav_log(level, ...)                                                           \
   navp::details::globalFormattedLogger->log(level, "{}", navp::source_information()); \
   navp::details::globalPureLogger->log(level, __VA_ARGS__);
 #define nav_trace(...) nav_log(spdlog::level::trace, __VA_ARGS__)
@@ -49,15 +47,44 @@ NAVP_EXPORT std::string source_information(std::source_location location = std::
 // ```
 // logger format
 // [2024-04-23 11:58:28.135] [D] [thread 18488] can't find valid ephemeris
-std::shared_ptr<spdlog::logger> createCommonSpdlogger(const std::string& loggerFileName, const std::string& loggerName,
-                                                      const std::string& direction = constants::logDirection);
+std::shared_ptr<spdlog::logger> create_common_spdlogger(const std::string& loggerFileName, const std::string& loggerName,
+                                                      const std::string& direction = constants::LogDirection);
 
-std::shared_ptr<spdlog::logger> createPureSpdlogger(const std::string& loggerFileName, const std::string& loggerName,
-                                                    const std::string& direction = constants::logDirection);
+std::shared_ptr<spdlog::logger> create_pure_spdlogger(const std::string& loggerFileName, const std::string& loggerName,
+                                                    const std::string& direction = constants::LogDirection);
 
 // 创建一个数据输出logger，无附带任何格式
-std::shared_ptr<spdlog::logger> createDataSpdlogger(const std::string& loggerFileName, const std::string& loggerName,
-                                                    const std::string& direction = constants::dataDirection);
+std::shared_ptr<spdlog::logger> create_data_spdlogger(const std::string& loggerFileName, const std::string& loggerName,
+                                                    const std::string& direction = constants::DataDirection);
+
+class Logger : public spdlog::logger {
+ public:
+  using BaseType = spdlog::logger;
+  typedef std::shared_ptr<BaseType> LogPtr;
+
+  explicit Logger(std::string name) : spdlog::logger(name) {}
+
+  inline Logger& depoy_sink(spdlog::sink_ptr sink) noexcept {
+    this->sinks_.emplace_back(std::move(sink));
+    return *this;
+  }
+
+  inline Logger& set_level(spdlog::level::level_enum level) noexcept {
+    level_ = level;
+    return *this;
+  }
+
+  inline Logger& flush_on(spdlog::level::level_enum level) noexcept {
+    flush_level_ = level;
+    return *this;
+  }
+
+  inline LogPtr register_self() noexcept {
+    LogPtr logptr = std::make_shared<BaseType>(std::move(static_cast<BaseType>(*this)));
+    spdlog::register_logger(logptr);
+    return std::move(logptr);
+  }
+};
 
 namespace details {
 // create a global logger, output to file and stdout, with format:

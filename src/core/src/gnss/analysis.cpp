@@ -52,44 +52,44 @@ Option<f64> freq(Sv sv, EpochUtc t, ObsCodeEnum code, const Navigation* nav) noe
 auto RawObsMeta::pseudorange(const GObs& obs) const noexcept -> f64 {
   if (auto sig = obs.find_code(code); sig) {
     if (sig->P == 0.0) {
-      nav_debug("{} {} missing {} pseudorange", EpochUtc(obs.time), obs.Sat, magic_enum::enum_name(code));
+      nav_debug("{} {} missing {} pseudorange", EpochUtc(obs.time), obs.sv, magic_enum::enum_name(code));
     }
     return sig->P;
   }
-  nav_debug("{} {} missing {} observation", EpochUtc(obs.time), obs.Sat, magic_enum::enum_name(code));
+  nav_debug("{} {} missing {} observation", EpochUtc(obs.time), obs.sv, magic_enum::enum_name(code));
   return 0.0;
 }
 
 auto RawObsMeta::carrier(const GObs& obs) const noexcept -> f64 {
   if (auto sig = obs.find_code(code); sig) {
     if (sig->L == 0.0) {
-      nav_debug("{} {} missing {} carrier", EpochUtc(obs.time), obs.Sat, magic_enum::enum_name(code));
+      nav_debug("{} {} missing {} carrier", EpochUtc(obs.time), obs.sv, magic_enum::enum_name(code));
     }
     return sig->L;
   }
-  nav_debug("{} {} missing {} observation", EpochUtc(obs.time), obs.Sat, magic_enum::enum_name(code));
+  nav_debug("{} {} missing {} observation", EpochUtc(obs.time), obs.sv, magic_enum::enum_name(code));
   return 0.0;
 }
 
 auto RawObsMeta::snr(const GObs& obs) const noexcept -> f64 {
   if (auto sig = obs.find_code(code); sig) {
     if (sig->snr == 0.0) {
-      nav_debug("{} {} missing {} snr", EpochUtc(obs.time), obs.Sat, magic_enum::enum_name(code));
+      nav_debug("{} {} missing {} snr", EpochUtc(obs.time), obs.sv, magic_enum::enum_name(code));
     }
     return sig->snr;
   }
-  nav_debug("{} {} missing {} observation", EpochUtc(obs.time), obs.Sat, magic_enum::enum_name(code));
+  nav_debug("{} {} missing {} observation", EpochUtc(obs.time), obs.sv, magic_enum::enum_name(code));
   return 0.0;
 }
 
 auto RawObsMeta::doppler(const GObs& obs) const noexcept -> f64 {
   if (auto sig = obs.find_code(code); sig) {
     if (sig->D == 0.0) {
-      nav_debug("{} {} missing {} doppler", EpochUtc(obs.time), obs.Sat, magic_enum::enum_name(code));
+      nav_debug("{} {} missing {} doppler", EpochUtc(obs.time), obs.sv, magic_enum::enum_name(code));
     }
     return sig->D;
   }
-  nav_debug("{} {} missing {} observation", EpochUtc(obs.time), obs.Sat, magic_enum::enum_name(code));
+  nav_debug("{} {} missing {} observation", EpochUtc(obs.time), obs.sv, magic_enum::enum_name(code));
   return 0.0;
 }
 
@@ -129,22 +129,22 @@ void NdCombineObsMeta::get_sigs(const GObs& _obs1, const GObs& _obs2) noexcept {
   obs1 = &_obs1, obs2 = &_obs2;
   sig1 = obs1->find_code(code1);
   if (sig1 == nullptr) {
-    nav_debug("{} {} missing {} observation", EpochUtc(obs1->time), obs1->Sat, magic_enum::enum_name(code1));
+    nav_debug("{} {} missing {} observation", EpochUtc(obs1->time), obs1->sv, magic_enum::enum_name(code1));
   }
   sig2 = obs2->find_code(code2);
   if (sig2 == nullptr) {
-    nav_debug("{} {} missing {} observation", EpochUtc(obs2->time), obs2->Sat, magic_enum::enum_name(code2));
+    nav_debug("{} {} missing {} observation", EpochUtc(obs2->time), obs2->sv, magic_enum::enum_name(code2));
   }
 }
 
 auto NdCombineObsMeta::combine_pseudorange(f64 n, f64 m) const noexcept -> f64 {
   f64 pseudorange = n * sig1->P + m * sig2->P;
   if (sig1->P == 0.0) {
-    nav_debug("{} {} missing {} pseudorange", EpochUtc(obs1->time), obs1->Sat, magic_enum::enum_name(code1));
+    nav_debug("{} {} missing {} pseudorange", EpochUtc(obs1->time), obs1->sv, magic_enum::enum_name(code1));
     pseudorange = 0.0;
   }
   if (sig2->P == 0.0) {
-    nav_debug("{} {} missing {} pseudorange", EpochUtc(obs2->time), obs2->Sat, magic_enum::enum_name(code2));
+    nav_debug("{} {} missing {} pseudorange", EpochUtc(obs2->time), obs2->sv, magic_enum::enum_name(code2));
     pseudorange = 0.0;
   }
   return pseudorange;
@@ -153,11 +153,11 @@ auto NdCombineObsMeta::combine_pseudorange(f64 n, f64 m) const noexcept -> f64 {
 auto NdCombineObsMeta::combine_carrier(f64 n, f64 m) const noexcept -> f64 {
   f64 carrier = n * sig1->L + m * sig2->L;
   if (sig1->L == 0.0) {
-    nav_debug("{} {} missing {} carrier", EpochUtc(obs1->time), obs1->Sat, magic_enum::enum_name(code1));
+    nav_debug("{} {} missing {} carrier", EpochUtc(obs1->time), obs1->sv, magic_enum::enum_name(code1));
     carrier = 0.0;
   }
   if (sig2->L == 0.0) {
-    nav_debug("{} {} missing {} carrier", EpochUtc(obs2->time), obs2->Sat, magic_enum::enum_name(code2));
+    nav_debug("{} {} missing {} carrier", EpochUtc(obs2->time), obs2->sv, magic_enum::enum_name(code2));
     carrier = 0.0;
   }
   return carrier;
@@ -172,8 +172,8 @@ auto GFobsMeta::pseudorange(const GObs& obs1, const GObs obs2) const noexcept ->
 auto GFobsMeta::carrier(const GObs& obs1, const GObs obs2, const Navigation* nav) const noexcept -> f64 {
   auto meta = NdCombineObsMeta{.code1 = code1, .code2 = code2};
   meta.get_sigs(obs1, obs2);
-  auto f1 = freq(meta.obs1->Sat, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
-  auto f2 = freq(meta.obs2->Sat, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
+  auto f1 = freq(meta.obs1->sv, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
+  auto f2 = freq(meta.obs2->sv, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
   return meta.combine_carrier(Constants::CLIGHT / f1, -Constants::CLIGHT / f2);
 }
 
@@ -181,16 +181,16 @@ auto GFobsMeta::pseudorange_carrier(const GObs& obs1, const GObs& obs2,
                                     const Navigation* nav) const noexcept -> std::tuple<f64, f64> {
   auto meta = NdCombineObsMeta{.code1 = code1, .code2 = code2};
   meta.get_sigs(obs1, obs2);
-  auto f1 = freq(meta.obs1->Sat, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
-  auto f2 = freq(meta.obs2->Sat, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
+  auto f1 = freq(meta.obs1->sv, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
+  auto f2 = freq(meta.obs2->sv, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
   return {meta.combine_pseudorange(1, -1), meta.combine_carrier(Constants::CLIGHT / f1, -Constants::CLIGHT / f2)};
 }
 
 auto IFobsMeta::pseudorange(const GObs& obs1, const GObs obs2, const Navigation* nav) const noexcept -> f64 {
   auto meta = NdCombineObsMeta{.code1 = code1, .code2 = code2};
   meta.get_sigs(obs1, obs2);
-  auto f1 = freq(meta.obs1->Sat, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
-  auto f2 = freq(meta.obs2->Sat, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
+  auto f1 = freq(meta.obs1->sv, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
+  auto f2 = freq(meta.obs2->sv, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
   auto f1_2 = f1 * f1, f2_2 = f2 * f2;
   auto f = f1_2 - f2_2;
   return meta.combine_pseudorange(f1_2 / f, -f2_2 / f);
@@ -199,8 +199,8 @@ auto IFobsMeta::pseudorange(const GObs& obs1, const GObs obs2, const Navigation*
 auto IFobsMeta::carrier(const GObs& obs1, const GObs obs2, const Navigation* nav) const noexcept -> f64 {
   auto meta = NdCombineObsMeta{.code1 = code1, .code2 = code2};
   meta.get_sigs(obs1, obs2);
-  auto f1 = freq(meta.obs1->Sat, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
-  auto f2 = freq(meta.obs2->Sat, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
+  auto f1 = freq(meta.obs1->sv, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
+  auto f2 = freq(meta.obs2->sv, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
   auto f1_2 = f1 * f1, f2_2 = f2 * f2;
   auto f = f1_2 - f2_2;
   return meta.combine_carrier(f1_2 / f, -f1 * f2 / f);
@@ -210,8 +210,8 @@ auto IFobsMeta::pseudorange_carrier(const GObs& obs1, const GObs& obs2,
                                     const Navigation* nav) const noexcept -> std::tuple<f64, f64> {
   auto meta = NdCombineObsMeta{.code1 = code1, .code2 = code2};
   meta.get_sigs(obs1, obs2);
-  auto f1 = freq(meta.obs1->Sat, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
-  auto f2 = freq(meta.obs2->Sat, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
+  auto f1 = freq(meta.obs1->sv, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
+  auto f2 = freq(meta.obs2->sv, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
   auto f1_2 = f1 * f1, f2_2 = f2 * f2;
   auto f = f1_2 - f2_2;
   return {meta.combine_pseudorange(f1_2 / f, -f2_2 / f), meta.combine_carrier(f1_2 / f, -f1 * f2 / f)};
@@ -232,26 +232,26 @@ auto WLobsMeta::carrier(const GObs& obs1, const GObs obs2) const noexcept -> f64
 auto GRobsMeta::combine(const GObs& obs, const Navigation* nav) const noexcept -> f64 {
   auto sig = obs.find_code(code);
   if (sig == nullptr) {
-    nav_debug("{} {} missing {} observation", EpochUtc(obs.time), obs.Sat, magic_enum::enum_name(code));
+    nav_debug("{} {} missing {} observation", EpochUtc(obs.time), obs.sv, magic_enum::enum_name(code));
     return 0.0;
   }
   if (sig->P == 0.0) {
-    nav_debug("{} {} missing {} pseudorange", EpochUtc(obs.time), obs.Sat, magic_enum::enum_name(code));
+    nav_debug("{} {} missing {} pseudorange", EpochUtc(obs.time), obs.sv, magic_enum::enum_name(code));
     return 0.0;
   }
   if (sig->L == 0.0) {
-    nav_debug("{} {} missing {} carrier", EpochUtc(obs.time), obs.Sat, magic_enum::enum_name(code));
+    nav_debug("{} {} missing {} carrier", EpochUtc(obs.time), obs.sv, magic_enum::enum_name(code));
     return 0.0;
   }
-  auto f = freq(obs.Sat, static_cast<EpochUtc>(obs.time), code, nav).unwrap();
+  auto f = freq(obs.sv, static_cast<EpochUtc>(obs.time), code, nav).unwrap();
   return 0.5 * (Constants::CLIGHT / f * sig->L + sig->P);
 }
 
 auto MWobsMeta::wl_ambiguity(const GObs& obs1, const GObs obs2, const Navigation* nav) const noexcept -> f64 {
   auto meta = NdCombineObsMeta{.code1 = code1, .code2 = code2};
   meta.get_sigs(obs1, obs2);
-  auto f1 = freq(meta.obs1->Sat, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
-  auto f2 = freq(meta.obs2->Sat, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
+  auto f1 = freq(meta.obs1->sv, static_cast<EpochUtc>(meta.obs1->time), code1, nav).unwrap();
+  auto f2 = freq(meta.obs2->sv, static_cast<EpochUtc>(meta.obs2->time), code2, nav).unwrap();
   auto lambda_wl = Constants::CLIGHT / (f1 - f2);
   auto combine_pse = meta.combine_pseudorange(f1 / (f1 + f2) / lambda_wl, f2 / (f1 + f2) / lambda_wl);
   auto combine_car = meta.combine_carrier(1, -1);
