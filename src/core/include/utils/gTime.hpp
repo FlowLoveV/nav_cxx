@@ -124,9 +124,9 @@ struct Duration {
 /** Time structure used throughout this software
  */
 struct GTime {
-  mutable i32 cacheN = 0;
-  mutable f128 cacheTime = -1;
-  mutable string cacheString;
+  // mutable i32 cacheN = 0;
+  // mutable f128 cacheTime = -1;
+  // mutable string cacheString;
 
   f128 bigTime = 0;
 

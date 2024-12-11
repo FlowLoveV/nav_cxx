@@ -317,9 +317,9 @@ GTime utc2gpst(UtcTime utcTime) {
 }
 
 string GTime::to_string(i32 n) const {
-  if (cacheTime == bigTime && cacheN == n) {
-    return cacheString;
-  }
+  // if (cacheTime == bigTime && cacheN == n) {
+  //   return cacheString;
+  // }
 
   GTime t = *this;
 
@@ -343,11 +343,11 @@ string GTime::to_string(i32 n) const {
   snprintf(buff, sizeof(buff), "%04.0f-%02.0f-%02.0f %02.0f:%02.0f:%0*.*f", ep.year, ep.month, ep.day, ep.hour, ep.min,
            n <= 0 ? 2 : n + 3, n, ep.sec);
 
-  cacheString = buff;
-  cacheTime = bigTime;
-  cacheN = n;
+  // cacheString = buff;
+  // cacheTime = bigTime;
+  // cacheN = n;
 
-  return cacheString;
+  return std::string(buff);
 }
 
 string GTime::to_ISOstring(i32 n) const {

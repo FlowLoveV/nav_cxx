@@ -31,6 +31,7 @@
 // Minimize 0.5 (10 - x)^2 using jacobian matrix computed using
 // numeric differentiation.
 #include "ceres/ceres.h"
+#include "utils/types.hpp"
 // A cost functor that implements the residual r = 10 - x.
 struct CostFunctor {
   bool operator()(const double* const x, double* residual) const {
@@ -58,6 +59,9 @@ int main(int argc, char** argv) {
   // ceres::Solve(options, &problem, &summary);
   // std::cout << summary.BriefReport() << "\n";
   // std::cout << "x : " << initial_x << " -> " << x << "\n";
-
+  navp::f128 x = 10.123456789, integer;
+  auto frac = std::modf(x, &integer);
+  long double frac_ = static_cast<long double>(frac);
+  std::cout << frac_ << '\n';
   return 0;
 }

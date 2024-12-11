@@ -35,11 +35,7 @@ TEST_CASE("GPS BDS BRDC") {
   EphemerisSolver eph_solver;
   eph_solver.add_ephemeris(bds_nav.nav.get());
   eph_solver.add_ephemeris(gps_nav.nav.get());
-
-  auto beg_time = obs.begin_time();
-  navp::utils::GTime ref_gtime;
-  ref_gtime.bigTime = 2184.0 * 604800.0 + 26700.0;
-  auto ref_epoch = static_cast<EpochUtc>(ref_gtime);
+  auto ref_epoch = EpochUtc::from_gps_time<std::chrono::gps_clock>(2184, 26700);
   auto sv_vec = obs.sv_at(ref_epoch);
   auto sv_known = eph_solver.solve_sv_status(ref_epoch, sv_vec);
   auto sv_status = eph_solver.quary_sv_status_unchecked(ref_epoch, sv_known);
