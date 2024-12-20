@@ -7,15 +7,6 @@
 
 namespace navp::solution {
 
-Rtk::Rtk(std::string_view cfg_path) noexcept : ConfigTask(cfg_path) {
-  rover_.initialize(config_, true);
-  rover_.initialize(config_, false);
-}
-
-Rtk::~Rtk() = default;
-
-void Rtk::solve() {
-  //
-}
+Rtk::Rtk(std::string_view cfg_path) noexcept : ConfigTask(cfg_path) {}
 
 }  // namespace navp::solution

@@ -13,8 +13,6 @@ class NAVP_EXPORT Task {
  public:
   Task();
   virtual ~Task() = 0;
-
-  virtual void solve() = 0;
 };
 
 class NAVP_EXPORT ConfigTask {
@@ -23,7 +21,11 @@ class NAVP_EXPORT ConfigTask {
 
   ConfigTask(std::string_view cfg_path);
 
-  virtual void solve() = 0;
+  ConfigTask(const ConfigTask&) = delete;
+  ConfigTask(ConfigTask&&) = default;
+
+  ConfigTask& operator=(const ConfigTask&) = delete;
+  ConfigTask& operator=(ConfigTask&&) = default;
 
   void export_config(std::ostream& os = std::cout) const noexcept;
 

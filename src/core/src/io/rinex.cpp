@@ -10,7 +10,7 @@ using navp::sensors::gnss::ObsList;
 
 namespace navp::io::rinex {
 
-RinexRecord::RinexRecord() : _station(std::make_shared<RinexStation>()), _nav(std::make_shared<Navigation>()) {}
+RinexRecord::RinexRecord() : station_(std::make_unique<RinexStation>()), nav_(std::make_unique<Navigation>()) {}
 
 RinexRecord::~RinexRecord() = default;
 
@@ -19,18 +19,43 @@ RinexStream::~RinexStream() = default;
 void RinexStream::decode_record(Record& record) {
   // decode header
   if (tellg() == 0) {
-    readRnxH(*this, _version, _type, _sys, _tsys, _sys_code_types, *_nav, *_station);
+    readRnxH(*this, version_, type_, sys_, tsys_, sys_code_types_, *nav_, *station_, glo_fcn_, glo_cpbias_);
+    switch (type_) {
+      case 'O': {
+        if (auto gnss_obs = dynamic_cast<GnssObsRecord*>(&record)) {
+          memcpy(glo_fcn_, gnss_obs->glo_fcn_, 28);
+          memcpy(glo_cpbias_, gnss_obs->glo_cpbias_, 32);
+        }
+        break;
+      }
+      case 'N':
+        [[fallthrough]];
+      case 'G':
+        [[fallthrough]];
+      case 'H':
+        [[fallthrough]];
+      case 'J':
+        [[fallthrough]];
+      case 'L':
+        [[fallthrough]];
+      case 'C': {
+        if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
+          gnss_nav->nav->ionMap = std::move(nav_->ionMap);
+          gnss_nav->nav->stoMap = std::move(nav_->stoMap);
+        }
+      }
+    }
   }
-  if (_type == ' ') {
+  if (type_ == ' ') {
     nav_warn("RinexStream receive an empty stream!");
   }
   // decode body
   i32 stat = 0;
-  switch (_type) {
+  switch (type_) {
     case 'O': {
       if (auto gnss_obs = dynamic_cast<GnssObsRecord*>(&record); gnss_obs) {
         ObsList obs_list;
-        stat = readRnxObs(*this, _version, _tsys, _sys_code_types, obs_list, *_station);
+        stat = readRnxObs(*this, version_, tsys_, sys_code_types_, obs_list, *station_);
         gnss_obs->add_obs_list(std::move(obs_list));
         break;
       } else {
@@ -41,7 +66,7 @@ void RinexStream::decode_record(Record& record) {
 
     case 'N': {
       if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
-        stat = readRnxNav(*this, _version, _sys, *gnss_nav->nav);
+        stat = readRnxNav(*this, version_, sys_, *gnss_nav->nav);
       } else {
         nav_warn("RinexStream decode unmatched record!");
       }
@@ -50,7 +75,7 @@ void RinexStream::decode_record(Record& record) {
 
     case 'G': {
       if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
-        stat = readRnxNav(*this, _version, ConstellationEnum::GLO, *gnss_nav->nav);
+        stat = readRnxNav(*this, version_, ConstellationEnum::GLO, *gnss_nav->nav);
       } else {
         nav_warn("RinexStream decode unmatched record!");
       }
@@ -59,7 +84,7 @@ void RinexStream::decode_record(Record& record) {
 
     case 'H': {
       if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
-        stat = readRnxNav(*this, _version, ConstellationEnum::SBS, *gnss_nav->nav);
+        stat = readRnxNav(*this, version_, ConstellationEnum::SBS, *gnss_nav->nav);
       } else {
         nav_warn("RinexStream decode unmatched record!");
       }
@@ -68,7 +93,7 @@ void RinexStream::decode_record(Record& record) {
 
     case 'J': {
       if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
-        stat = readRnxNav(*this, _version, ConstellationEnum::QZS, *gnss_nav->nav);  // extension
+        stat = readRnxNav(*this, version_, ConstellationEnum::QZS, *gnss_nav->nav);  // extension
       } else {
         nav_warn("RinexStream decode unmatched record!");
       }
@@ -77,7 +102,7 @@ void RinexStream::decode_record(Record& record) {
 
     case 'L': {
       if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
-        stat = readRnxNav(*this, _version, ConstellationEnum::GAL, *gnss_nav->nav);  // extension
+        stat = readRnxNav(*this, version_, ConstellationEnum::GAL, *gnss_nav->nav);  // extension
       } else {
         nav_warn("RinexStream decode unmatched record!");
       }
@@ -86,7 +111,7 @@ void RinexStream::decode_record(Record& record) {
 
     case 'C': {
       if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
-        stat = readRnxClk(*this, _version, *gnss_nav->nav);
+        stat = readRnxClk(*this, version_, *gnss_nav->nav);
       } else {
         nav_warn("RinexStream decode unmatched record!");
       }
@@ -94,7 +119,7 @@ void RinexStream::decode_record(Record& record) {
     }
 
     default: {
-      nav_error("Unknown rinex file type {}", _type);
+      nav_error("Unknown rinex file type {}", type_);
       return;
     }
   }

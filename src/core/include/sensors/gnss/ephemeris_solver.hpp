@@ -1,45 +1,46 @@
 #pragma once
 
 #include "sensors/gnss/navigation.hpp"
+#include "sensors/gnss/observation.hpp"
 #include "utils/macro.hpp"
 #include "utils/space.hpp"
 #include "utils/time.hpp"
 
 namespace navp::sensors::gnss {
 
-// forward declaration
-struct GObs;
-
-class NAVP_EXPORT EphemerisSolver;
+class EphemerisSolver;
 
 // Group Delay and Inter-Satellite Clock
-struct NAVP_EXPORT BdsGroupDelay;
-struct NAVP_EXPORT GpsGroupDelay;
-struct NAVP_EXPORT GalGroupDelay;
-struct NAVP_EXPORT QzsGroupDelay;
-struct NAVP_EXPORT GloGroupDelay;
+struct BdsGroupDelay;
+struct GpsGroupDelay;
+struct GalGroupDelay;
+struct QzsGroupDelay;
+struct GloGroupDelay;
 // A structure representing satellite status information
 struct NAVP_EXPORT EphemerisResult {
   Sv sv;
-  utils::CoordinateXyz pos, vel;  // satellite position (ecef) {x,y,z} (m)
-  f64 var;                        // satellite position and clock variance (m^2)
-  f64 dt_trans, dtsv, fd_dtsv;    // signal transmission time(s) 、 clock bias(s) 、 clock speed
-  f64 elevation, azimuth;         // satellite elevation、azimuth （rad)
+  utils::CoordinateXyz pos, vel;   // satellite position (ecef) {x,y,z} (m)
+  f64 var;                         // satellite position and clock variance (m^2)
+  f64 dt_trans, dtsv, fd_dtsv;     // signal transmission time(s) 、 clock bias(s) 、 clock speed
+  mutable f64 elevation, azimuth;  // satellite elevation、azimuth （rad)
 
   void rotate_correct() noexcept;
 
-  void calculate_ea_from(const utils::CoordinateXyz& pos) noexcept;
+  void calculate_ea_from(const utils::CoordinateXyz& pos) const noexcept;
 
   std::string format_as_string() const noexcept;
+
+  void view_vector_to(const utils::CoordinateXyz& station_pos, f64& x, f64& y, f64& z, f64& distance) const noexcept;
 };
 
 // features:
 // 1. solve broadcast ephemeris and quary
 // 2. quary tgd parameters
 // 3. can be inheritted to reuse
-class EphemerisSolver {
+class NAVP_EXPORT EphemerisSolver {
  public:
-  using SvMap = std::map<Sv, EphemerisResult>;
+  using SvMap = std::unordered_map<Sv, EphemerisResult>;
+  using TimeSvMap = std::map<EpochUtc, SvMap>;
 
   EphemerisSolver() noexcept;
   explicit EphemerisSolver(const std::vector<const Navigation*>& nav) noexcept;
@@ -49,7 +50,7 @@ class EphemerisSolver {
   void add_ephemeris(const Navigation* nav) noexcept;
 
   // calculate sv status at signal receive time, with signal transmission time corrected
-  auto solve_sv_status(EpochUtc tr, const std::map<Sv, std::shared_ptr<GObs>>& visible_sv) noexcept -> std::vector<Sv>;
+  auto solve_sv_status(EpochUtc tr, const GnssObsRecord::ObsMap* visible_sv) noexcept -> std::vector<Sv>;
   // calculate sv status at given time, without any corrected
   auto solve_sv_status(EpochUtc tr, const std::vector<Sv>& svs) noexcept -> std::vector<Sv>;
 
@@ -58,6 +59,15 @@ class EphemerisSolver {
   auto quary_sv_status(EpochUtc tr, const std::vector<Sv>& sv) const noexcept -> std::vector<const EphemerisResult*>;
   auto quary_sv_status_unchecked(EpochUtc tr, Sv sv) const -> const EphemerisResult*;
   auto quary_sv_status_unchecked(EpochUtc tr, const std::vector<Sv>& sv) const -> std::vector<const EphemerisResult*>;
+
+  template <typename Func>
+  void for_each_sv_at(EpochUtc tr, Func&& func) {
+    if (sv_status->contains(tr)) {
+      for (auto&& [_, status] : sv_status->at(tr)) {
+        std::invoke(std::forward<Func>(func), std::forward<EphemerisResult>(status));
+      }
+    }
+  }
 
   auto quary_gps_tgd(EpochUtc tr) noexcept -> const GpsGroupDelay*;
   auto quary_bds_tgd(EpochUtc tr) noexcept -> const BdsGroupDelay*;
@@ -94,7 +104,7 @@ class EphemerisSolver {
   std::vector<const Navigation*> nav;
 
   // sv status
-  std::shared_ptr<std::map<EpochUtc, std::map<Sv, EphemerisResult>>> sv_status = nullptr;
+  std::shared_ptr<TimeSvMap> sv_status = nullptr;
 
   // cache newest ephemeris of different versions and system
   Eph *cache_bds_d1d2, *cache_gps_lnav, *cache_qzs_lnav, *cache_gal_ifnav;

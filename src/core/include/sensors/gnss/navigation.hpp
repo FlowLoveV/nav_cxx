@@ -13,28 +13,28 @@ class NAVP_EXPORT GnssNavRecord;
 /** navigation data type
  */
 struct NAVP_EXPORT Navigation {
-  std::map<std::string, std::map<utils::GTime, Pclk>> pclkMap;  ///< precise clock
-  std::map<Sv, std::map<utils::GTime, Peph>> pephMap;           ///< precise ephemeris
+  // clang-format off
+  using PclkMapType = std::map<std::string, std::map<utils::GTime, Pclk>>;  // todo, may need changing the map key
+  using PephMapType = std::unordered_map<Sv, std::map<utils::GTime, Peph>>;
+  using EphMapType = std::unordered_map<Sv, std::unordered_map<NavMsgTypeEnum, std::map<utils::GTime, Eph, std::less<utils::GTime>>>>;
+  using GephMapType = std::unordered_map<Sv, std::unordered_map<NavMsgTypeEnum, std::map<utils::GTime, Geph, std::less<utils::GTime>>>>;
+  using SephMapType = std::unordered_map<Sv, std::unordered_map<NavMsgTypeEnum, std::map<utils::GTime, Seph, std::less<utils::GTime>>>>;
+  using CephMapType = std::unordered_map<Sv, std::unordered_map<NavMsgTypeEnum, std::map<utils::GTime, Ceph, std::less<utils::GTime>>>>;
+  using IonMapType = std::unordered_map<ConstellationEnum, std::unordered_map<NavMsgTypeEnum, std::map<utils::GTime, ION, std::less<utils::GTime>>>>;
+  using StoMapType = std::unordered_map<StoCodeEnum, std::unordered_map<NavMsgTypeEnum, std::map<utils::GTime, STO, std::less<utils::GTime>>>>;
+  using EopMapType = std::unordered_map<ConstellationEnum, std::unordered_map<NavMsgTypeEnum, std::map<utils::GTime, EOP, std::less<utils::GTime>>>>;
+  // clang-format on
+  PclkMapType pclkMap;  ///< precise clock
+  PephMapType pephMap;  ///< precise ephemeris
+  EphMapType ephMap;    ///< GPS/QZS/GAL/BDS ephemeris
+  GephMapType gephMap;  ///< GLONASS ephemeris
+  SephMapType sephMap;  ///< SBAS ephemeris
+  CephMapType cephMap;  ///< GPS/QZS/BDS CNVX ephemeris
+  IonMapType ionMap;    ///< ION messages
+  StoMapType stoMap;    ///< STO messages
+  EopMapType eopMap;    ///< EOP messages
 
-  std::map<Sv, std::map<NavMsgTypeEnum, std::map<utils::GTime, Eph, std::less<utils::GTime>>>>
-      ephMap;  ///< GPS/QZS/GAL/BDS ephemeris
-  std::map<Sv, std::map<NavMsgTypeEnum, std::map<utils::GTime, Geph, std::less<utils::GTime>>>>
-      gephMap;  ///< GLONASS ephemeris
-  std::map<Sv, std::map<NavMsgTypeEnum, std::map<utils::GTime, Seph, std::less<utils::GTime>>>>
-      sephMap;  ///< SBAS ephemeris
-  std::map<Sv, std::map<NavMsgTypeEnum, std::map<utils::GTime, Ceph, std::less<utils::GTime>>>>
-      cephMap;  ///< GPS/QZS/BDS CNVX ephemeris
-  std::map<ConstellationEnum, std::map<NavMsgTypeEnum, std::map<utils::GTime, ION, std::less<utils::GTime>>>>
-      ionMap;  ///< ION messages
-  std::map<StoCodeEnum, std::map<NavMsgTypeEnum, std::map<utils::GTime, STO, std::less<utils::GTime>>>>
-      stoMap;  ///< STO messages
-  std::map<ConstellationEnum, std::map<NavMsgTypeEnum, std::map<utils::GTime, EOP, std::less<utils::GTime>>>>
-      eopMap;  ///< EOP messages
-
-  ginan::ERP erp;       /* earth rotation parameters */
-  i32 leaps = -1;       /* leap seconds (s) */
-  char glo_fcn[27 + 1]; /* glonass frequency channel number + 8 */
-  f64 glo_cpbias[4];    /* glonass code-phase bias {1C,1P,2C,2P} (m) */
+  ginan::ERP erp; /* earth rotation parameters */
 };
 
 class GnssNavRecord : public io::Record {

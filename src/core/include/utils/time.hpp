@@ -759,6 +759,10 @@ typedef Epoch<std::chrono::tai_clock> EpochTai;
 typedef Epoch<std::chrono::gps_clock> EpochGps;
 typedef Epoch<navp::details::bds_clock> EpochBds;
 
+// some custom hash for Epoch
+// template <typename clock_type>
+// struct NAV_EXPORT EpochHasherSecond()
+
 }  // namespace navp
 
 namespace std {

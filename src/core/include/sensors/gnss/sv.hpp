@@ -13,15 +13,6 @@
 
 namespace navp::sensors::gnss {
 
-inline auto constexpr NSYSGPS = 1;
-inline auto constexpr NSATGPS = 32;  ///< potential number of GPS satellites, PRN goes from 1 to this number
-inline auto constexpr NSATGLO = 27;  ///< potential number of GLONASS satellites, PRN goes from 1 to this number
-inline auto constexpr NSATGAL = 36;  ///< potential number of Galileo satellites, PRN goes from 1 to this number
-inline auto constexpr NSATQZS = 7;   ///< potential number of QZSS satellites, PRN goes from 1 to this number
-inline auto constexpr NSATLEO = 78;  ///< potential number of LEO satellites, PRN goes from 1 to this number
-inline auto constexpr NSATBDS = 62;  ///< potential number of Beidou satellites, PRN goes from 1 to this number
-inline auto constexpr NSATSBS = 39;  ///< potential number of SBAS satellites, PRN goes from 1 to this number
-
 struct NAVP_EXPORT Constellation {
   static Result<Constellation, GnssParseConstellationError> form_str(const char* str) {
     std::string s(str);
@@ -141,12 +132,15 @@ struct NAVP_EXPORT Sv {
   }
   constexpr inline auto operator<=>(const Sv& rhs) const {
     if (rhs.constellation != constellation) {
-      return rhs.constellation.id <=> constellation.id;
+      return rhs.system() <=> system();
     }
     return prn <=> rhs.prn;
   }
 
-  operator bool() const noexcept { return !(constellation.id == ConstellationEnum::NONE || prn == 0); }
+  operator bool() const noexcept { return !(system() == ConstellationEnum::NONE || prn == 0); }
+
+  inline constexpr ConstellationEnum system() const noexcept { return constellation.id; }
+  inline constexpr ConstellationEnum& system() noexcept { return constellation.id; }
 
   u8 prn;
   Constellation constellation;
@@ -209,7 +203,7 @@ struct NAVP_EXPORT formatter<navp::sensors::gnss::Sv, char> {
 template <>
 struct NAVP_EXPORT hash<navp::sensors::gnss::Sv> {
   size_t operator()(const navp::sensors::gnss::Sv& sv) const {
-    return hash<navp::u8>()(sv.prn) ^ (hash<navp::u8>()((navp::u8)(sv.constellation.id)) << 1);
+    return hash<navp::u8>()(sv.prn) ^ (hash<navp::u8>()((navp::u8)(sv.system())) << 1);
   }
 };
 }  // namespace std

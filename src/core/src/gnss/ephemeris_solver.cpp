@@ -25,7 +25,7 @@ inline f64 constexpr RE_GLO = 6378136.0;
 namespace navp::sensors::gnss {
 
 // clang-format off
-struct BdsGroupDelay {
+struct NAVP_EXPORT BdsGroupDelay {
   f64 tgd1=0.0,tgd2=0.0,tgd_b1cp=0.0,tgd_b2ap=0.0,tgd_b2bi=0.0;
   f64 isc_b2ad=0.0,isc_b1cd=0.0;
 
@@ -59,7 +59,7 @@ protected:
   void update_cnv3_tgd(const f64* tgd) noexcept { tgd_b2bi=tgd[2]; }
 };
 
-struct GpsGroupDelay {
+struct NAVP_EXPORT GpsGroupDelay {
   f64 tgd=0.0;
   f64 isc_l1ca=0.0,isc_l2c=0.0,isc_l5i5=0.0,isc_l5q5=0.0,isc_l1cd=0.0,isc_l1cp=0.0;
 
@@ -89,7 +89,7 @@ protected:
   }
 };
 
-struct GalGroupDelay {
+struct NAVP_EXPORT GalGroupDelay {
   f64 bgd_e5a=0.0, bgd_e5b=0.0;
 
   void update_ifnav(const Eph* eph) noexcept {
@@ -102,7 +102,7 @@ protected:
   void update_ifnav_tgd(const f64* tgd) noexcept { bgd_e5a=tgd[0];bgd_e5b=tgd[1]; }
 };
 
-struct QzsGroupDelay {
+struct NAVP_EXPORT QzsGroupDelay {
   f64 tgd=0.0;
   f64 isc_l1ca=0.0,isc_l2c=0.0,isc_l5i5=0.0,isc_l5q5=0.0,isc_l1cd=0.0,isc_l1cp=0.0;
 
@@ -132,7 +132,7 @@ protected:
   }
 };
 
-struct GloGroupDelay {
+struct NAVP_EXPORT GloGroupDelay {
   f64 tgd;
 
   void update_fdma(const Geph* eph) noexcept {
@@ -155,7 +155,7 @@ void EphemerisResult::rotate_correct() noexcept {
   pos[0] = x, pos[1] = y;
 }
 
-void EphemerisResult::calculate_ea_from(const utils::CoordinateXyz& position) noexcept {
+void EphemerisResult::calculate_ea_from(const utils::CoordinateXyz& position) const noexcept {
   auto enu = position.to_enu(pos);
   elevation = asin(sqrt(pow(enu.z(), 2) / enu.squaredNorm()));
   azimuth = atan2(enu.x(), enu.y());
@@ -174,10 +174,19 @@ std::string EphemerisResult::format_as_string() const noexcept {
                      vel_formatter.format(vel[2]), dtsv_formatter.format(dtsv), dtsv_formatter.format(fd_dtsv));
 }
 
+void EphemerisResult::view_vector_to(const utils::CoordinateXyz& station_pos, f64& x, f64& y, f64& z,
+                                     f64& distance) const noexcept {
+  f64 dx = station_pos.x() - pos.x(), dy = station_pos.y() - pos.y(), dz = station_pos.z() - pos.z();
+  distance = sqrt(dx * dx + dy * dy + dz * dz);
+  x = dx / distance;
+  y = dy / distance;
+  z = dz / distance;
+}
+
 using utils::GTime;
 
 // static constants
-typedef std::map<ConstellationEnum, std::vector<NavMsgTypeEnum>> MsgType;
+typedef std::unordered_map<ConstellationEnum, std::array<NavMsgTypeEnum, 4>> MsgType;
 
 static MsgType EphMsgTypeMap = {
     {ConstellationEnum::GPS, {NavMsgTypeEnum::LNAV}},
@@ -307,13 +316,8 @@ struct BrdcKeplerEphHelper {
   std::tuple<NavVector3f64, NavVector3f64> position_velocity() const noexcept;
 };
 
-typedef std::map<Sv, std::map<NavMsgTypeEnum, std::map<GTime, Eph, std::less<GTime>>>> EphMapType;
-typedef std::map<Sv, std::map<NavMsgTypeEnum, std::map<GTime, Geph, std::less<GTime>>>> GephMapType;
-typedef std::map<Sv, std::map<NavMsgTypeEnum, std::map<GTime, Seph, std::less<GTime>>>> SephMapType;
-typedef std::map<Sv, std::map<NavMsgTypeEnum, std::map<GTime, Ceph, std::less<GTime>>>> CephMapType;
-
 struct EphSolver {
-  EphSolver(const EphMapType* _eph_ptr, Sv sv, const GTime& t) noexcept;
+  EphSolver(const Navigation::EphMapType* _eph_ptr, Sv sv, const GTime& t) noexcept;
 
   bool available() const noexcept { return eph; }
 
@@ -327,12 +331,12 @@ struct EphSolver {
   void presolve(Sv sv, const GTime& ts) const noexcept;
 
   mutable std::shared_ptr<BrdcKeplerEphHelper> helper = nullptr;
-  const EphMapType* eph_map;
+  const Navigation::EphMapType* eph_map;
   const Eph* eph;
 };
 
 struct CephSolver {
-  CephSolver(const CephMapType* _eph_ptr, Sv sv, const GTime& t);
+  CephSolver(const Navigation::CephMapType* _eph_ptr, Sv sv, const GTime& t);
 
   bool available() const noexcept { return eph; }
 
@@ -346,12 +350,12 @@ struct CephSolver {
   void presolve(Sv sv, const GTime& ts) const noexcept;
 
   mutable std::shared_ptr<BrdcKeplerEphHelper> helper = nullptr;
-  const CephMapType* eph_map;
+  const Navigation::Navigation::CephMapType* eph_map;
   const Ceph* eph;
 };
 
 struct GephSolver {
-  GephSolver(const GephMapType* _eph_ptr, Sv sv, const GTime& t);
+  GephSolver(const Navigation::GephMapType* _eph_ptr, Sv sv, const GTime& t);
 
   bool available() const noexcept { return eph; }
 
@@ -362,12 +366,12 @@ struct GephSolver {
  protected:
   const Geph* seleph(Sv sv, const GTime& tr) const noexcept;
 
-  const GephMapType* eph_map;
+  const Navigation::GephMapType* eph_map;
   const Geph* eph;
 };
 
 struct SephSolver {
-  SephSolver(const SephMapType* _eph_ptr, Sv sv, const GTime& t);
+  SephSolver(const Navigation::SephMapType* _eph_ptr, Sv sv, const GTime& t);
 
   bool available() const noexcept { return eph; }
 
@@ -378,7 +382,7 @@ struct SephSolver {
  protected:
   const Seph* seleph(Sv sv, const GTime& tr) const noexcept;
 
-  const SephMapType* eph_map;
+  const Navigation::SephMapType* eph_map;
   const Seph* eph;
 };
 
@@ -399,7 +403,7 @@ Option<f64> calculate_t_k(const GTime& t, const GTime& toe, Sv sv) noexcept {
   }
 }
 
-bool is_bds_geo(Sv sv) noexcept { return sv.constellation.id == ConstellationEnum::BDS && (sv.prn < 6 || sv.prn > 58); }
+bool is_bds_geo(Sv sv) noexcept { return sv.system() == ConstellationEnum::BDS && (sv.prn < 6 || sv.prn > 58); }
 
 /*
  * BrdcKeplerEphHelper implement
@@ -543,7 +547,7 @@ std::tuple<NavVector3f64, NavVector3f64> BrdcKeplerEphHelper::position_velocity(
 /*
  * EphSolver implementation
  */
-EphSolver::EphSolver(const EphMapType* _eph_ptr, Sv sv, const GTime& t) noexcept {
+EphSolver::EphSolver(const Navigation::EphMapType* _eph_ptr, Sv sv, const GTime& t) noexcept {
   this->eph_map = _eph_ptr;
   this->eph = this->seleph(sv, t);
 }
@@ -553,7 +557,7 @@ const Eph* EphSolver::seleph(Sv sv, const GTime& t) const noexcept {
     return nullptr;
   }
   auto _eph_map = this->eph_map->at(sv);
-  for (const auto& nav_msg_type : EphMsgTypeMap.at(sv.constellation.id)) {
+  for (const auto& nav_msg_type : EphMsgTypeMap.at(sv.system())) {
     if (_eph_map.contains(nav_msg_type)) {
       for (const auto& [toe, _ephemeris] : _eph_map.at(nav_msg_type)) {
         if (abs((t - toe).to_double()) <= Constants::max_toe(sv)) {
@@ -688,7 +692,7 @@ EphemerisResult EphSolver::solve(Sv sv, const GTime& tr, const GTime& ts) const 
   result.dt_trans = (tr - ts).to_double();
   result.dtsv = helper->dtsv;
   result.fd_dtsv = helper->fd_dtsv;
-  result.var = var_uraeph(sv.constellation.id, eph->sva);
+  result.var = var_uraeph(sv.system(), eph->sva);
   // correct rotation
   result.rotate_correct();
   return result;
@@ -698,7 +702,7 @@ EphemerisResult EphSolver::solve(Sv sv, const GTime& tr, const GTime& ts) const 
  * CephSolver implementation
  */
 
-CephSolver::CephSolver(const CephMapType* _eph_ptr, Sv sv, const GTime& t) {
+CephSolver::CephSolver(const Navigation::Navigation::CephMapType* _eph_ptr, Sv sv, const GTime& t) {
   this->eph_map = _eph_ptr;
   this->eph = this->seleph(sv, t);
 }
@@ -708,7 +712,7 @@ const Ceph* CephSolver::seleph(Sv sv, const GTime& t) const noexcept {
     return nullptr;
   }
   auto _eph_map = this->eph_map->at(sv);
-  for (const auto& nav_msg_type : CephMsgTypeMap.at(sv.constellation.id)) {
+  for (const auto& nav_msg_type : CephMsgTypeMap.at(sv.system())) {
     if (_eph_map.contains(nav_msg_type)) {
       for (const auto& [toe, _ephemeris] : _eph_map.at(nav_msg_type)) {
         if (abs((t - toe).to_double()) <= Constants::max_toe(sv)) {
@@ -834,17 +838,19 @@ EphemerisResult CephSolver::solve(Sv sv, const GTime& tr, const GTime& ts) const
   result.vel = vel;
   // todo
   // sis
-  // result.var = var_uraeph(sv.constellation.id, eph);
+  // result.var = var_uraeph(sv.system(), eph);
   result.dt_trans = (tr - ts).to_double();
   result.dtsv = helper->dtsv;
   result.fd_dtsv = helper->fd_dtsv;
+  // correct rotation
+  result.rotate_correct();
   return result;
 }
 
 /*
  * GephSolver implementation
  */
-GephSolver::GephSolver(const GephMapType* _eph_ptr, Sv sv, const GTime& t) {
+GephSolver::GephSolver(const Navigation::GephMapType* _eph_ptr, Sv sv, const GTime& t) {
   this->eph_map = _eph_ptr;
   this->eph = this->seleph(sv, t);
 }
@@ -854,7 +860,7 @@ const Geph* GephSolver::seleph(Sv sv, const GTime& t) const noexcept {
     return nullptr;
   }
   auto _eph_map = this->eph_map->at(sv);
-  for (const auto& nav_msg_type : GephMsgTypeMap.at(sv.constellation.id)) {
+  for (const auto& nav_msg_type : GephMsgTypeMap.at(sv.system())) {
     if (_eph_map.contains(nav_msg_type)) {
       for (const auto& [toe, _ephemeris] : _eph_map.at(nav_msg_type)) {
         if (abs((t - toe).to_double()) <= Constants::max_toe(sv)) {
@@ -898,7 +904,7 @@ EphemerisResult GephSolver::solve(Sv sv, const GTime& tr, const GTime& ts) const
   for (i32 i = 3; i < 6; i++) {
     result.vel[i - 3] = x[i];
   }
-  result.var = var_uraeph(sv.constellation.id, eph->sva);
+  result.var = var_uraeph(sv.system(), eph->sva);
   return result;
 }
 
@@ -906,7 +912,7 @@ EphemerisResult GephSolver::solve(Sv sv, const GTime& tr, const GTime& ts) const
  * SephSolver implementation
  */
 
-SephSolver::SephSolver(const SephMapType* _eph_ptr, Sv sv, const GTime& t) {
+SephSolver::SephSolver(const Navigation::SephMapType* _eph_ptr, Sv sv, const GTime& t) {
   this->eph_map = _eph_ptr;
   this->eph = this->seleph(sv, t);
 }
@@ -916,7 +922,7 @@ const Seph* SephSolver::seleph(Sv sv, const GTime& t) const noexcept {
     return nullptr;
   }
   auto _eph_map = this->eph_map->at(sv);
-  for (const auto& nav_msg_type : SephMsgTypeMap.at(sv.constellation.id)) {
+  for (const auto& nav_msg_type : SephMsgTypeMap.at(sv.system())) {
     if (_eph_map.contains(nav_msg_type)) {
       for (const auto& [toe, _ephemeris] : _eph_map.at(nav_msg_type)) {
         if (abs((t - toe).to_double()) <= Constants::max_toe(sv)) {
@@ -951,7 +957,7 @@ EphemerisResult SephSolver::solve(Sv sv, const GTime& tr, const GTime& ts) const
   for (i32 i = 0; i < 3; i++) {
     result.vel[i] = eph->vel[i] + eph->acc[i] * t;
   }
-  result.var = var_uraeph(sv.constellation.id, eph->sva);
+  result.var = var_uraeph(sv.system(), eph->sva);
   return result;
 }
 
@@ -959,7 +965,7 @@ EphemerisResult SephSolver::solve(Sv sv, const GTime& tr, const GTime& ts) const
  * EphemerisSolver implementation
  */
 EphemerisSolver::EphemerisSolver() noexcept
-    : sv_status(std::make_shared<std::map<EpochUtc, std::map<Sv, EphemerisResult>>>()),
+    : sv_status(std::make_shared<TimeSvMap>()),
       bds_gd(std::make_shared<BdsGroupDelay>()),
       gps_gd(std::make_shared<GpsGroupDelay>()),
       gal_gd(std::make_shared<GalGroupDelay>()),
@@ -968,7 +974,7 @@ EphemerisSolver::EphemerisSolver() noexcept
 
 EphemerisSolver::EphemerisSolver(const std::vector<const Navigation*>& _nav) noexcept
     : nav(std::move(_nav)),
-      sv_status(std::make_shared<std::map<EpochUtc, std::map<Sv, EphemerisResult>>>()),
+      sv_status(std::make_shared<TimeSvMap>()),
       bds_gd(std::make_shared<BdsGroupDelay>()),
       gps_gd(std::make_shared<GpsGroupDelay>()),
       gal_gd(std::make_shared<GalGroupDelay>()),
@@ -1203,16 +1209,16 @@ bool EphemerisSolver::launch_seph_solver(const utils::GTime& tr, Sv _sv, f64 pr,
 
 void EphemerisSolver::add_ephemeris(const Navigation* _nav) noexcept { nav.emplace_back(_nav); }
 
-auto EphemerisSolver::solve_sv_status(EpochUtc tr, const std::map<Sv, std::shared_ptr<GObs>>& visible_sv) noexcept
-    -> std::vector<Sv> {
-  std::ranges::for_each(visible_sv, [&](const auto& kv) {
+auto EphemerisSolver::solve_sv_status(EpochUtc tr,
+                                      const GnssObsRecord::ObsMap* visible_sv) noexcept -> std::vector<Sv> {
+  std::ranges::for_each(*visible_sv, [&](const auto& kv) {
     Sv sv = kv.first;
     const GObs& obs = *kv.second;
 
     f64 pr = 0.0;
     for (const auto& sig : obs.sigs_list | std::views::values | std::views::join) {
-      if (sig.P != 0.0) {
-        pr = sig.P;
+      if (sig.pseudorange != 0.0) {
+        pr = sig.pseudorange;
         break;
       }
     }
@@ -1233,7 +1239,7 @@ std::vector<Sv> EphemerisSolver::solve_sv_status(EpochUtc tr, const std::vector<
 bool EphemerisSolver::brdc_solve_sv_status(EpochUtc tr, Sv _sv, f64 pr) noexcept {
   bool correct_transmission = pr == 0.0 ? false : true;
   bool done = false;
-  auto _cons = _sv.constellation.id;
+  auto _cons = _sv.system();
   if (_cons == ConstellationEnum::GPS || _cons == ConstellationEnum::BDS || _cons == ConstellationEnum::QZS) {
     done = launch_ceph_solver(tr, _sv, pr, correct_transmission);
     if (!done) launch_eph_solver(tr, _sv, pr, correct_transmission);
@@ -1359,26 +1365,22 @@ std::vector<const EphemerisResult*> EphemerisSolver::quary_sv_status(EpochUtc t,
   if (!sv_status->contains(t)) {
     return {};
   }
-  std::vector<const EphemerisResult*> res;
-  res.reserve(sv.size());
+  std::vector<const EphemerisResult*> res(sv.size());
   const auto& sv_map = sv_status->at(t);
-  for (auto _sv : sv) {
-    if (sv_map.contains(_sv)) {
-      res.emplace_back(&sv_map.at(_sv));
-    }
+  for (u16 i = 0; i < sv.size(); i++) {
+    res[i] = &sv_map.at(sv[i]);
   }
-  return res;
+  return std::move(res);
 }
 
 std::vector<const EphemerisResult*> EphemerisSolver::quary_sv_status_unchecked(EpochUtc t,
                                                                                const std::vector<Sv>& sv) const {
-  std::vector<const EphemerisResult*> res;
-  res.reserve(sv.size());
+  std::vector<const EphemerisResult*> res(sv.size());
   const auto& sv_map = sv_status->at(t);
-  for (auto _sv : sv) {
-    res.emplace_back(&sv_map.at(_sv));
+  for (u16 i = 0; i < sv.size(); i++) {
+    res[i] = &sv_map.at(sv[i]);
   }
-  return res;
+  return std::move(res);
 }
 
 auto EphemerisSolver::quary_sv_status_unchecked(EpochUtc t, Sv sv) const -> const EphemerisResult* {

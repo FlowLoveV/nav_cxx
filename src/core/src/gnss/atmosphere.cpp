@@ -2,8 +2,6 @@
 
 #include <numbers>
 
-#include "sensors/gnss/ephemeris_solver.hpp"
-
 #define SQR(x) ((x) * (x))
 
 /*
@@ -87,42 +85,28 @@ TropSaasResult tropSAAS(utils::GTime time, const utils::CoordinateBlh* pos, f64 
 
 namespace navp::sensors::gnss {
 
-AtmosphereModel::~AtmosphereModel() = default;
-
-AtmosphereModel& AtmosphereModel::set_station_pos(const utils::CoordinateBlh* pos) noexcept {
+AtmosphereHandler& AtmosphereHandler::set_station_pos(const utils::CoordinateBlh* pos) noexcept {
   station_pos_ = pos;
   return *this;
 }
 
-AtmosphereModel& AtmosphereModel::set_time(EpochUtc tr) noexcept {
-  tr_ = tr;
+AtmosphereHandler& AtmosphereHandler::set_time(const EpochUtc& tr) noexcept {
+  tr_ = &tr;
   return *this;
 }
 
-AtmosphereModel& AtmosphereModel::set_sv_status(const EphemerisSolver* solver) noexcept {
-  sv_map_ = solver->quary_sv_status(tr_);
+AtmosphereHandler& AtmosphereHandler::set_sv_info(const EphemerisResult* eph_result) noexcept {
+  sv_info_ = eph_result;
   return *this;
 }
 
-AtmosphereModel& AtmosphereModel::set_sv_status(const std::map<Sv, EphemerisResult>* eph_result) noexcept {
-  sv_map_ = eph_result;
-  return *this;
-}
+bool AtmosphereHandler::solvable() const noexcept { return station_pos_ && sv_info_; }
 
-bool AtmosphereModel::solvable() const noexcept { return station_pos_ && sv_map_; }
-
-// f64 AtmosphereModel::solve(Sv sv) { return 0.0; }
-
-TropModel& TropModel::set_model(TropModelEnum type) noexcept {
-  type_ = type;
-  return *this;
-}
-
-f64 TropModel::solve(Sv sv) {
+f64 TropHandler::handle(TropModelEnum model) const noexcept {
   if (!solvable()) return 0.0;
-  switch (type_) {
+  switch (static_cast<TropModelEnum>(model)) {
     case TropModelEnum::STANDARD: {
-      auto trop_saas_res = details::tropSAAS(static_cast<utils::GTime>(tr_), station_pos_, sv_map_->at(sv).elevation);
+      auto trop_saas_res = details::tropSAAS(static_cast<utils::GTime>(*tr_), station_pos_, sv_info_->elevation);
       return trop_saas_res.trop();
     }
     case TropModelEnum::SBAS: {
@@ -148,16 +132,9 @@ f64 TropModel::solve(Sv sv) {
   }
 }
 
-TropModel::~TropModel() = default;
-
-IonoModel& IonoModel::set_model(IonoModelEnum type) noexcept {
-  type_ = type;
-  return *this;
-}
-
-f64 IonoModel::solve(Sv sv) {
+f64 IonoHandler::handle(IonoModelEnum model) const noexcept {
   if (!solvable()) return 0.0;
-  switch (type_) {
+  switch (static_cast<IonoModelEnum>(model)) {
     case IonoModelEnum::NONE: {
       nav_error("not implmented!");
       return 0.0;
@@ -188,7 +165,5 @@ f64 IonoModel::solve(Sv sv) {
     }
   }
 }
-
-IonoModel::~IonoModel() = default;
 
 }  // namespace navp::sensors::gnss

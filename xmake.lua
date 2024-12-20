@@ -18,6 +18,8 @@ includes("src/plot/xmake.lua")
 includes("src/third/ginan/cpp/xmake.lua")
 -- test modules
 includes("src/test/xmake.lua")
+-- benchmark modules
+includes("src/benchmark/xmake.lua")
 
 target("main")
     set_kind("binary")

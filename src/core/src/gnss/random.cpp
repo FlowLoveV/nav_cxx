@@ -1,7 +1,6 @@
 #include "sensors/gnss/random.hpp"
 
 #include "sensors/gnss/constants.hpp"
-#include "sensors/gnss/ephemeris_solver.hpp"
 
 namespace navp::sensors::gnss {
 
@@ -19,35 +18,22 @@ constexpr f32 stardand_carrier_var = 0.02f;
 
 }  // namespace details
 
-GnssRandomHandler& GnssRandomHandler::set_time(EpochUtc time) noexcept {
-  time_ = time;
-  return *this;
-}
-
-GnssRandomHandler& GnssRandomHandler::set_random_model(RandomModelEnum type) noexcept {
-  type_ = type;
-  return *this;
-}
-
-GnssRandomHandler& GnssRandomHandler::target_obs(const GnssObsRecord& obs_record) noexcept {
+GnssRandomHandler& GnssRandomHandler::set_obs(const GObs* obs) noexcept {
   // safe const cast
-  obs_map_ = const_cast<std::map<Sv, std::shared_ptr<GObs>>*>(obs_record.query(time_));
+  obs_ = const_cast<GObs*>(obs);
   return *this;
 }
 
-GnssRandomHandler& GnssRandomHandler::target_eph_solver(const EphemerisSolver& eph_solver) noexcept {
-  eph_result_ = eph_solver.quary_sv_status(time_);
+GnssRandomHandler& GnssRandomHandler::set_sv_info(const EphemerisResult* eph_result) noexcept {
+  sv_info_ = eph_result;
   return *this;
 }
 
-bool GnssRandomHandler::handlable() const noexcept { return obs_map_ && eph_result_; }
-
-const Sig* GnssRandomHandler::handle(Sv sv, ObsCodeEnum code) {
-  if (!handlable()) return nullptr;
-  auto& obs = obs_map_->at(sv);
-  auto sig = const_cast<Sig*>(obs->find_code(code));  // safe and necessary const_cast here
+const Sig* GnssRandomHandler::handle(ObsCodeEnum code, RandomModelEnum model) const noexcept {
+  if (!obs_) return nullptr;
+  auto sig = const_cast<Sig*>(obs_->find_code(code));  // safe and necessary const_cast here
   if (sig) {
-    switch (type_) {
+    switch (model) {
       case RandomModelEnum::STANDARD: {
         sig->code_var = details::stardand_pseudorange_var;
         sig->phase_var = details::stardand_carrier_var;

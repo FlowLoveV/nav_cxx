@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sensors/gnss/enums.hpp"
+#include "sensors/gnss/ephemeris_solver.hpp"
 #include "sensors/gnss/observation.hpp"
 
 namespace navp::sensors::gnss {
@@ -13,20 +14,13 @@ class GnssRandomHandler;
 
 class GnssRandomHandler {
  public:
-  GnssRandomHandler& set_time(EpochUtc time) noexcept;
-  GnssRandomHandler& set_random_model(RandomModelEnum type) noexcept;
-  GnssRandomHandler& target_obs(const GnssObsRecord& obs_record) noexcept;
-  GnssRandomHandler& target_eph_solver(const EphemerisSolver& eph_solver) noexcept;
+  GnssRandomHandler& set_obs(const GObs* obs) noexcept;
+  GnssRandomHandler& set_sv_info(const EphemerisResult* eph_result) noexcept;
 
-  const Sig* handle(Sv sv, ObsCodeEnum code);
-  // bool handle(const std::vector<Sv>& sv);
+  const Sig* handle(ObsCodeEnum code, RandomModelEnum model) const noexcept;
 
  protected:
-  bool handlable() const noexcept;
-
-  EpochUtc time_{};
-  std::map<Sv, std::shared_ptr<GObs>>* obs_map_ = nullptr;
-  const std::map<Sv, EphemerisResult>* eph_result_ = nullptr;
-  RandomModelEnum type_;
+  GObs* obs_ = nullptr;
+  const EphemerisResult* sv_info_ = nullptr;
 };
 }  // namespace navp::sensors::gnss

@@ -14,7 +14,7 @@ class RinexStream;
 namespace navp::sensors::gnss {
 
 // forward declaration
-class TropModel;
+class TropHandler;
 
 using navp::Epoch;
 
@@ -25,13 +25,12 @@ struct NAVP_EXPORT GObs;
  */
 struct NAVP_EXPORT RawSig {
   ObsCodeEnum code = ObsCodeEnum::NONE;  ///< Reported code type
-  bool LLI = false;                      ///< Loss of lock indicator
+  bool lli = false;                      ///< Loss of lock indicator
   bool invalid = false;
-
-  f64 L = 0;    ///< Carrier phase (cycles)
-  f64 P = 0;    ///< Pseudorange (meters)
-  f64 D = 0;    ///< Doppler
-  f64 snr = 0;  ///< Signal to Noise ratio (dB-Hz)
+  f32 snr = 0;          ///< Signal to Noise ratio (dB-Hz)
+  f64 carrier = 0;      ///< Carrier phase (cycles)
+  f64 pseudorange = 0;  ///< Pseudorange (meters)
+  f64 doppler = 0;      ///< Doppler
 
   bool operator<(const RawSig& b) const { return (code < b.code); }
 };
@@ -48,14 +47,33 @@ struct NAVP_EXPORT Sig : RawSig {
 /** Raw observation data from a receiver. Not to be modified by processing functions
  */
 struct GObs {
-  std::map<FreTypeEnum, std::list<Sig>> sigs_list;  ///> std::map of all signals available in this observation (may
-                                                    /// include multiple per frequency, eg L1X, L1C)
-  Sv sv = {};                                       ///> Satellite ID (system, prn)
-  utils::GTime time = {};                           ///< Receiver sampling time (GPST)
+  std::unordered_map<FreTypeEnum, std::list<Sig>>
+      sigs_list;           ///> std::map of all signals available in this observation (may
+                           /// include multiple per frequency, eg L1X, L1C)
+  Sv sv = {};              ///> Satellite ID (system, prn)
+  utils::GTime time = {};  ///> Receiver sampling time (GPST)
 
   const Sig* find_code(ObsCodeEnum code) const noexcept;
 
-  operator std::shared_ptr<GObs>();
+  u8 frequency_count() const noexcept;
+
+  u8 code_count() const noexcept;
+
+  template <typename Func>
+  void for_each_frequency(Func&& func) {
+    for (auto&& [_, sigs] : sigs_list) {
+      std::invoke(std::forward<Func>(func), std::forward<std::list<Sig>>(sigs));
+    }
+  }
+
+  template <typename Func>
+  void for_each_code(Func&& func) {
+    for (auto&& [_, sigs] : sigs_list) {
+      for (auto&& sig : sigs) {
+        std::invoke(std::forward<Func>(func), std::forward<Sig>(sig));
+      }
+    }
+  }
 };
 
 /** List of observations for an epoch
@@ -65,10 +83,11 @@ struct NAVP_EXPORT ObsList : std::vector<std::shared_ptr<GObs>> {
 };
 
 class GnssObsRecord : public io::Record {
-  using StorageType = std::map<EpochUtc, std::map<Sv, std::shared_ptr<GObs>>>;
+  using StorageType = std::map<EpochUtc, std::unordered_map<Sv, std::shared_ptr<GObs>>>;
 
  public:
-  using ObsMap = std::map<Sv, std::shared_ptr<GObs>>;
+  using ObsMap = std::unordered_map<Sv, std::shared_ptr<GObs>>;
+  using ObsPtr = std::shared_ptr<GObs>;
 
   GnssObsRecord() = default;
 
@@ -90,7 +109,7 @@ class GnssObsRecord : public io::Record {
   u32 frequency() const noexcept;
 
   // set gnss observation frequency
-  GnssObsRecord& set_frequcney(u32 frequency) noexcept;
+  GnssObsRecord& set_frequency(u32 frequency) noexcept;
 
   // merge another GnssObsRecord
   GnssObsRecord& merge_record(GnssObsRecord&& record) noexcept;
@@ -111,10 +130,13 @@ class GnssObsRecord : public io::Record {
   auto sv_at(EpochUtc time) const noexcept -> std::vector<Sv>;
 
   // quary gnss observation at given epoch
-  auto query(EpochUtc time) const noexcept -> const ObsMap*;
+  auto at(EpochUtc time) const noexcept -> const ObsMap*;
 
   // quary gnss observation at given epoch and targeted satellite
-  auto query(EpochUtc time, Sv sv) const noexcept -> const std::shared_ptr<GObs>;
+  auto at(EpochUtc time, Sv sv) const noexcept -> const GObs*;
+
+  // check if contains an epoch
+  auto contains(EpochUtc time) const noexcept -> bool;
 
   // get observation by index
   auto operator[](i64 index) const -> const ObsMap*;
@@ -130,9 +152,11 @@ class GnssObsRecord : public io::Record {
   // erase
   void erase() noexcept;
 
-  i32 storage_ = 5;    ///> storage_ < 0, meaning limitless
-  u32 frequceny_ = 1;  ///> observation frequency
-  StorageType obs_map_;
+  i32 storage_ = -1;      // observation storage, when storage_ < 0, meaning limitless
+  u32 frequceny_ = 1;     // observation frequency
+  char glo_fcn_[27 + 1];  // glonass frequency channel number + 8
+  f64 glo_cpbias_[4];     // glonass code-phase bias {1C,1P,2C,2P} (m)
+  StorageType obs_map_;   // observation map
 };
 
 }  // namespace navp::sensors::gnss

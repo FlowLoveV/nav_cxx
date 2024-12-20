@@ -20,7 +20,6 @@ TEST_CASE("test format_num") {
 }
 
 TEST_CASE("test logger") {
-  nav_data_export(FORMAT_NUM(":>18", ":3.13f", 3.1415));
   nav_log(spdlog::level::debug, "this is a debug message");
   nav_trace("this a trace message");  // can't be display
   nav_debug("{}", "another debug message");

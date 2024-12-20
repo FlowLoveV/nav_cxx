@@ -175,7 +175,7 @@ struct NAVP_EXPORT Constants {
   inline static constexpr f64 CLIGHT = 299792458.0;
 
   static constexpr f64 gm(Sv sv) {
-    switch (sv.constellation.id) {
+    switch (sv.system()) {
       case ConstellationEnum::BDS:
         return GM::BDS;
       case ConstellationEnum::GAL:
@@ -188,7 +188,7 @@ struct NAVP_EXPORT Constants {
   }
 
   static constexpr f64 omega(Sv sv) {
-    switch (sv.constellation.id) {
+    switch (sv.system()) {
       case ConstellationEnum::BDS:
         return Omega::BDS;
       case ConstellationEnum::GAL:
@@ -201,7 +201,7 @@ struct NAVP_EXPORT Constants {
   }
 
   static constexpr f64 dtr_f(const Sv& sv) {
-    switch (sv.constellation.id) {
+    switch (sv.system()) {
       case ConstellationEnum::BDS:
         return DtrF::BDS;
       case ConstellationEnum::GAL:
@@ -212,7 +212,7 @@ struct NAVP_EXPORT Constants {
   }
 
   static constexpr f64 max_toe(const Sv& sv) {
-    switch (sv.constellation.id) {
+    switch (sv.system()) {
       case ConstellationEnum::GPS:
         return MaxToe::GPS;
       case ConstellationEnum::GAL:
@@ -230,12 +230,12 @@ struct NAVP_EXPORT Constants {
     }
   }
 
-  static constexpr f64 frequency(FreTypeEnum freq_enum) noexcept {
+  inline static constexpr f64 frequency(FreTypeEnum freq_enum) noexcept {
     return details::FREQ_ARRAY[static_cast<u8>(freq_enum)];
   }
 
-  static constexpr f64 wave_length(FreTypeEnum freq) noexcept {
-    return sensors::gnss::Constants::CLIGHT / frequency(freq);
+  inline static constexpr f64 wave_length(FreTypeEnum freq_enum) noexcept {
+    return sensors::gnss::Constants::CLIGHT / frequency(freq_enum);
   }
 
   // clang-format off
@@ -252,8 +252,12 @@ struct NAVP_EXPORT Constants {
   }
   // clang-format on
 
-  static constexpr f64 code_to_freq(ConstellationEnum sys, ObsCodeEnum code) noexcept {
+  inline static constexpr f64 code_to_freq(ConstellationEnum sys, ObsCodeEnum code) noexcept {
     return frequency(code_to_freq_enum(sys, code));
+  }
+
+  inline static constexpr f64 code_to_wave_length(ConstellationEnum sys, ObsCodeEnum code) noexcept {
+    return wave_length(code_to_freq_enum(sys, code));
   }
 };
 

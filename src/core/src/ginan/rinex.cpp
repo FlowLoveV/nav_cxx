@@ -62,7 +62,7 @@ namespace navp::io::rinex {
 /** Decode obs header
  */
 void decodeObsH(std::istream& inputStream, string& line, f64 ver, TimeSystemEnum& tsys,
-                std::map<ConstellationEnum, std::map<i32, CodeType>>& sysCodeTypes, Navigation& nav,
+                std::map<ConstellationEnum, std::map<i32, CodeType>>& sysCodeTypes, char* glo_fcn, f64* glo_cpbias,
                 RinexStation& rnxRec) {
   f64 del[3];
   i32 prn;
@@ -139,7 +139,7 @@ void decodeObsH(std::istream& inputStream, string& line, f64 ver, TimeSystemEnum
       char code[] = "Lxx";
       code[1] = buff[k + 1];
       code[2] = buff[k + 2];
-      if ((sv.constellation.id == ConstellationEnum::BDS) && (code[1] == '1') && (ver == 3.02)) {
+      if ((sv.system() == ConstellationEnum::BDS) && (code[1] == '1') && (ver == 3.02)) {
         // change beidou B1 code: 3.02 draft -> 3.02
         code[1] = '2';
       }
@@ -150,11 +150,11 @@ void decodeObsH(std::istream& inputStream, string& line, f64 ver, TimeSystemEnum
         // << "invalid obs code: " << code;
       }
 
-      sysCodeTypes[sv.constellation.id][j] = codeType;
+      sysCodeTypes[sv.system()][j] = codeType;
     }
 
     // if unknown code in ver.3, set default code
-    // 		for (auto& codeType : sysCodeTypes[sv.constellation.id])
+    // 		for (auto& codeType : sysCodeTypes[sv.system()])
     // 		{
     //             if (tobs[i][j][2])
     // 				continue;
@@ -259,7 +259,7 @@ void decodeObsH(std::istream& inputStream, string& line, f64 ver, TimeSystemEnum
       if (sscanf(p, "R%2d %2d", &prn, &fcn) < 2) continue;
 
       if (1 <= prn && prn <= 27) {
-        nav.glo_fcn[prn - 1] = fcn + 8;
+        glo_fcn[prn - 1] = fcn + 8;
       }
     }
   } else if (strstr(label, "GLONASS COD/PHS/BIS")) {
@@ -267,18 +267,19 @@ void decodeObsH(std::istream& inputStream, string& line, f64 ver, TimeSystemEnum
     p = buff;
     for (i32 i = 0; i < 4; i++, p += 13) {
       if (strncmp(p + 1, "C1C", 3))
-        nav.glo_cpbias[0] = str2num(p, 5, 8);
+        glo_cpbias[0] = str2num(p, 5, 8);
       else if (strncmp(p + 1, "C1P", 3))
-        nav.glo_cpbias[1] = str2num(p, 5, 8);
+        glo_cpbias[1] = str2num(p, 5, 8);
       else if (strncmp(p + 1, "C2C", 3))
-        nav.glo_cpbias[2] = str2num(p, 5, 8);
+        glo_cpbias[2] = str2num(p, 5, 8);
       else if (strncmp(p + 1, "C2P", 3))
-        nav.glo_cpbias[3] = str2num(p, 5, 8);
+        glo_cpbias[3] = str2num(p, 5, 8);
     }
-  } else if (strstr(label, "LEAP SECONDS")) {
-    // This would be GPS-UTC, and NOT optional as of RINEX 4
-    nav.leaps = (i32)str2num(buff, 0, 6);
   }
+  // else if (strstr(label, "LEAP SECONDS")) {
+  //   // This would be GPS-UTC, and NOT optional as of RINEX 4
+  //   nav.leaps = (i32)str2num(buff, 0, 6);
+  // }
   //     else if (strstr(label, "# OF SALTELLITES"    )) ; // opt
   //     else if (strstr(label, "PRN / # OF OBS"      )) ; // opt
 }
@@ -302,7 +303,7 @@ void decodeNavH(string& line,           ///< Line to decode
     ION& ionEntry = nav.ionMap[sys][type][time];
 
     ionEntry.type = type;
-    ionEntry.sv.constellation.id = sys;
+    ionEntry.sv.system() = sys;
     ionEntry.ttm = time;
 
     for (i32 i = 0, j = 2; i < 4; i++, j += 12) ionEntry.vals[i] = str2num(buff, j, 12);
@@ -314,7 +315,7 @@ void decodeNavH(string& line,           ///< Line to decode
     ION& ionEntry = nav.ionMap[sys][type][time];
 
     ionEntry.type = type;
-    ionEntry.sv.constellation.id = sys;
+    ionEntry.sv.system() = sys;
     ionEntry.ttm = time;
 
     for (i32 i = 0, j = 2; i < 4; i++, j += 12) ionEntry.vals[i + 4] = str2num(buff, j, 12);
@@ -343,7 +344,7 @@ void decodeNavH(string& line,           ///< Line to decode
     STO& stoEntry = nav.stoMap[code][type][time];
 
     stoEntry.type = type;
-    stoEntry.sv.constellation.id = sys;
+    stoEntry.sv.system() = sys;
     stoEntry.tot = time;
     stoEntry.code = code;
 
@@ -361,7 +362,7 @@ void decodeNavH(string& line,           ///< Line to decode
     ION& ionEntry = nav.ionMap[sys][type][time];
 
     ionEntry.type = type;
-    ionEntry.sv.constellation.id = sys;
+    ionEntry.sv.system() = sys;
     ionEntry.sv.prn = str2num(buff, 55, 3);
     ionEntry.ttm = time;
 
@@ -380,40 +381,40 @@ void decodeNavH(string& line,           ///< Line to decode
 
     switch (code) {
       case StoCodeEnum::GPUT:
-        sv.constellation.id = ConstellationEnum::GPS;
+        sv.system() = ConstellationEnum::GPS;
         break;
       case StoCodeEnum::GLUT:
-        sv.constellation.id = ConstellationEnum::GLO;
+        sv.system() = ConstellationEnum::GLO;
         break;
       case StoCodeEnum::GAUT:
-        sv.constellation.id = ConstellationEnum::GAL;
+        sv.system() = ConstellationEnum::GAL;
         break;
       case StoCodeEnum::BDUT:
-        sv.constellation.id = ConstellationEnum::BDS;
+        sv.system() = ConstellationEnum::BDS;
         break;
       case StoCodeEnum::QZUT:
-        sv.constellation.id = ConstellationEnum::QZS;
+        sv.system() = ConstellationEnum::QZS;
         break;
       case StoCodeEnum::SBUT:
-        sv.constellation.id = ConstellationEnum::SBS;
+        sv.system() = ConstellationEnum::SBS;
         break;
       case StoCodeEnum::GAGP:
-        sv.constellation.id = ConstellationEnum::GAL;
+        sv.system() = ConstellationEnum::GAL;
         break;
       case StoCodeEnum::QZGP:
-        sv.constellation.id = ConstellationEnum::QZS;
+        sv.system() = ConstellationEnum::QZS;
         break;
       default:
         break;
     }
     // UTC ID skipped
 
-    NavMsgTypeEnum type = NavMsgTypeMap[sv.constellation.id];
+    NavMsgTypeEnum type = NavMsgTypeMap[sv.system()];
 
     f64 sec = str2num(buff, 38, 7);
     f64 week = str2num(buff, 45, 5);
     GTime time = {};
-    if (sv.constellation.id != ConstellationEnum::BDS) {
+    if (sv.system() != ConstellationEnum::BDS) {
       time = GTime(GWeek(week), GTow(sec));
     } else {
       time = GTime(BWeek(week), BTow(sec));
@@ -430,10 +431,11 @@ void decodeNavH(string& line,           ///< Line to decode
     stoEntry.A0 = str2num(buff, 5, 17);
     stoEntry.A1 = str2num(buff, 22, 16);
     stoEntry.A2 = 0.0;
-  } else if (strstr(label, "LEAP SECONDS")) {
-    // opt
-    nav.leaps = (i32)str2num(buff, 0, 6);
   }
+  // else if (strstr(label, "LEAP SECONDS")) {
+  //   // opt
+  //   nav.leaps = (i32)str2num(buff, 0, 6);
+  // }
 }
 /** Decode gnav header
  */
@@ -445,10 +447,10 @@ void decodeGnavH(string& line, Navigation& nav) {
 
   if (strstr(label, "CORR TO SYTEM TIME"))
     ;  // opt
-  else if (strstr(label, "LEAP SECONDS")) {
-    // opt
-    nav.leaps = (i32)str2num(buff, 0, 6);
-  }
+  // else if (strstr(label, "LEAP SECONDS")) {
+  //   // opt
+  //   nav.leaps = (i32)str2num(buff, 0, 6);
+  // }
 }
 
 /** Decode geo nav header
@@ -463,17 +465,17 @@ void decodeHnavH(string& line, Navigation& nav) {
     ;  // opt
   else if (strstr(label, "D-UTC A0,A1,T,W,S,U"))
     ;  // opt
-  else if (strstr(label, "LEAP SECONDS")) {
-    // opt
-    nav.leaps = (i32)str2num(buff, 0, 6);
-  }
+  // else if (strstr(label, "LEAP SECONDS")) {
+  //   // opt
+  //   nav.leaps = (i32)str2num(buff, 0, 6);
+  // }
 }
 
 /** Read rinex header
  */
 i32 readRnxH(std::istream& inputStream, f64& ver, char& type, ConstellationEnum& sys, TimeSystemEnum& tsys,
-             std::map<ConstellationEnum, std::map<i32, CodeType>>& sysCodeTypes, Navigation& nav,
-             RinexStation& rnxRec) {
+             std::map<ConstellationEnum, std::map<i32, CodeType>>& sysCodeTypes, Navigation& nav, RinexStation& rnxRec,
+             char* glo_fcn, f64* glo_cpbias) {
   string line;
   i32 i = 0;
   i32 block = 0;
@@ -616,7 +618,7 @@ i32 readRnxH(std::istream& inputStream, f64& ver, char& type, ConstellationEnum&
     // file type
     switch (type) {
       case 'O':
-        decodeObsH(inputStream, line, ver, tsys, sysCodeTypes, nav, rnxRec);
+        decodeObsH(inputStream, line, ver, tsys, sysCodeTypes, glo_fcn, glo_cpbias, rnxRec);
         break;
       case 'N':
         decodeNavH(line, sys, nav);
@@ -738,7 +740,7 @@ i32 decodeObsData(std::istream& inputStream, string& line, f64 ver,
     stat = 0;
   }
 
-  auto& codeTypes = sysCodeTypes[obs.sv.constellation.id];
+  auto& codeTypes = sysCodeTypes[obs.sv.system()];
 
   i32 j;
   if (ver <= 2.99)
@@ -756,7 +758,7 @@ i32 decodeObsData(std::istream& inputStream, string& line, f64 ver,
       j = 0;
     }
 
-    FreTypeEnum ft = Constants::code_to_freq_enum(obs.sv.constellation.id, codeType.code);
+    FreTypeEnum ft = Constants::code_to_freq_enum(obs.sv.system(), codeType.code);
 
     RawSig* rawSig = nullptr;
     auto& sigList = obs.sigs_list[ft];
@@ -784,17 +786,17 @@ i32 decodeObsData(std::istream& inputStream, string& line, f64 ver,
     if (val) switch (codeType.type) {
         case 'P':  // fallthrough
         case 'C':
-          sig.P = val;
+          sig.pseudorange = val;
           break;
         case 'L':
-          sig.L = val;
-          sig.LLI = lli;
+          sig.carrier = val;
+          sig.lli = static_cast<decltype(Sig::lli)>(lli);
           break;
         case 'D':
-          sig.D = val;
+          sig.doppler = val;
           break;
         case 'S':
-          sig.snr = val;
+          sig.snr = static_cast<decltype(Sig::snr)>(val);
           break;
         default:
           break;
@@ -838,7 +840,7 @@ int readNextRnxObsB(std::istream& inputStream, double ver, TimeSystemEnum tsys,
       bool pass = decodeObsData(inputStream, line, ver, sysCodeTypes, rawObs, sats[i - 1]);
       if (pass) {
         // save obs data
-        obsList.push_back((std::shared_ptr<GObs>)rawObs);
+        obsList.emplace_back(std::make_shared<GObs>(std::move(rawObs)));
       }
     }
     i++;
@@ -904,7 +906,7 @@ i32 readRnxObs(std::istream& inputStream, f64 ver, TimeSystemEnum tsys,
 i32 decodeEph(f64 ver, Sv sv, GTime toc, std::vector<f64>& data, Eph& eph) {
   // 	BOOST_LOG_TRIVIAL(debug) << __FUNCTION__ << ": ver=" << ver << " sat=" << sv.id();
 
-  auto sys = sv.constellation.id;
+  auto sys = sv.system();
 
   if (sys != ConstellationEnum::GPS && sys != ConstellationEnum::GAL && sys != ConstellationEnum::QZS &&
       sys != ConstellationEnum::BDS) {
@@ -914,7 +916,7 @@ i32 decodeEph(f64 ver, Sv sv, GTime toc, std::vector<f64>& data, Eph& eph) {
     return 0;
   }
 
-  eph.type = NavMsgTypeMap[sv.constellation.id];
+  eph.type = NavMsgTypeMap[sv.system()];
   eph.sv = sv;
   eph.toc = toc;
 
@@ -1032,7 +1034,7 @@ i32 decodeEph(f64 ver, Sv sv, GTime toc, std::vector<f64>& data, Eph& eph) {
 /** Decode glonass ephemeris
  */
 i32 decodeGeph(f64 ver,                 ///< RINEX version
-               Sv sv,                  ///< Satellite ID
+               Sv sv,                   ///< Satellite ID
                GTime toc,               ///< Time of clock
                std::vector<f64>& data,  ///< Data to decode
                Geph& geph)              ///< Glonass ephemeris
@@ -1042,14 +1044,14 @@ i32 decodeGeph(f64 ver,                 ///< RINEX version
   //     BOOST_LOG_TRIVIAL(debug)
   // 	<< "decodeGeph: ver=" << ver << " sat=" << sv.id();
 
-  if (sv.constellation.id != ConstellationEnum::GLO) {
+  if (sv.system() != ConstellationEnum::GLO) {
     // BOOST_LOG_TRIVIAL(debug)
     // << "glonass ephemeris error: invalid satellite sat=" << sv.id();
 
     return 0;
   }
 
-  geph.type = NavMsgTypeMap[sv.constellation.id];
+  geph.type = NavMsgTypeMap[sv.system()];
   geph.sv = sv;
 
   RTod toes = i32(RTod(toc) + 450.0) / 900 * 900.0;
@@ -1093,14 +1095,14 @@ i32 decodeSeph(f64 ver, Sv sv, GTime toc, std::vector<f64>& data, Seph& seph) {
   //     BOOST_LOG_TRIVIAL(debug)
   // 	<< "decodeSeph: ver=" << ver << " sat=" << sv.id();
 
-  if (sv.constellation.id != ConstellationEnum::SBS) {
+  if (sv.system() != ConstellationEnum::SBS) {
     // BOOST_LOG_TRIVIAL(debug)
     // << "geo ephemeris error: invalid satellite sat=" << sv.id();
 
     return 0;
   }
 
-  seph.type = NavMsgTypeMap[sv.constellation.id];
+  seph.type = NavMsgTypeMap[sv.system()];
   seph.sv = sv;
   seph.t0 = toc;
 
@@ -1125,7 +1127,7 @@ i32 decodeSeph(f64 ver, Sv sv, GTime toc, std::vector<f64>& data, Seph& seph) {
 /** Decode CNVX ephemeris
  */
 i32 decodeCeph(f64 ver,                 ///< RINEX version
-               Sv sv,                  ///< Satellite ID
+               Sv sv,                   ///< Satellite ID
                NavMsgTypeEnum type,     ///< Navigation message type
                GTime toc,               ///< Time of clock
                std::vector<f64>& data,  ///< Data to decode
@@ -1149,7 +1151,7 @@ i32 decodeCeph(f64 ver,                 ///< RINEX version
     return 0;
   }
 
-  auto sys = sv.constellation.id;
+  auto sys = sv.system();
 
   if (sys != ConstellationEnum::GPS && sys != ConstellationEnum::QZS && sys != ConstellationEnum::BDS) {
     // BOOST_LOG_TRIVIAL(debug)
@@ -1281,7 +1283,7 @@ i32 decodeSto(f64 ver, Sv sv, NavMsgTypeEnum type, GTime toc, std::vector<f64>& 
     return -1;
   }
 
-  auto sys = sv.constellation.id;
+  auto sys = sv.system();
 
   sto.sv = sv;
   sto.type = type;
@@ -1316,7 +1318,7 @@ i32 decodeEop(f64 ver, Sv sv, NavMsgTypeEnum type, GTime toc, std::vector<f64>& 
     return -1;
   }
 
-  auto sys = sv.constellation.id;
+  auto sys = sv.system();
 
   eop.sv = sv;
   eop.type = type;
@@ -1352,7 +1354,7 @@ i32 decodeIon(f64 ver, Sv sv, NavMsgTypeEnum type, GTime toc, std::vector<f64>& 
     return -1;
   }
 
-  auto sys = sv.constellation.id;
+  auto sys = sv.system();
 
   ion.sv = sv;
   ion.type = type;
@@ -1433,7 +1435,7 @@ i32 readRnxNavB(std::istream& inputStream,  ///< Input stream to read
 
         strncpy(id, buff + 6, 3);
         sv = Sv::from_str(id).unwrap();
-        sys = sv.constellation.id;
+        sys = sv.system();
 
         strncpy(typeStr, buff + 10, 4);
         std::replace(typeStr, typeStr + 4, ' ', '\0');
@@ -1450,10 +1452,10 @@ i32 readRnxNavB(std::istream& inputStream,  ///< Input stream to read
         if (ver < 4.0)  // satellite id included in message type field in ver.4
         {
           sv = Sv::from_str(id).unwrap();
-          if (ver >= 3.0) sys = sv.constellation.id;
+          if (ver >= 3.0) sys = sv.system();
         }
       } else {
-        sv.constellation.id = sys;
+        sv.system() = sys;
         sv.prn = str2num(buff, 0, 2);
       }
 
@@ -1646,10 +1648,10 @@ i32 readRnxNav(std::istream& inputStream,  ///< Input stream to read
           nav.stoMap[sto.code][sto.type][sto.tot] = sto;
           break;
         case EphemerisType::EOP:
-          nav.eopMap[eop.sv.constellation.id][eop.type][eop.teop] = eop;
+          nav.eopMap[eop.sv.system()][eop.type][eop.teop] = eop;
           break;
         case EphemerisType::ION:
-          nav.ionMap[ion.sv.constellation.id][ion.type][ion.ttm] = ion;
+          nav.ionMap[ion.sv.system()][ion.type][ion.ttm] = ion;
           break;
         default:
           continue;
@@ -1744,10 +1746,10 @@ i32 readRnxClk(std::istream& inputStream, f64 ver, Navigation& nav) {
  */
 i32 readRnx(std::istream& inputStream, char& type, ObsList& obsList, Navigation& nav, RinexStation& rnxRec, f64& ver,
             ConstellationEnum& sys, TimeSystemEnum& tsys,
-            std::map<ConstellationEnum, std::map<i32, CodeType>>& sysCodeTypes) {
+            std::map<ConstellationEnum, std::map<i32, CodeType>>& sysCodeTypes, char* glo_fcn, f64* glo_cpbias) {
   if (inputStream.tellg() == 0) {
     // read rinex header if at beginning of file
-    readRnxH(inputStream, ver, type, sys, tsys, sysCodeTypes, nav, rnxRec);
+    readRnxH(inputStream, ver, type, sys, tsys, sysCodeTypes, nav, rnxRec, glo_fcn, glo_cpbias);
   }
 
   // read rinex body

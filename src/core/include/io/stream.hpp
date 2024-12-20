@@ -35,4 +35,7 @@ class NAVP_EXPORT Stream : public std::fstream {
   virtual void encode_record(Record& record) = 0;
 };
 
+template <typename Derived>
+concept nav_stream_type = std::is_base_of_v<Stream, Derived>;
+
 }  // namespace navp::io

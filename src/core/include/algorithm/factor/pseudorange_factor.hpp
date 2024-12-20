@@ -2,28 +2,29 @@
 
 #include <ceres/sized_cost_function.h>
 
+#include "sensors/gnss/observation.hpp"
 #include "utils/eigen.hpp"
 #include "utils/macro.hpp"
-#include "sensors/gnss/observation.hpp"
 
 namespace navp::fgo {
 
-using utils::NavVector3f64;
 using sensors::gnss::Sig;
+using utils::NavVector3f64;
 
-// - Residual dimension = 1
-// - First parameter(position xyz) dimension = 3
-// - Second parameter(receiver clock bias) dimension = 1 (For the clock differences of different GNSS systems inside the
-// receiver, you need to specify them externally.)
-struct NAVP_EXPORT PseudorangeFunctor : ceres::SizedCostFunction<1, 3, 1> {
-  explicit PseudorangeFunctor(const NavVector3f64* _sv_pos, f64 _pseudorange, f64 _var)
+//   Discription      Dimension         Meaning
+// - Residual            1          Pseudorange residual
+// - Parameter1          3          ECEF coordinate parameter(XYZ,m)
+// - Parameter2          1          receiver clock bias(m)
+struct NAVP_EXPORT PseudorangeFactor : ceres::SizedCostFunction<1, 3, 1> {
+  explicit PseudorangeFactor(const NavVector3f64* _sv_pos, f64 _pseudorange, f64 _var)
       : sv_pos(_sv_pos), pseudorange(_pseudorange), var(_var) {}
+  ~PseudorangeFactor() override = default;
 
   bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override {
     if (!parameters || !parameters[0] || !parameters[1]) return false;
-    double dx = sv_pos->x() - parameters[0][0];
-    double dy = sv_pos->y() - parameters[0][1];
-    double dz = sv_pos->z() - parameters[0][2];
+    double dx = parameters[0][0] - sv_pos->x();
+    double dy = parameters[0][1] - sv_pos->y();
+    double dz = parameters[0][2] - sv_pos->z();
     double dx2 = dx * dx, dy2 = dy * dy, dz2 = dz * dz, d = sqrt(dx2 + dy2 + dz2);
     residuals[0] = pseudorange - d - parameters[1][0];
     residuals[0] /= var;
@@ -38,12 +39,19 @@ struct NAVP_EXPORT PseudorangeFunctor : ceres::SizedCostFunction<1, 3, 1> {
     return true;
   }
 
-  static PseudorangeFunctor* Create(const NavVector3f64* _sv_pos, f64 _pseudorange, f64 _var) {
-    return new PseudorangeFunctor(_sv_pos, _pseudorange, _var);
+  static PseudorangeFactor* Create(const NavVector3f64* _sv_pos, f64 _pseudorange, f64 _var) {
+    return new PseudorangeFactor(_sv_pos, _pseudorange, _var);
   }
 
   const NavVector3f64* sv_pos;  //< satellite position
   double_t pseudorange, var;    //< corrected pseudorange and its variances
+};
+
+//   Discription      Dimension         Meaning
+//  -Residual            1          Pseudorange residual
+//  -Parameter1          3          ECEF coordinate correction(dX,dY,dZ,m)
+struct NAVP_EXPORT DdPseudorangeFunctor : ceres::SizedCostFunction<1, 3, 1, 1> {
+  const utils::NavVector3f64 *ref_sv_pos, *mob_sv_pos;
 };
 
 }  // namespace navp::fgo

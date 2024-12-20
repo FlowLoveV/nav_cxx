@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sensors/gnss/ephemeris_solver.hpp"
 #include "sensors/gnss/sv.hpp"
 #include "utils/eigen.hpp"
 #include "utils/macro.hpp"
@@ -8,60 +9,36 @@
 
 namespace navp::sensors::gnss {
 
-// forward declaration
-class EphemerisSolver;
-struct EphemerisResult;
-
 using utils::NavVector3f64;
 
-class AtmosphereModel;
-class TropModel;
-class IonoModel;
+class AtmosphereHandler;
+class TropHandler;
+class IonoHandler;
 
-class NAVP_EXPORT AtmosphereModel {
+class NAVP_EXPORT AtmosphereHandler {
  public:
-  AtmosphereModel& set_time(EpochUtc tr) noexcept;
+  AtmosphereHandler& set_time(const EpochUtc& tr) noexcept;
 
-  AtmosphereModel& set_sv_status(const EphemerisSolver* solver) noexcept;
+  AtmosphereHandler& set_sv_info(const EphemerisResult* eph_result) noexcept;
 
-  AtmosphereModel& set_sv_status(const std::map<Sv, EphemerisResult>* eph_result) noexcept;
-
-  AtmosphereModel& set_station_pos(const utils::CoordinateBlh* pos) noexcept;
-
-  virtual f64 solve(Sv sv) = 0;
-
-  virtual ~AtmosphereModel();
+  AtmosphereHandler& set_station_pos(const utils::CoordinateBlh* pos) noexcept;
 
  protected:
   bool solvable() const noexcept;
 
   const utils::CoordinateBlh* station_pos_{};
-  EpochUtc tr_{};
-  const std::map<Sv, EphemerisResult>* sv_map_{};
+  const EpochUtc* tr_;
+  const EphemerisResult* sv_info_{};
 };
 
-class NAVP_EXPORT TropModel : public AtmosphereModel {
+class NAVP_EXPORT TropHandler : public AtmosphereHandler {
  public:
-  TropModel& set_model(TropModelEnum type) noexcept;
-
-  virtual f64 solve(Sv sv) override;
-
-  virtual ~TropModel() override;
-
- protected:
-  TropModelEnum type_;
+  f64 handle(TropModelEnum model) const noexcept;
 };
 
-class NAVP_EXPORT IonoModel : public AtmosphereModel {
+class NAVP_EXPORT IonoHandler : public AtmosphereHandler {
  public:
-  IonoModel& set_model(IonoModelEnum type) noexcept;
-
-  virtual f64 solve(Sv sv) override;
-
-  virtual ~IonoModel() override;
-
- protected:
-  IonoModelEnum type_;
+  f64 handle(IonoModelEnum model) const noexcept;
 };
 
 }  // namespace navp::sensors::gnss

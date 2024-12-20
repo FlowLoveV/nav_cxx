@@ -1,5 +1,6 @@
 #pragma once
 
+#include "algorithm/parameter_block.hpp"
 #include "io/record.hpp"
 #include "utils/macro.hpp"
 #include "utils/space.hpp"
@@ -22,17 +23,19 @@ enum class NAVP_EXPORT SolutionModeEnum : u8 {
 };
 
 struct NAVP_EXPORT PvtSolutionRecord : public io::Record {
+  virtual ~PvtSolutionRecord() = default;
+
   EpochUtc time;
   utils::CoordinateXyz position, velicity; /* position/velocity (m|m/s) */
+  utils::CoordinateBlh blh;                /* latitude/longitude/height (rad|rad|m) */
   f32 qr[6];                               /* position variance/covariance (m^2) */
   f32 qv[6];                               /* velocity variance/covariance (m^2/s^2) */
   f64 dtr[6];                              /* receiver clock bias to time systems (s) */
   SolutionModeEnum mode = SolutionModeEnum::NONE;
-  u8 type;   /* type (0:xyz-ecef,1:enu-baseline) */
-  u8 ns;     /* number of valid satellites */
-  f32 age;   /* age of differential (s) */
-  f32 ratio; /* AR ratio factor for valiation */
-  f32 thres; /* AR ratio threshold for valiation */
+  u8 type;            /* type (0:xyz-ecef,1:enu-baseline) */
+  u8 syss;            /* number of systems */
+  u8 ns;              /* number of valid satellites */
+  bool vaild = false; /* solution vaild flag */
 };
 
 }  // namespace navp::solution

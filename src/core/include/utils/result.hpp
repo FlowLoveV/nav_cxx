@@ -454,6 +454,22 @@ class NAVP_EXPORT Result : private std::variant<Ok<T>, Err<E>> {
     }
   }
 
+  constexpr const T& unwrap_throw() const& {
+    if (is_ok()) {
+      return _m_get_ok_value();
+    } else {
+      throw _m_get_err_value();
+    }
+  }
+
+  constexpr T&& unwrap_throw() && {
+    if (is_ok()) [[likely]] {
+      return std::move(_m_get_ok_value());
+    } else {
+      throw std::move(_m_get_err_value());
+    }
+  }
+
   // unwrap_unchecked()
   // dangerous!!!
   constexpr T& unwrap_unchecked() const& { return const_cast<T&>(_m_get_ok_value()); }

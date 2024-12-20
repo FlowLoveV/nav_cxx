@@ -1,28 +1,28 @@
 #pragma once
 
-#include <deque>
-
-#include "solution/gnss_handler.hpp"
+#include "sensors/gnss/gnss_handler.hpp"
 #include "solution/solution.hpp"
-#include "solution/task.hpp"
 
 namespace navp::solution {
 
-class NAVP_EXPORT Spp : public ConfigTask {
+using sensors::gnss::GnssStationHandler;
+
+class NAVP_EXPORT Spp {
  public:
-  Spp(std::string_view cfg_path) noexcept;
-  virtual ~Spp() override;
+  Spp(std::shared_ptr<GnssStationHandler> handler) noexcept;
+  std::shared_ptr<GnssStationHandler> gnss_handler() noexcept;
+
+  PvtSolutionRecord next() noexcept;
+
+  ~Spp() = default;
 
  protected:
-  std::unique_ptr<GnssHandler> rover_;  ///> rover server
-  std::deque<PvtSolutionRecord> sol_;   ///> solution
+  std::shared_ptr<GnssStationHandler> rover_;       ///> rover handler
 };
 
 class NAVP_EXPORT FgoSpp : public Spp {
  public:
   using Spp::Spp;
-  virtual void solve() override;
-  virtual ~FgoSpp() override;
 };
 
 }  // namespace navp::solution

@@ -14,6 +14,10 @@ template <size_t Row, size_t Col>
 using NavMatrixf64 = Eigen::Matrix<f64, Row, Col>;
 template <size_t Row, size_t Col>
 using NavMatrixf32 = Eigen::Matrix<f32, Row, Col>;
+template <size_t Row>
+using NavVectorf32 = Eigen::Vector<f32, Row>;
+template<size_t Row>
+using NavVectorf64 = Eigen::Vector<f64, Row>;
 
 template <size_t Row>
 using NavMatrixDcf64 = Eigen::Matrix<f64, Row, Eigen::Dynamic>;
@@ -26,6 +30,8 @@ using NavMatrixDrf32 = Eigen::Matrix<f32, Eigen::Dynamic, Col>;
 
 using NavMatrixDf64 = Eigen::Matrix<f64, Eigen::Dynamic, Eigen::Dynamic>;
 using NavMatrixDf32 = Eigen::Matrix<f32, Eigen::Dynamic, Eigen::Dynamic>;
+using NavVectorDf32 = Eigen::Vector<f32, Eigen::Dynamic>;
+using NavVectorDf64 = Eigen::Vector<f64, Eigen::Dynamic>;
 
 using NavVector2f64 = NavMatrixf64<2, 1>;
 using NavVector3f64 = NavMatrixf64<3, 1>;

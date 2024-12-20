@@ -87,33 +87,33 @@ class NAVP_EXPORT FilterItems : public std::variant<EpochItem, CarrierItem, Cons
      */
     if (Carrier::from_str(items[0].c_str()).is_ok()) {
       std::vector<Carrier> carrier_res(items.size());
-      for (const auto& item : items) {
-        auto carrier = Carrier::from_str(item.c_str());
-        carrier_res.emplace_back(carrier.unwrap());
-        return Ok(FilterItems(carrier_res));
+      for (u16 i = 0; i < items.size(); i++) {
+        auto carrier = Carrier::from_str(items[i].c_str());
+        carrier_res[i] = carrier.unwrap();
       }
+      return Ok(FilterItems(carrier_res));
     }
     /*
      * Constellation
      */
     if (Constellation::form_str(items[0].c_str()).is_ok()) {
       std::vector<Constellation> constellation_res(items.size());
-      for (const auto& item : items) {
-        auto constellation = Constellation::form_str(item.c_str());
-        constellation_res.emplace_back(constellation.unwrap());
-        return Ok(FilterItems(constellation_res));
+      for (u16 i = 0; i < items.size(); i++) {
+        auto constellation = Constellation::form_str(items[i].c_str());
+        constellation_res[i] = constellation.unwrap();
       }
+      return Ok(FilterItems(constellation_res));
     }
     /*
      * Sv
      */
     if (Sv::from_str(items[0].c_str()).is_ok()) {
       std::vector<Sv> sv_res(items.size());
-      for (const auto& item : items) {
-        auto sv = Sv::from_str(item.c_str());
-        sv_res.emplace_back(sv.unwrap());
-        return Ok(FilterItems(sv_res));
+      for (u16 i = 0; i < items.size(); i++) {
+        auto sv = Sv::from_str(items[i].c_str());
+        sv_res[i] = sv.unwrap();
       }
+      return Ok(FilterItems(sv_res));
     }
     return Ok(FilterItems(items));
   }

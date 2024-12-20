@@ -8,21 +8,21 @@ struct PvtSolutionRecord;
 
 }  // namespace navp::solution
 
-namespace navp::io {
+namespace navp::io::custom {
 
 class SolutionStream;
 
 class NAVP_EXPORT SolutionStream : public Stream {
  public:
   using Stream::Stream;
-  virtual ~SolutionStream();
+  virtual ~SolutionStream() override = default;
 
  protected:
   virtual void decode_record(Record& record) override;
 
   virtual void encode_record(Record& record) override;
 
-  virtual void encode_pvt_solution_record(solution::PvtSolutionRecord& record);
+  void encode_pvt_solution_record(solution::PvtSolutionRecord& record);
 };
 
-}  // namespace navp::io
+}  // namespace navp::io::custom

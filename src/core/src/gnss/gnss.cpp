@@ -6,8 +6,17 @@
 
 namespace navp::sensors::gnss {
 
+#define NSYSGPS 1
+#define NSATGPS 32  ///< potential number of GPS satellites, PRN goes from 1 to this number
+#define NSATGLO 27  ///< potential number of GLONASS satellites, PRN goes from 1 to this number
+#define NSATGAL 36  ///< potential number of Galileo satellites, PRN goes from 1 to this number
+#define NSATQZS 7   ///< potential number of QZSS satellites, PRN goes from 1 to this number
+#define NSATLEO 78  ///< potential number of LEO satellites, PRN goes from 1 to this number
+#define NSATBDS 62  ///< potential number of Beidou satellites, PRN goes from 1 to this number
+#define NSATSBS 39  ///< potential number of SBAS satellites, PRN goes from 1 to this number
+
 const Sig* GObs::find_code(ObsCodeEnum code) const noexcept {
-  auto freq = Constants::code_to_freq_enum(sv.constellation.id, code);
+  auto freq = Constants::code_to_freq_enum(sv.system(), code);
   if (sigs_list.contains(freq)) {
     for (const auto& sig : sigs_list.at(freq)) {
       if (sig.code == code) {
@@ -18,9 +27,12 @@ const Sig* GObs::find_code(ObsCodeEnum code) const noexcept {
   return nullptr;
 }
 
-GObs::operator std::shared_ptr<GObs>() {
-  auto pointer = std::make_shared<GObs>(*this);
-  return pointer;
+u8 GObs::frequency_count() const noexcept { return sigs_list.size(); }
+
+u8 GObs::code_count() const noexcept {
+  u8 count = 0;
+  std::ranges::for_each(sigs_list | std::views::values, [&](const std::list<Sig>& sig) { count += sig.size(); });
+  return count;
 }
 
 ObsList& ObsList::operator+=(const ObsList& right) {
@@ -39,55 +51,54 @@ GnssObsRecord::GnssObsRecord(std::unique_ptr<ObsList>&& _obs_ptr) noexcept { add
 std::vector<Sv> get_sv_sats(ConstellationEnum cons) {
   std::vector<Sv> sats;
   /* output satellite PRN*/
-  if (cons == ConstellationEnum::GPS)
+  if (cons == ConstellationEnum::GPS) {
+    sats.resize(NSATGPS);
     for (u8 prn = 1; prn <= NSATGPS; prn++) {
-      sats.push_back(Sv{prn, ConstellationEnum::GPS});
+      sats[prn - 1] = Sv{prn, ConstellationEnum::GPS};
     }
-  if (cons == ConstellationEnum::GLO)
+  }
+  if (cons == ConstellationEnum::GLO) {
+    sats.resize(NSATGLO);
     for (u8 prn = 1; prn <= NSATGLO; prn++) {
-      sats.push_back(Sv{prn, ConstellationEnum::GLO});
+      sats[prn - 1] = Sv{prn, ConstellationEnum::GLO};
     }
-  if (cons == ConstellationEnum::GAL)
+  }
+  if (cons == ConstellationEnum::GAL) {
+    sats.resize(NSATGAL);
     for (u8 prn = 1; prn <= NSATGAL; prn++) {
-      sats.push_back(Sv{prn, ConstellationEnum::GAL});
+      sats[prn - 1] = Sv{prn, ConstellationEnum::GAL};
     }
-  if (cons == ConstellationEnum::BDS)
+  }
+  if (cons == ConstellationEnum::BDS) {
+    sats.resize(NSATBDS);
     for (u8 prn = 1; prn <= NSATBDS; prn++) {
-      sats.push_back(Sv{prn, ConstellationEnum::BDS});
+      sats[prn - 1] = Sv{prn, ConstellationEnum::BDS};
     }
-  if (cons == ConstellationEnum::QZS)
+  }
+  if (cons == ConstellationEnum::QZS) {
+    sats.resize(NSATQZS);
     for (u8 prn = 1; prn <= NSATQZS; prn++) {
-      sats.push_back(Sv{prn, ConstellationEnum::QZS});
+      sats[prn - 1] = Sv{prn, ConstellationEnum::QZS};
     }
-  if (cons == ConstellationEnum::SBS)
+  }
+  if (cons == ConstellationEnum::SBS) {
+    sats.resize(NSATSBS);
     for (u8 prn = 1; prn <= NSATSBS; prn++) {
-      sats.push_back(Sv{prn, ConstellationEnum::SBS});
+      sats[prn - 1] = Sv{prn, ConstellationEnum::SBS};
     }
-  if (cons == ConstellationEnum::LEO)
+  }
+  if (cons == ConstellationEnum::LEO) {
+    sats.resize(NSATLEO);
     for (u8 prn = 1; prn <= NSATLEO; prn++) {
-      sats.push_back(Sv{prn, ConstellationEnum::LEO});
+      sats[prn - 1] = Sv{prn, ConstellationEnum::LEO};
     }
-
+  }
   return sats;
 };
 
-EpochUtc GnssObsRecord::begin_time() const noexcept {
-  if (auto gobs_itr = obs_map_.begin(); gobs_itr != obs_map_.end()) [[likely]] {
-    return EpochUtc{(*gobs_itr).first};
-  } else {
-    nav_error("No observation in GnssObsRecord!");
-    return {};
-  }
-}
+EpochUtc GnssObsRecord::begin_time() const noexcept { return obs_map_.begin()->first; }
 
-EpochUtc GnssObsRecord::end_time() const noexcept {
-  if (auto gobs_itr = obs_map_.rbegin(); gobs_itr != obs_map_.rend()) [[likely]] {
-    return EpochUtc{(*gobs_itr).first};
-  } else {
-    nav_error("No observation in GnssObsRecord!");
-    return {};
-  }
-}
+EpochUtc GnssObsRecord::end_time() const noexcept { return obs_map_.rbegin()->first; }
 
 std::tuple<EpochUtc, EpochUtc> GnssObsRecord::period() const noexcept { return {begin_time(), end_time()}; }
 
@@ -96,28 +107,14 @@ std::vector<EpochUtc> GnssObsRecord::epoches() const noexcept {
 }
 
 std::vector<Sv> GnssObsRecord::sv_at(EpochUtc time) const noexcept {
-  if (obs_map_.contains(time)) {
-    return obs_map_.at(time) | std::views::keys | std::ranges::to<std::vector>();
-  } else {
-    return {};
-  }
+  return obs_map_.at(time) | std::views::keys | std::ranges::to<std::vector>();
 }
 
-auto GnssObsRecord::query(EpochUtc time) const noexcept -> const ObsMap* {
-  if (obs_map_.contains(time)) {
-    return &obs_map_.at(time);
-  } else {
-    return nullptr;
-  }
-}
+auto GnssObsRecord::at(EpochUtc time) const noexcept -> const ObsMap* { return &obs_map_.at(time); }
 
-auto GnssObsRecord::query(EpochUtc time, Sv sv) const noexcept -> const std::shared_ptr<GObs> {
-  if (obs_map_.contains(time) && obs_map_.at(time).contains(sv)) {
-    return obs_map_.at(time).at(sv);
-  } else {
-    return nullptr;
-  }
-}
+auto GnssObsRecord::at(EpochUtc time, Sv sv) const noexcept -> const GObs* { return obs_map_.at(time).at(sv).get(); }
+
+auto GnssObsRecord::contains(EpochUtc time) const noexcept -> bool { return obs_map_.contains(time); }
 
 void GnssObsRecord::add_obs_list(ObsList&& obs_list) noexcept {
   for (const auto& obs_ptr : obs_list) {
@@ -148,7 +145,7 @@ GnssObsRecord& GnssObsRecord::set_storage(i32 storage) noexcept {
 
 u32 GnssObsRecord::frequency() const noexcept { return frequceny_; }
 
-GnssObsRecord& GnssObsRecord::set_frequcney(u32 frequency) noexcept {
+GnssObsRecord& GnssObsRecord::set_frequency(u32 frequency) noexcept {
   frequceny_ = frequency;
   return *this;
 }
@@ -177,12 +174,21 @@ auto GnssObsRecord::operator[](i64 index) const -> const ObsMap* {
   }
 }
 
-auto GnssObsRecord::latest() const -> const StorageType::value_type& { return *obs_map_.rend(); }
+auto GnssObsRecord::latest() const -> const StorageType::value_type& { return *obs_map_.rbegin(); }
 
 GnssObsRecord::~GnssObsRecord() = default;
 
 GnssNavRecord::GnssNavRecord() : nav(std::make_shared<Navigation>()) {}
 
 GnssNavRecord::~GnssNavRecord() = default;
+
+#undef NSYSGPS
+#undef NSATGPS
+#undef NSATGLO
+#undef NSATGAL
+#undef NSATQZS
+#undef NSATLEO
+#undef NSATBDS
+#undef NSATSBS
 
 }  // namespace navp::sensors::gnss

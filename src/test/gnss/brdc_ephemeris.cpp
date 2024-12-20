@@ -12,9 +12,9 @@ using namespace navp::io::rinex;
 using namespace navp::sensors::gnss;
 
 TEST_CASE("GPS BDS BRDC") {
-  std::string nav_bds_path = "../test_resources/SPP/NovatelOEM20211114-01.nav";
-  std::string nav_gps_path = "../test_resources/SPP/NovatelOEM20211114-01.21N";
-  std::string obs_path = "../test_resources/SPP/NovatelOEM20211114-01-GPS&BDS-Double.obs";
+  std::string nav_bds_path = "/root/project/nav_cxx/test_resources/SPP/NovatelOEM20211114-01.nav";
+  std::string nav_gps_path = "/root/project/nav_cxx/test_resources/SPP/NovatelOEM20211114-01.21N";
+  std::string obs_path = "/root/project/nav_cxx/test_resources/SPP/NovatelOEM20211114-01-GPS&BDS-Double.obs";
 
   RinexStream bds_nav_stream(nav_bds_path, std::ios::in);
   RinexStream gps_nav_stream(nav_gps_path, std::ios::in);

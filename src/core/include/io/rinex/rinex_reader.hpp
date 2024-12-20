@@ -5,8 +5,8 @@
 
 #include "sensors/gnss/enums.hpp"
 #include "utils/eigen.hpp"
-#include "utils/types.hpp"
 #include "utils/macro.hpp"
+#include "utils/types.hpp"
 
 namespace navp::sensors::gnss {
 struct Navigation;
@@ -40,7 +40,8 @@ struct NAVP_EXPORT RinexStation {
 
 /// read rinex file header
 i32 readRnxH(std::istream& inputStream, f64& ver, char& type, ConstellationEnum& sys, TimeSystemEnum& tsys,
-             std::map<ConstellationEnum, std::map<i32, CodeType>>& sysCodeTypes, Navigation& nav, RinexStation& rnxRec);
+             std::map<ConstellationEnum, std::map<i32, CodeType>>& sysCodeTypes, Navigation& nav, RinexStation& rnxRec,
+             char* glo_fcn, f64* glo_cpbias);
 
 /// read rinex observation at next epoch
 int readNextRnxObsB(std::istream& inputStream, double ver, TimeSystemEnum tsys,
@@ -63,6 +64,6 @@ i32 readRnxClk(std::istream& inputStream, f64 ver, Navigation& nav);
 /// read rinex file
 i32 readRnx(std::istream& inputStream, char& type, ObsList& obsList, Navigation& nav, RinexStation& rnxRec, f64& ver,
             ConstellationEnum& sys, TimeSystemEnum& tsys,
-            std::map<ConstellationEnum, std::map<i32, CodeType>>& sysCodeTypes);
+            std::map<ConstellationEnum, std::map<i32, CodeType>>& sysCodeTypes, char* glo_fcn, f64* glo_cpbias);
 
 }  // namespace navp::io::rinex

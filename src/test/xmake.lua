@@ -1,5 +1,13 @@
 add_rules("mode.debug", "mode.release")
 
+set_project("nav_test")
+set_targetdir("$(projectdir)/bin/test")
+set_objectdir("$(projectdir)/libs/test")
+set_languages("c++23", "c11")
+set_toolchains("gcc")
+set_toolset("cc", "gcc-14")
+set_toolset("cxx", "g++-14")
+
 target("test")
     set_kind("binary")
     set_languages("c++23")
@@ -9,12 +17,12 @@ target("test")
     add_files("test.cpp")
 target_end()
 
-target("time_test")
+target("test_time")
     set_kind("binary")
     set_languages("c++23")
     set_pcheader("doctest.h")
     add_deps("nav_core")
-    add_files("time_test.cpp")
+    add_files("test_time.cpp")
 target_end()
 
 target("space_test")
