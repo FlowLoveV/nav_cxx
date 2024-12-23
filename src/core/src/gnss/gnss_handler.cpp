@@ -11,7 +11,7 @@ namespace navp::sensors::gnss {
 
 using navp::sensors::gnss::GnssRandomHandler;
 
-bool GnssRecord::update(GnssRuntimeInfo* runtime_info) {
+bool GnssRecord::update() {
   if (!obs_stream->eof()) [[likely]] {
     obs->get_record(*obs_stream);  // read next epoch observation
     return true;
@@ -86,12 +86,12 @@ void GnssRuntimeInfo::update(const GnssRecord* record) {
 //   return latest_spp_result_;
 // }
 
-NAV_NODISCARD_UNUNSED auto GnssStationHandler::generate_rawobs_handler() const noexcept -> std::vector<RawObsHandler> {
+NAV_NODISCARD_UNUNSED auto GnssPayload::generate_rawobs_handler() const -> std::vector<RawObsHandler> {
   std::vector<RawObsHandler> handler;
   auto& satellites_vector = runtime_info_->avilable_sv;
   handler.reserve(satellites_vector.size());
   u16 sv_count = 0;
-  for (u16 i = 0; i < satellites_vector.size(); i++) {
+  for (u16 i = 0; i < satellites_vector.size(); ++i) {
     if (!settings_->enabled(satellites_vector[i])) continue;  // filter sv and system
     GObs* obs = runtime_info_->obs_map->at(satellites_vector[i]).get();
     std::vector<const Sig*> sig;
@@ -106,8 +106,7 @@ NAV_NODISCARD_UNUNSED auto GnssStationHandler::generate_rawobs_handler() const n
 }
 
 // todo
-NAV_NODISCARD_ERROR_HANDLE auto GnssStationHandler::generate_undiffobs_handler() const noexcept
-    -> std::vector<UnDiffObsHandler> {
+NAV_NODISCARD_ERROR_HANDLE auto GnssPayload::generate_undiffobs_handler() const -> std::vector<UnDiffObsHandler> {
   auto& satellites_vector = runtime_info_->avilable_sv;
   std::vector<UnDiffObsHandler> handler(satellites_vector.size());
   for (auto sv : satellites_vector) {
@@ -125,31 +124,16 @@ NAV_NODISCARD_ERROR_HANDLE auto GnssStationHandler::generate_undiffobs_handler()
   return std::move(handler);
 }
 
-auto GnssStationHandler::generate_trop_handler(Sv sv) const noexcept
-    -> std::function<f64(const utils::CoordinateBlh*)> {
-  return [handler = static_cast<TropHandler>(
-              TropHandler{}.set_time(runtime_info_->epoch).set_sv_info(&runtime_info_->sv_map->at(sv))),
-          model = settings_->trop](const utils::CoordinateBlh* pos) mutable {
-    handler.set_station_pos(pos);
-    return handler.handle(model);
-  };
+auto GnssPayload::generate_atmosphere_handler(Sv sv) const -> AtmosphereHandler {
+  return AtmosphereHandler{}
+      .set_time(runtime_info_->epoch)
+      .set_sv_info(&runtime_info_->sv_map->at(sv))
+      .set_trop_model(settings_->trop)
+      .set_iono_model(settings_->iono);
 }
 
-auto GnssStationHandler::generate_iono_handler(Sv sv) const noexcept
-    -> std::function<f64(const utils::CoordinateBlh*)> {
-  return [handler = static_cast<IonoHandler>(
-              IonoHandler{}.set_time(runtime_info_->epoch).set_sv_info(&runtime_info_->sv_map->at(sv))),
-          model = settings_->iono](const utils::CoordinateBlh* pos) mutable {
-    handler.set_station_pos(pos);
-    return handler.handle(model);
-  };
-}
-
-auto GnssStationHandler::generate_random_handler(Sv sv) const noexcept -> std::function<const Sig*(ObsCodeEnum)> {
-  return [handler = GnssRandomHandler{}
-                        .set_obs(runtime_info_->obs_map->at(sv).get())
-                        .set_sv_info(&runtime_info_->sv_map->at(sv)),
-          model = settings_->random](ObsCodeEnum code) { return handler.handle(code, model); };
+auto GnssPayload::generate_random_handler(Sv sv) const -> GnssRandomHandler {
+  return GnssRandomHandler{}.set_model(settings_->random).set_sv_info(&runtime_info_->sv_map->at(sv));
 }
 
 }  // namespace navp::sensors::gnss

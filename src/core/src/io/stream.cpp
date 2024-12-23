@@ -18,6 +18,9 @@ void Stream::reset(std::string_view _filename, std::ios::openmode mode) {
 
 void Stream::open(std::string_view _filename, std::ios::openmode mode) { reset(_filename, mode); }
 
-Stream::Stream(std::string_view _filename, std::ios::openmode mode) { reset(_filename, mode); }
+Stream::Stream(std::string_view _filename, std::ios::openmode mode, std::shared_ptr<spdlog::logger> logger)
+    : logger_(logger) {
+  reset(_filename, mode);
+}
 
 }  // namespace navp::io

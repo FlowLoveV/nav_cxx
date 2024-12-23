@@ -1,23 +1,24 @@
 #pragma once
 
-#include "sensors/gnss/gnss_handler.hpp"
+#include "sensors/gnss/gnss.hpp"
 #include "solution/solution.hpp"
+#include "utils/option.hpp"
 
 namespace navp::solution {
 
-using sensors::gnss::GnssStationHandler;
+using sensors::gnss::GnssHandler;
 
 class NAVP_EXPORT Spp {
  public:
-  Spp(std::shared_ptr<GnssStationHandler> handler) noexcept;
-  std::shared_ptr<GnssStationHandler> gnss_handler() noexcept;
+  Spp(std::shared_ptr<GnssHandler> handler) noexcept;
+  std::shared_ptr<GnssHandler> gnss_handler() noexcept;
 
-  PvtSolutionRecord next() noexcept;
+  Option<PvtSolutionRecord> next_solution() noexcept;
 
   ~Spp() = default;
 
  protected:
-  std::shared_ptr<GnssStationHandler> rover_;       ///> rover handler
+  std::shared_ptr<GnssHandler> rover_;       ///> rover handler
 };
 
 class NAVP_EXPORT FgoSpp : public Spp {

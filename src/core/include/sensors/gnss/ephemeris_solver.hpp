@@ -42,9 +42,7 @@ class NAVP_EXPORT EphemerisSolver {
   using SvMap = std::unordered_map<Sv, EphemerisResult>;
   using TimeSvMap = std::map<EpochUtc, SvMap>;
 
-  EphemerisSolver() noexcept;
-  explicit EphemerisSolver(const std::vector<const Navigation*>& nav) noexcept;
-  explicit EphemerisSolver(const std::vector<GnssNavRecord>& gnss_record_nav) noexcept;
+  EphemerisSolver(std::shared_ptr<spdlog::logger> logger) noexcept;
 
   // add new navigation
   void add_ephemeris(const Navigation* nav) noexcept;
@@ -62,8 +60,8 @@ class NAVP_EXPORT EphemerisSolver {
 
   template <typename Func>
   void for_each_sv_at(EpochUtc tr, Func&& func) {
-    if (sv_status->contains(tr)) {
-      for (auto&& [_, status] : sv_status->at(tr)) {
+    if (sv_status_->contains(tr)) {
+      for (auto&& [_, status] : sv_status_->at(tr)) {
         std::invoke(std::forward<Func>(func), std::forward<EphemerisResult>(status));
       }
     }
@@ -101,23 +99,25 @@ class NAVP_EXPORT EphemerisSolver {
   bool launch_geph_solver(const utils::GTime& tr, Sv sv, f64 pr, bool correct_transmission = false) noexcept;
   bool launch_seph_solver(const utils::GTime& tr, Sv sv, f64 pr, bool correct_transmission = false) noexcept;
 
-  std::vector<const Navigation*> nav;
+  std::vector<const Navigation*> nav_vec_;
 
   // sv status
-  std::shared_ptr<TimeSvMap> sv_status = nullptr;
+  std::shared_ptr<TimeSvMap> sv_status_ = nullptr;
 
   // cache newest ephemeris of different versions and system
-  Eph *cache_bds_d1d2, *cache_gps_lnav, *cache_qzs_lnav, *cache_gal_ifnav;
-  Ceph *cache_bds_cnv1, *cache_bds_cnv2, *cache_bds_cnv3, *cache_gps_cnav, *cache_gps_cnv2, *cache_qzs_cnav,
-      *cache_qzs_cnv2;
-  Geph* cache_glo_fdma;
+  Eph *cache_bds_d1d2_, *cache_gps_lnav_, *cache_qzs_lnav_, *cache_gal_ifnav_;
+  Ceph *cache_bds_cnv1_, *cache_bds_cnv2_, *cache_bds_cnv3_, *cache_gps_cnav_, *cache_gps_cnv2_, *cache_qzs_cnav_,
+      *cache_qzs_cnv2_;
+  Geph* cache_glo_fdma_;
 
   // tgd paramenters
-  std::shared_ptr<BdsGroupDelay> bds_gd = nullptr;
-  std::shared_ptr<GpsGroupDelay> gps_gd = nullptr;
-  std::shared_ptr<GalGroupDelay> gal_gd = nullptr;
-  std::shared_ptr<QzsGroupDelay> qzs_gd = nullptr;
-  std::shared_ptr<GloGroupDelay> glo_gd = nullptr;
+  std::shared_ptr<BdsGroupDelay> bds_gd_ = nullptr;
+  std::shared_ptr<GpsGroupDelay> gps_gd_ = nullptr;
+  std::shared_ptr<GalGroupDelay> gal_gd_ = nullptr;
+  std::shared_ptr<QzsGroupDelay> qzs_gd_ = nullptr;
+  std::shared_ptr<GloGroupDelay> glo_gd_ = nullptr;
+
+  std::shared_ptr<spdlog::logger> logger_;
 };
 
 }  // namespace navp::sensors::gnss

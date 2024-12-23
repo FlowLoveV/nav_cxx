@@ -18,9 +18,23 @@ constexpr f32 stardand_carrier_var = 0.02f;
 
 }  // namespace details
 
-GnssRandomHandler& GnssRandomHandler::set_obs(const GObs* obs) noexcept {
-  // safe const cast
-  obs_ = const_cast<GObs*>(obs);
+#define HANDLE_PSEUDORANGE(code)                       \
+  if (options_ & EvaluateRandomOptions::Pseudorange) { \
+    code;                                              \
+  }
+
+#define HANDLE_CARRIER(code)                       \
+  if (options_ & EvaluateRandomOptions::Carrier) { \
+    code;                                          \
+  }
+
+GnssRandomHandler& GnssRandomHandler::set_model(RandomModelEnum model) noexcept {
+  model_ = model;
+  return *this;
+}
+
+GnssRandomHandler& GnssRandomHandler::set_options(EvaluateRandomOptions options) noexcept {
+  options_ = options;
   return *this;
 }
 
@@ -29,24 +43,24 @@ GnssRandomHandler& GnssRandomHandler::set_sv_info(const EphemerisResult* eph_res
   return *this;
 }
 
-const Sig* GnssRandomHandler::handle(ObsCodeEnum code, RandomModelEnum model) const noexcept {
-  if (!obs_) return nullptr;
-  auto sig = const_cast<Sig*>(obs_->find_code(code));  // safe and necessary const_cast here
-  if (sig) {
-    switch (model) {
+const Sig* GnssRandomHandler::handle(const Sig* sig) const noexcept {
+  if (!sig) return nullptr;
+  auto sig_ = const_cast<Sig*>(sig);
+  if (sig_) {
+    switch (model_) {
       case RandomModelEnum::STANDARD: {
-        sig->code_var = details::stardand_pseudorange_var;
-        sig->phase_var = details::stardand_carrier_var;
-        return sig;
+        HANDLE_PSEUDORANGE(sig_->code_var = details::stardand_pseudorange_var);
+        HANDLE_CARRIER(sig_->phase_var = details::stardand_carrier_var);
+        return sig_;
       }
       case RandomModelEnum::ELEVATION_DEPENDENT: {
-        return sig;
+        return sig_;
       }
       case RandomModelEnum::SNR_DEPENDENT: {
-        return sig;
+        return sig_;
       }
       case RandomModelEnum::CUSTOM: {
-        return sig;
+        return sig_;
       }
       default: {
         nav_error("Encountering an unexpected branch in RandomModelEnum");
@@ -56,5 +70,8 @@ const Sig* GnssRandomHandler::handle(ObsCodeEnum code, RandomModelEnum model) co
   }
   return nullptr;
 }
+
+#undef HANDLE_PSEUDORANGE
+#undef HANDLE_CARRIER
 
 }  // namespace navp::sensors::gnss

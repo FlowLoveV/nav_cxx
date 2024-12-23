@@ -14,7 +14,7 @@ i32 uraToSva(f64 ura) {
   if (ura < 0)
     sva = 15;
   else {
-    for (sva = 0; sva < 15; sva++)
+    for (sva = 0; sva < 15; ++sva)
       if (ura_eph[sva] >= ura) break;
   }
 

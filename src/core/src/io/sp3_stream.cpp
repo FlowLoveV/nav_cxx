@@ -181,7 +181,7 @@ Quick and dirty read of the velocities
 @todo change later.
     */
     if (buff[0] == 'V') {
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < 3; ++i) {
         f64 val = str2num(buff, 4 + i * 14, 14);
         pephList.back().vel[i] = val * 0.1;
       }

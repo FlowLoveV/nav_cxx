@@ -2,6 +2,7 @@
 
 #include <fstream>
 
+#include "utils/logger.hpp"
 #include "utils/macro.hpp"
 #include "utils/types.hpp"
 
@@ -18,7 +19,7 @@ class NAVP_EXPORT Stream : public std::fstream {
 
   virtual ~Stream();
 
-  Stream(std::string_view filename, std::ios::openmode mode = std::ios::in);
+  Stream(std::string_view filename, std::ios::openmode mode, std::shared_ptr<spdlog::logger> logger = nullptr);
 
   virtual void open(std::string_view filename, std::ios::openmode mode);
 
@@ -33,6 +34,8 @@ class NAVP_EXPORT Stream : public std::fstream {
   virtual void decode_record(Record& record) = 0;
 
   virtual void encode_record(Record& record) = 0;
+
+  std::shared_ptr<spdlog::logger> logger_;
 };
 
 template <typename Derived>

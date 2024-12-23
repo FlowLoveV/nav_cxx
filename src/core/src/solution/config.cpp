@@ -95,17 +95,19 @@ auto get_child_node(const toml::node* node, std::string_view key) noexcept -> Co
 }
 
 template <io::nav_stream_type StreamType>
-auto get_stream(const toml::node* node) noexcept -> ConfigResult<std::unique_ptr<io::Stream>> {
+auto get_stream(const toml::node* node, std::shared_ptr<spdlog::logger> logger = nullptr) noexcept
+    -> ConfigResult<std::unique_ptr<io::Stream>> {
   if (!node->is_string()) [[unlikely]] {
     return ConfigParseError(std::format("Parse error at {}, should be a string", node->source()));
   }
   // todo File type detection content should be added here
 
-  auto rnx_stream = std::make_unique<StreamType>(node->as_string()->get());
+  auto rnx_stream = std::make_unique<StreamType>(node->as_string()->get(), std::ios::in, logger);
   return std::move(rnx_stream);
 }
 
-auto get_nav_record(const toml::node* node) noexcept -> ConfigResult<std::list<GnssNavRecord>> {
+auto get_nav_record(const toml::node* node, std::shared_ptr<spdlog::logger> logger = nullptr) noexcept
+    -> ConfigResult<std::list<GnssNavRecord>> {
   if (!node->is_array()) [[unlikely]] {
     return ConfigParseError(std::format("Parse error at {}, should be a array", node->source()));
   }
@@ -113,7 +115,7 @@ auto get_nav_record(const toml::node* node) noexcept -> ConfigResult<std::list<G
 
   auto ary = node->as_array();
   std::list<GnssNavRecord> result;
-  for (auto it = ary->begin(); it != ary->end(); it++) {
+  for (auto it = ary->begin(); it != ary->end(); ++it) {
     if (!it->is_string()) [[unlikely]] {
       return ConfigParseError(std::format("Parse error at {}, should be a string", it->source()));
     }
@@ -142,7 +144,7 @@ auto get_coordinate(utils::CoordSystemEnum out_style, const toml::node* node_sty
   }
   auto coord = node_coord->as_array();
   utils::NavVector3f64 result;
-  for (u8 i = 0; i < 3; i++) {
+  for (u8 i = 0; i < 3; ++i) {
     if (!coord->get(i)->is_number()) [[unlikely]] {
       return ConfigParseError(std::format("Parse error at {}, should be a number", coord->get(i)->source()));
     }
@@ -193,7 +195,7 @@ auto get_enabled_codes(const toml::node* node) noexcept -> ConfigResult<CodeMap>
   for (const auto& [sys, code] : *node->as_table()) {
     ConstellationEnum constellation = sensors::gnss::Constellation::form_str(sys.str().data()).unwrap().id;
     if (auto code_list = code.as_array()) [[likely]] {
-      for (auto it = code_list->begin(); it != code_list->end(); it++) {
+      for (auto it = code_list->begin(); it != code_list->end(); ++it) {
         // cheeck if string
         if (!it->is_string()) [[unlikely]] {
           return ConfigParseError(std::format("Parsing error at {}, should be a string", it->source()));
@@ -371,11 +373,10 @@ solution::NavConfigManger& GlobalConfig::get_instance() noexcept {
   return config_;
 }
 
-std::unique_ptr<sensors::gnss::GnssStationHandler> GlobalConfig::get_station_handler(
-    std::string_view station_name) noexcept {
+std::unique_ptr<GnssPayload> GlobalConfig::get_station_handler(std::string_view station_name) noexcept {
   auto& config = get_instance();
   auto station_node = get_node(&config_, GlobalStationCfg, station_name).unwrap_throw();
-  auto station = std::make_unique<GnssStationHandler>();
+  auto station = std::make_unique<GnssPayload>();
 
   /*
    * logger
@@ -424,7 +425,7 @@ std::unique_ptr<sensors::gnss::GnssStationHandler> GlobalConfig::get_station_han
   {
     station->record_ = std::make_unique<GnssRecord>();
     // storage from file source
-    auto init_file_source = [station_node](GnssRecord& storage) {
+    auto init_file_source = [station_node, logger](GnssRecord& storage) {
       // navigation
       auto nav_node = get_child_node(station_node, StationNavPathCfg).unwrap_throw();
       storage.nav = get_nav_record(nav_node).unwrap_throw();
@@ -432,11 +433,11 @@ std::unique_ptr<sensors::gnss::GnssStationHandler> GlobalConfig::get_station_han
       auto obs_node = get_child_node(station_node, StationObsPathCfg).unwrap_throw();
       // todo
       // detection observation file type here
-      storage.obs_stream = get_stream<RinexStream>(obs_node).unwrap_throw();
+      storage.obs_stream = get_stream<RinexStream>(obs_node, logger).unwrap_throw();
       // obs
-      storage.obs = std::make_unique<GnssObsRecord>();
+      storage.obs = std::make_unique<GnssObsRecord>(logger);
       // ephemeris solver
-      storage.eph_solver = std::make_unique<EphemerisSolver>();
+      storage.eph_solver = std::make_unique<EphemerisSolver>(logger);
       std::ranges::for_each(storage.nav,
                             [&](const GnssNavRecord& record) { storage.eph_solver->add_ephemeris(record.nav.get()); });
     };
@@ -482,8 +483,14 @@ std::unique_ptr<sensors::gnss::GnssStationHandler> GlobalConfig::get_station_han
     // clock parameter map
     settings.clock_map = std::make_unique<ClockParameterMap>();
     u8 syss = 0;
-    std::ranges::for_each(*settings.enabled_obs_code | std::views::keys,
-                          [&](ConstellationEnum sys) { settings.clock_map->insert({sys, syss++}); });
+    if (settings.enabled_obs_code->empty()) {
+      // if no obs code enabled, using obs code from GnssObsRecord
+      std::ranges::for_each(station->record_->obs->code_map() | std::views::keys,
+                            [&](ConstellationEnum sys) { settings.clock_map->insert({sys, syss++}); });
+    } else {
+      std::ranges::for_each(*settings.enabled_obs_code | std::views::keys,
+                            [&](ConstellationEnum sys) { settings.clock_map->insert({sys, syss++}); });
+    }
   }
 
   /*
@@ -491,18 +498,20 @@ std::unique_ptr<sensors::gnss::GnssStationHandler> GlobalConfig::get_station_han
    */
   { station->runtime_info_ = std::make_unique<GnssRuntimeInfo>(); }
 
-  logger->info("Station \'{}\' initialized succeed!", station->station_info()->name);
+  logger->info("Station \'{}\' initialized succeed!", station->station_info_->name);
   return station;
 }
 
-std::shared_ptr<Gnss<utils::null_mutex>> GlobalConfig::get_station_st(std::string_view station_name) noexcept {
+std::shared_ptr<sensors::gnss::GnssHandler> GlobalConfig::get_station_st(std::string_view station_name) noexcept {
   auto station_handler = get_station_handler(station_name);
-  return std::make_shared<GnssSt>(std::move(*station_handler));
+  auto gnss_st = std::make_shared<GnssSt>(std::move(*station_handler));
+  return gnss_st;
 }
 
-std::shared_ptr<Gnss<std::mutex>> GlobalConfig::get_station_mt(std::string_view station_name) noexcept {
+std::shared_ptr<sensors::gnss::GnssHandler> GlobalConfig::get_station_mt(std::string_view station_name) noexcept {
   auto station_handler = get_station_handler(station_name);
-  return std::make_shared<GnssMt>(std::move(*station_handler));
+  auto gnss_mt = std::make_shared<GnssMt>(std::move(*station_handler));
+  return gnss_mt;
 }
 
 std::shared_ptr<spdlog::logger> GlobalConfig::get_logger(std::string_view logger_name) noexcept {

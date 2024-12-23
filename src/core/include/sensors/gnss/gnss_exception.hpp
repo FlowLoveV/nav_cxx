@@ -29,9 +29,7 @@ REGISTER_NAV_RUNTIME_ERROR_CHILD(GnssParseSvError, GnssRuntimeError);
 // parse string to Carrier exception
 REGISTER_NAV_RUNTIME_ERROR_CHILD(GnssParseCarrierError, GnssRuntimeError);
 
-/*
- * gnss residual building exception
- */
-REGISTER_NAV_RUNTIME_ERROR_CHILD(GnssCorrectionsBuildError, GnssRuntimeError);
+// GnssObsRecord exception
+REGISTER_NAV_RUNTIME_ERROR_CHILD(GnssObsRecordError, GnssRuntimeError);
 
 }  // namespace navp::sensors::gnss

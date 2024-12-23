@@ -25,6 +25,13 @@ void RinexStream::decode_record(Record& record) {
         if (auto gnss_obs = dynamic_cast<GnssObsRecord*>(&record)) {
           memcpy(glo_fcn_, gnss_obs->glo_fcn_, 28);
           memcpy(glo_cpbias_, gnss_obs->glo_cpbias_, 32);
+          // obs code map
+          for (auto& [sys, code_map] : sys_code_types_) {
+            for (auto& [code, code_type] : code_map) {
+              gnss_obs->code_map_[sys].insert(code_type.code);
+            }
+          }
+          ON_GNSS_DEBUG(logger_->debug("read rinex observation file version: {}", version_);)
         }
         break;
       }
@@ -42,12 +49,13 @@ void RinexStream::decode_record(Record& record) {
         if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
           gnss_nav->nav->ionMap = std::move(nav_->ionMap);
           gnss_nav->nav->stoMap = std::move(nav_->stoMap);
+          ON_GNSS_DEBUG(logger_->debug("read rinex navigation file version: {}", version_));
         }
       }
     }
   }
   if (type_ == ' ') {
-    nav_warn("RinexStream receive an empty stream!");
+    logger_->warn("RinexStream receive an empty stream!");
   }
   // decode body
   i32 stat = 0;
@@ -57,9 +65,13 @@ void RinexStream::decode_record(Record& record) {
         ObsList obs_list;
         stat = readRnxObs(*this, version_, tsys_, sys_code_types_, obs_list, *station_);
         gnss_obs->add_obs_list(std::move(obs_list));
+        ON_GNSS_DEBUG(logger_->debug("read rinex observation at {}", static_cast<EpochGps>(obs_list.front()->time));
+                      for (auto& obs: obs_list) {
+
+                      } logger_->debug("read rinex observation at {}", stat);)
         break;
       } else {
-        nav_warn("RinexStream decode unmatched record!");
+        logger_->warn("RinexStream decode unmatched record, rinex observation stream should receive GnssObsRecord!");
       }
       return;
     }
@@ -68,7 +80,7 @@ void RinexStream::decode_record(Record& record) {
       if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
         stat = readRnxNav(*this, version_, sys_, *gnss_nav->nav);
       } else {
-        nav_warn("RinexStream decode unmatched record!");
+        logger_->warn("RinexStream decode unmatched record!");
       }
       return;
     }
@@ -77,7 +89,7 @@ void RinexStream::decode_record(Record& record) {
       if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
         stat = readRnxNav(*this, version_, ConstellationEnum::GLO, *gnss_nav->nav);
       } else {
-        nav_warn("RinexStream decode unmatched record!");
+        logger_->warn("RinexStream decode unmatched record!");
       }
       return;
     }
@@ -86,7 +98,7 @@ void RinexStream::decode_record(Record& record) {
       if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
         stat = readRnxNav(*this, version_, ConstellationEnum::SBS, *gnss_nav->nav);
       } else {
-        nav_warn("RinexStream decode unmatched record!");
+        logger_->warn("RinexStream decode unmatched record!");
       }
       return;
     }
@@ -95,7 +107,7 @@ void RinexStream::decode_record(Record& record) {
       if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
         stat = readRnxNav(*this, version_, ConstellationEnum::QZS, *gnss_nav->nav);  // extension
       } else {
-        nav_warn("RinexStream decode unmatched record!");
+        logger_->warn("RinexStream decode unmatched record!");
       }
       return;
     }
@@ -104,7 +116,7 @@ void RinexStream::decode_record(Record& record) {
       if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
         stat = readRnxNav(*this, version_, ConstellationEnum::GAL, *gnss_nav->nav);  // extension
       } else {
-        nav_warn("RinexStream decode unmatched record!");
+        logger_->warn("RinexStream decode unmatched record!");
       }
       return;
     }
@@ -113,13 +125,13 @@ void RinexStream::decode_record(Record& record) {
       if (auto gnss_nav = dynamic_cast<GnssNavRecord*>(&record)) {
         stat = readRnxClk(*this, version_, *gnss_nav->nav);
       } else {
-        nav_warn("RinexStream decode unmatched record!");
+        logger_->warn("RinexStream decode unmatched record!");
       }
       return;
     }
 
     default: {
-      nav_error("Unknown rinex file type {}", type_);
+      logger_->error("Unknown rinex file type {}", type_);
       return;
     }
   }
@@ -131,7 +143,7 @@ void RinexStream::decode_record(Record& record) {
 
 void RinexStream::encode_record(Record& record) {
   // todo
-  nav_error("Not implentted yet!");
+  logger_->error("Not implentted yet!");
   exit(-1);
 }
 

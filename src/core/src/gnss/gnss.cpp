@@ -44,10 +44,6 @@ GnssNavRecord::GnssNavRecord(Navigation&& _nav) noexcept : nav(std::make_shared<
 
 GnssNavRecord::GnssNavRecord(std::unique_ptr<Navigation>&& _nav_ptr) noexcept : nav(std::move(_nav_ptr)) {}
 
-GnssObsRecord::GnssObsRecord(ObsList&& _obs) noexcept { add_obs_list(std::move(_obs)); }
-
-GnssObsRecord::GnssObsRecord(std::unique_ptr<ObsList>&& _obs_ptr) noexcept { add_obs_list(std::move(*_obs_ptr)); }
-
 std::vector<Sv> get_sv_sats(ConstellationEnum cons) {
   std::vector<Sv> sats;
   /* output satellite PRN*/
@@ -120,6 +116,7 @@ void GnssObsRecord::add_obs_list(ObsList&& obs_list) noexcept {
   for (const auto& obs_ptr : obs_list) {
     EpochUtc epoch(obs_ptr->time);
     obs_map_[epoch][obs_ptr->sv] = obs_ptr;
+    logger_->debug("add obs from : {}", obs_ptr->sv);
   }
   erase();
 }
@@ -152,7 +149,7 @@ GnssObsRecord& GnssObsRecord::set_frequency(u32 frequency) noexcept {
 
 auto GnssObsRecord::operator[](i64 index) const -> const ObsMap* {
   if (obs_map_.empty()) {
-    throw std::out_of_range("GnssObsRecord is empty");
+    throw GnssObsRecordError("GnssObsRecord is empty");
   }
 
   if (index >= 0) {
@@ -160,15 +157,15 @@ auto GnssObsRecord::operator[](i64 index) const -> const ObsMap* {
     auto it = obs_map_.begin();
     std::advance(it, index);
     if (it == obs_map_.end()) {
-      throw std::out_of_range("Index out of range");
+      throw GnssObsRecordError("Index out of range");
     }
     return &it->second;
   } else {
     // Negative index
     auto it = obs_map_.rbegin();
-    std::advance(it, -index - 1);
+    std::advance(it, index);
     if (it == obs_map_.rend()) {
-      throw std::out_of_range("Index out of range");
+      throw GnssObsRecordError("Index out of range");
     }
     return &it->second;
   }
@@ -181,6 +178,10 @@ GnssObsRecord::~GnssObsRecord() = default;
 GnssNavRecord::GnssNavRecord() : nav(std::make_shared<Navigation>()) {}
 
 GnssNavRecord::~GnssNavRecord() = default;
+
+const CodeMap& GnssObsRecord::code_map() const noexcept { return code_map_; }
+
+GnssObsRecord::GnssObsRecord(std::shared_ptr<spdlog::logger> logger) : logger_(logger) {}
 
 #undef NSYSGPS
 #undef NSATGPS

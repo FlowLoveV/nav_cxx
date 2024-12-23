@@ -6,9 +6,10 @@
 #include "utils/exception.hpp"
 #include "utils/hash.hpp"
 #include "utils/logger.hpp"
-#include "utils/macro.hpp"
 #include "utils/result.hpp"
 #include "utils/types.hpp"
+
+// https://zh.cppreference.com/w/cpp/chrono/parse
 
 namespace navp::details {
 using namespace std;
@@ -202,17 +203,22 @@ struct NAVP_EXPORT Date {
   u16 minute;
   u16 integer_second;
   Seconds<i32> seconds_offset;  // default zero time zone
-  // std::variant<i64, f_least64> decimal;  // either storage a i64 attoseconds or a float decimal second
-  i64 attoseconds;           // i64 attoseconds(1e-18s)
-  f_least64 decimal_second;  // float decimal second
+  i64 attoseconds;              // i64 attoseconds(1e-18s)
+
+  template <typename _Float_t = f64>
+  inline _Float_t decimal_second() const noexcept {
+    return static_cast<_Float_t>(attoseconds) / (_Float_t)attos_per_second;
+  }
 };
 
 struct NAVP_EXPORT GpsTime {
-  u16 weeks;
-  u32 integer_second;
-  // std::variant<i64, f_least64> decimal;  // either storage a i64 attoseconds or a float decimal second
-  i64 attoseconds;           // i64 attoseconds(1e-18s)
-  f_least64 decimal_second;  // float decimal second
+  u16 weeks;           // weeks
+  u32 integer_second;  // integer second
+  i64 attoseconds;     // i64 attoseconds(1e-18s)
+  template <typename _Float_t = f64>
+  inline _Float_t decimal_second() const noexcept {
+    return static_cast<_Float_t>(attoseconds) / (_Float_t)attos_per_second;
+  }
 };
 
 struct NAVP_EXPORT TimeStamp {
@@ -220,6 +226,20 @@ struct NAVP_EXPORT TimeStamp {
 };
 
 namespace details {
+
+constexpr std::string first_n_digits(i64 value, u8 precision) {
+  char buffer[20];
+  auto [ptr, ec] = std::to_chars(buffer, buffer + 20, value);
+  if (ec == std::errc{}) {
+    size_t len = std::distance(buffer, ptr);
+    if (len > precision) {
+      return std::string(buffer, precision);
+    } else {
+      return std::string(buffer, len);
+    }
+  }
+  return "";
+}
 
 using std::chrono::year_month_day;
 
@@ -237,7 +257,6 @@ constexpr i64 tai_to_utc_offset = -378691210;
 struct Duration {
   typedef Seconds<i64> integer_duration_type;
   typedef Attoseconds<i64> decimal_duration_type;
-  typedef std::variant<i64, f_least64> decimal_type;
 
   // i64 `-9,223,372,036,854,775,808` to `9,223,372,036,854,775,807`
   Seconds<i64> _m_seconds{};
@@ -245,18 +264,15 @@ struct Duration {
 
   // return to duration of clock_type_in
   template <typename in_clock_t, typename out_clock_t>
-  constexpr static Duration from_date(u16 year, u8 month, u16 day, u8 hour, u8 minute, u8 integer_second,
-                                      decimal_type decimal_second, Seconds<i32> offset_seconds) {
-    if (!(check_ymd(year, month, day) && check_hms(hour, minute, integer_second, decimal_second))) {
+  constexpr static Duration from_date(u16 year, u8 month, u16 day, u8 hour, u8 minute, u8 integer_second, i64 attos,
+                                      Seconds<i32> offset_seconds) {
+    if (!(check_ymd(year, month, day) && check_hms(hour, minute, integer_second, attos))) {
       throw "Incorrect use of date time constructor";
     }
     auto duration = duration_from_date<in_clock_t>(year, month, day, hour, minute, integer_second);
     duration -= integer_duration_type(offset_seconds);
     std::chrono::time_point<in_clock_t, integer_duration_type> input_time(duration);
     auto output_time = std::chrono::clock_cast<out_clock_t>(input_time);
-    auto attos = std::holds_alternative<i64>(decimal_second)
-                     ? std::get<i64>(decimal_second)
-                     : static_cast<i64>(std::get<f_least64>(decimal_second) * attos_per_second);
     return Duration{._m_seconds = output_time.time_since_epoch(), ._m_attos = decimal_duration_type{attos}};
   }
 
@@ -282,39 +298,8 @@ struct Duration {
     auto in_tp = std::chrono::time_point<in_clock_t, integer_duration_type>(integer_dur);
     auto this_tp = std::chrono::clock_cast<out_clock_t>(in_tp);
     decimal_duration_type decimal_dur(atto);
-    // // correct leap seconds
-    // leap_second_info leap;
-    // if constexpr (std::is_same_v<in_clock_t, utc_clock>) {
-    //   auto utc_tp = chrono::utc_time<integer_duration_type>(integer_dur);
-    //   leap = get_leap_second_info(utc_tp);
-    //   utc_tp += leap.elapsed;
-    //   leap = get_leap_second_info(utc_tp);
-    //   integer_dur += leap.elapsed;
-    // }
     return Duration{._m_seconds = this_tp.time_since_epoch(), ._m_attos = decimal_dur};
   };
-
-  // // return duration independent of clock type
-  // constexpr static Duration from_gps_time(const u16 weeks, u32 integer_second, decimal_type decimal_second) {
-  //   f64 sec = static_cast<f64>(integer_second);
-  //   if (!check_gps_time(weeks, sec)) {
-  //     throw "Incorrect use of gps time constructor";
-  //   }
-  //   auto integer_duration = std::chrono::weeks(weeks) + std::chrono::seconds(integer_second);
-  //   auto attos = std::holds_alternative<i64>(decimal_second)
-  //                    ? std::get<i64>(decimal_second)
-  //                    : static_cast<i64>(std::get<f_least64>(decimal_second) * attos_per_second);
-  //   return Duration{._m_seconds = duration_cast<integer_duration_type>(integer_duration),
-  //                   ._m_attos = decimal_duration_type{attos}};
-  // }
-
-  // constexpr static Duration from_seconds(f_least64 seconds) noexcept {
-  //   assert(seconds < std::numeric_limits<i64>::max() && seconds > std::numeric_limits<i64>::min());
-  //   auto integer = static_cast<i64>(seconds);
-  //   auto fractional = seconds - (f_least64)(integer);
-  //   return Duration{._m_seconds = integer_duration_type(integer),
-  //                   ._m_attos = decimal_duration_type((i64)(fractional * attos_per_second))};
-  // }
 
   inline constexpr i64 weeks() const noexcept { return _m_seconds.count() / seconds_per_week; }
   inline constexpr i64 days() const noexcept { return _m_seconds.count() / seconds_per_day; }
@@ -389,25 +374,27 @@ struct Duration {
     integer_duration_type frac = sys_tp.time_since_epoch() - day;
     auto ymd = std::chrono::year_month_day(std::chrono::sys_time<Days<i64>>(day));
     auto hms = std::chrono::hh_mm_ss<integer_duration_type>(frac);
-    return Date{.year = static_cast<i16>(i32(ymd.year())),
-                .month = static_cast<u16>(u32(ymd.month())),
-                .day = static_cast<u16>(u32(ymd.day())),
-                .hour = static_cast<u16>(hms.hours().count()),
-                .minute = static_cast<u16>(hms.minutes().count()),
-                .integer_second = static_cast<u16>(hms.seconds().count()),
-                .seconds_offset = seconds_offset,
-                .attoseconds = _m_attos.count(),
-                .decimal_second = static_cast<f_least64>(_m_attos.count() / 1e18)};
+    return Date{
+        .year = static_cast<i16>(i32(ymd.year())),
+        .month = static_cast<u16>(u32(ymd.month())),
+        .day = static_cast<u16>(u32(ymd.day())),
+        .hour = static_cast<u16>(hms.hours().count()),
+        .minute = static_cast<u16>(hms.minutes().count()),
+        .integer_second = static_cast<u16>(hms.seconds().count()),
+        .seconds_offset = seconds_offset,
+        .attoseconds = _m_attos.count(),
+    };
   }
 
   // gps time
   constexpr GpsTime gps_time() noexcept {
     auto week = weeks();
     auto second = _m_seconds.count() - week * seconds_per_week;
-    return GpsTime{.weeks = static_cast<u16>(week),
-                   .integer_second = static_cast<u32>(second),
-                   .attoseconds = _m_attos.count(),
-                   .decimal_second = static_cast<f_least64>(_m_attos.count() / 1e18)};
+    return GpsTime{
+        .weeks = static_cast<u16>(week),
+        .integer_second = static_cast<u32>(second),
+        .attoseconds = _m_attos.count(),
+    };
   }
 
   constexpr auto operator<=>(const Duration& rhs) const noexcept {
@@ -528,17 +515,14 @@ struct Duration {
     }
   }
 
-  constexpr static bool check_hms(u8 hour, u8 minute, u8 integer_second, decimal_type decimal_second) {
-    if (std::holds_alternative<i64>(decimal_second)) {
-      auto val = std::get<i64>(decimal_second);
-      if (val >= attos_per_second) {
-        nav_error("Invalid decimal_seconds : {}attos , beyond 1s", val);
-      }
-    } else {
-      auto val = std::get<f_least64>(decimal_second);
-      if (val >= 1) {
-        nav_error("Invalid decimal_seconds : {}s , beyond 1s", static_cast<f64>(val));
-      }
+  constexpr static bool check_hms(u8 hour, u8 minute, u8 integer_second, i64 attos) {
+    if (attos >= attos_per_second) {
+      nav_error("Invalid decimal_seconds : {} attos , beyond 1s", attos);
+      return false;
+    }
+    if (attos < 0) {
+      nav_error("Invalid decimal_seconds : {} attos, less than 0", attos);
+      return false;
     }
     if (hour >= 24 || minute >= 60 || integer_second >= 60) {
       nav_error("Invalid hh:mm:ss : The {}:{}:{} is not vaild.", hour, minute, integer_second);
@@ -640,20 +624,16 @@ class NAVP_EXPORT Epoch {
   constexpr static Epoch from_date(const Date& date) {
     // `details::Duration::from_date` returns to
     return Epoch{.__dur = details::Duration::from_date<clock_type_in, clock_type>(
-                     date.year, date.month, date.day, date.hour, date.minute, date.integer_second,
-                     judge_input(date.attoseconds, date.decimal_second), date.seconds_offset)};
+                     date.year, date.month, date.day, date.hour, date.minute, date.integer_second, date.attoseconds,
+                     date.seconds_offset)};
   }
 
   template <typename in_clock_t = clock_type>
   constexpr static Epoch from_gps_time(const GpsTime& gps_time) {
     auto dur = details::Duration::from_gps_time<in_clock_t, clock_type>(gps_time.weeks, gps_time.integer_second);
-    auto decimal_second = judge_input(gps_time.attoseconds, gps_time.decimal_second);
-    auto attos = std::holds_alternative<i64>(decimal_second)
-                     ? std::get<i64>(decimal_second)
-                     : static_cast<i64>(std::get<f_least64>(decimal_second) * attos_per_second);
     return Epoch{.__dur = details::Duration{
                      ._m_seconds = dur._m_seconds,
-                     ._m_attos = decimal_duration_type(attos),
+                     ._m_attos = decimal_duration_type(gps_time.attoseconds),
                  }};
   }
 
@@ -736,28 +716,19 @@ class NAVP_EXPORT Epoch {
   }
 
   details::Duration __dur{};
-
- protected:
-  typedef details::Duration::decimal_type decimal_type;
-
-  constexpr static decimal_type judge_input(i64 attos, f_least64 decimal_sec) noexcept {
-    bool using_i64 = attos != 0, using_f = decimal_sec != 0;
-    if (!using_f && !using_i64) return 0;
-    // else if (using_f) [[likely]]
-    // In most scenarios, people are accustomed to using floating-point numbers to
-    // represent parts of less than one second
-    else if (using_f)
-      return decimal_sec;
-    else
-      return attos;
-  }
 };
 
-typedef Epoch<std::chrono::system_clock> EpochSys;
-typedef Epoch<std::chrono::utc_clock> EpochUtc;
-typedef Epoch<std::chrono::tai_clock> EpochTai;
-typedef Epoch<std::chrono::gps_clock> EpochGps;
-typedef Epoch<navp::details::bds_clock> EpochBds;
+using SystemClock = std::chrono::system_clock;
+using UtcClock = std::chrono::utc_clock;
+using TaiClock = std::chrono::tai_clock;
+using GpsClock = std::chrono::gps_clock;
+using BdsClock = navp::details::bds_clock;
+
+using EpochSys = Epoch<std::chrono::system_clock>;
+using EpochUtc = Epoch<std::chrono::utc_clock>;
+using EpochTai = Epoch<std::chrono::tai_clock>;
+using EpochGps = Epoch<std::chrono::gps_clock>;
+using EpochBds = Epoch<navp::details::bds_clock>;
 
 // some custom hash for Epoch
 // template <typename clock_type>
@@ -861,4 +832,21 @@ struct NAVP_EXPORT formatter<navp::Epoch<clock_type>, _CharT> : __format::__form
   using _CDur = navp::details::_format_parse_cdur;
   __format::__formatter_chrono<_CharT> _M_f;
 };
+
+// formatter for gps time
+template <typename _CharT>
+struct NAVP_EXPORT formatter<navp::GpsTime, _CharT> {
+  template <typename _ParseContext>
+  constexpr typename _ParseContext::iterator parse(_ParseContext& __pc) {
+    return __pc.begin();
+  }
+
+  template <typename _FormatContext>
+  typename _FormatContext::iterator format(const navp::GpsTime& time, _FormatContext& __fc) const {
+    std::format_to(__fc.out(), "{:>4d} ", time.weeks);
+    std::format_to(__fc.out(), "{:>06d}", time.integer_second);
+    return std::format_to(__fc.out(), ".{}", navp::details::first_n_digits(time.attoseconds, 6));
+  }
+};
+
 }  // namespace std

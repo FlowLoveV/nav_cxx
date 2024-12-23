@@ -80,7 +80,7 @@ auto Coordinate<CoordSystemEnum::XYZ>::to_enu(const std::span<Coordinate>& span)
     -> std::vector<Coordinate<CoordSystemEnum::ENU>> {
   auto e = this->to_enu_matrix();
   std::vector<Coordinate<CoordSystemEnum::ENU>> res(span.size());
-  for (u32 i = 0; i < span.size(); i++) {
+  for (u32 i = 0; i < span.size(); ++i) {
     NavVector3f64 r = span[i] - *this;
     res[i] = e * r;
   }
@@ -96,7 +96,7 @@ auto Coordinate<CoordSystemEnum::XYZ>::to_enu(const std::span<Coordinate<CoordSy
     -> std::vector<Coordinate<CoordSystemEnum::ENU>> {
   auto e = this->to_enu_matrix();
   std::vector<Coordinate<CoordSystemEnum::ENU>> res(span.size());
-  for (u32 i = 0; i < span.size(); i++) {
+  for (u32 i = 0; i < span.size(); ++i) {
     NavVector3f64 r = span[i].to_xyz() - *this;
     res[i] = e * r;
   }
@@ -132,7 +132,7 @@ auto Coordinate<CoordSystemEnum::BLH>::to_enu(const std::span<Coordinate>& span)
   NavMatrix33f64 e = this->to_enu_matrix();
   auto xyz0 = this->to_xyz();
   std::vector<Coordinate<CoordSystemEnum::ENU>> res(span.size());
-  for (u32 i = 0; i < span.size(); i++) {
+  for (u32 i = 0; i < span.size(); ++i) {
     NavVector3f64 r = span[i].to_xyz() - xyz0;
     res[i] = e * r;
   }
@@ -151,7 +151,7 @@ auto Coordinate<CoordSystemEnum::BLH>::to_enu(const std::span<Coordinate<CoordSy
   NavMatrix33f64 e = this->to_enu_matrix();
   auto xyz0 = this->to_xyz();
   std::vector<Coordinate<CoordSystemEnum::ENU>> res(span.size());
-  for (u32 i = 0; i < span.size(); i++) {
+  for (u32 i = 0; i < span.size(); ++i) {
     NavVector3f64 r = span[i] - xyz0;
     res[i] = e * r;
   }

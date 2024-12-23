@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_set>
+
 #include "io/record.hpp"
 #include "sensors/gnss/enums.hpp"
 #include "sensors/gnss/sv.hpp"
@@ -13,13 +15,10 @@ class RinexStream;
 
 namespace navp::sensors::gnss {
 
-// forward declaration
-class TropHandler;
+class GnssObsRecord;
+struct GObs;
 
-using navp::Epoch;
-
-class NAVP_EXPORT GnssObsRecord;
-struct NAVP_EXPORT GObs;
+using CodeMap = std::unordered_map<ConstellationEnum, std::unordered_set<ObsCodeEnum>>;
 
 /** Raw observation data from a receiver for a single frequency. Not to be modified by processing functions
  */
@@ -46,7 +45,7 @@ struct NAVP_EXPORT Sig : RawSig {
 
 /** Raw observation data from a receiver. Not to be modified by processing functions
  */
-struct GObs {
+struct NAVP_EXPORT GObs {
   std::unordered_map<FreTypeEnum, std::list<Sig>>
       sigs_list;           ///> std::map of all signals available in this observation (may
                            /// include multiple per frequency, eg L1X, L1C)
@@ -82,22 +81,19 @@ struct NAVP_EXPORT ObsList : std::vector<std::shared_ptr<GObs>> {
   ObsList& operator+=(const ObsList& right);
 };
 
-class GnssObsRecord : public io::Record {
+class NAVP_EXPORT GnssObsRecord : public io::Record {
   using StorageType = std::map<EpochUtc, std::unordered_map<Sv, std::shared_ptr<GObs>>>;
 
  public:
   using ObsMap = std::unordered_map<Sv, std::shared_ptr<GObs>>;
   using ObsPtr = std::shared_ptr<GObs>;
 
-  GnssObsRecord() = default;
-
-  GnssObsRecord(ObsList&& _obs_list) noexcept;
-
-  GnssObsRecord(std::unique_ptr<ObsList>&& _obs_ptr) noexcept;
+  GnssObsRecord(std::shared_ptr<spdlog::logger> logger);
 
   virtual ~GnssObsRecord() override;
 
-  operator std::shared_ptr<GnssObsRecord>() noexcept;
+  // code map
+  const CodeMap& code_map() const noexcept;
 
   // get maximum storage
   i32 storage() const noexcept;
@@ -152,11 +148,13 @@ class GnssObsRecord : public io::Record {
   // erase
   void erase() noexcept;
 
-  i32 storage_ = -1;      // observation storage, when storage_ < 0, meaning limitless
-  u32 frequceny_ = 1;     // observation frequency
-  char glo_fcn_[27 + 1];  // glonass frequency channel number + 8
-  f64 glo_cpbias_[4];     // glonass code-phase bias {1C,1P,2C,2P} (m)
-  StorageType obs_map_;   // observation map
+  i32 storage_ = -1;                        // observation storage, when storage_ < 0, meaning limitless
+  u32 frequceny_ = 1;                       // observation frequency
+  char glo_fcn_[27 + 1];                    // glonass frequency channel number + 8
+  f64 glo_cpbias_[4];                       // glonass code-phase bias {1C,1P,2C,2P} (m)
+  CodeMap code_map_;                        // observation code map
+  StorageType obs_map_;                     // observation map
+  std::shared_ptr<spdlog::logger> logger_;  // logger
 };
 
 }  // namespace navp::sensors::gnss

@@ -2,8 +2,6 @@
 
 #include <spdlog/logger.h>
 
-#include <unordered_set>
-
 #include "sensors/gnss/enums.hpp"
 #include "solution/solution.hpp"
 #include "toml++/toml.hpp"
@@ -15,11 +13,10 @@ class GlobalConfig;
 
 // forward declaration
 namespace navp::sensors::gnss {
-template <typename Mutex>
-class Gnss;
-class GnssStationHandler;
+class GnssHandler;
 class GnssNavRecord;
 class EphemerisSolver;
+class GnssPayload;
 }  // namespace navp::sensors::gnss
 
 namespace navp::solution {
@@ -31,9 +28,7 @@ REGISTER_NAV_RUNTIME_ERROR_CHILD(ConfigParseError, NavRuntimeError);
 
 using sensors::gnss::ConstellationEnum;
 using sensors::gnss::EphemerisSolver;
-using sensors::gnss::Gnss;
 using sensors::gnss::GnssNavRecord;
-using sensors::gnss::GnssStationHandler;
 using sensors::gnss::IonoModelEnum;
 using sensors::gnss::ObsCodeEnum;
 using sensors::gnss::RandomModelEnum;
@@ -97,9 +92,9 @@ class NAVP_EXPORT GlobalConfig {
  public:
   static void initialize(std::string config_path) noexcept;
 
-  static std::shared_ptr<sensors::gnss::Gnss<utils::null_mutex>> get_station_st(std::string_view station_name) noexcept;
+  static std::shared_ptr<sensors::gnss::GnssHandler> get_station_st(std::string_view station_name) noexcept;
 
-  static std::shared_ptr<sensors::gnss::Gnss<std::mutex>> get_station_mt(std::string_view station_name) noexcept;
+  static std::shared_ptr<sensors::gnss::GnssHandler> get_station_mt(std::string_view station_name) noexcept;
 
   static std::shared_ptr<spdlog::logger> get_logger(std::string_view logger_name) noexcept;
 
@@ -108,7 +103,7 @@ class NAVP_EXPORT GlobalConfig {
 
   static solution::NavConfigManger& get_instance() noexcept;
 
-  static std::unique_ptr<sensors::gnss::GnssStationHandler> get_station_handler(std::string_view station_name) noexcept;
+  static std::unique_ptr<sensors::gnss::GnssPayload> get_station_handler(std::string_view station_name) noexcept;
 
   static std::string config_path_;
   static std::once_flag flag_;

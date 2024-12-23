@@ -12,24 +12,19 @@
 namespace navp::sensors::gnss {
 
 // forward declaration
-class EphemerisSolver;
-class GnssNavRecord;
-class GnssObsRecord;
-class TropHandler;
-class IonoHandler;
-class Sv;
-struct Sig;
+class AtmosphereHandler;
+class GnssRandomHandler;
 
 struct GnssStationInfo;
 struct GnssRuntimeInfo;
 struct GnssRecord;
 struct GnssSettings;
 struct UnDiffObsHandler;
-struct GnssStationHandler;
+struct GnssPayload;
 
 using ClockParameterMap = std::unordered_map<ConstellationEnum, u8>;
-using AtmosphereHandlerMap = std::unordered_map<Sv, std::function<f64(const utils::CoordinateBlh* station_pos)>>;
-using CodeMap = std::unordered_map<ConstellationEnum, std::unordered_set<ObsCodeEnum>>;
+using AtmosphereHandlerMap = std::unordered_map<Sv, AtmosphereHandler>;
+using RandomHandlerMap = std::unordered_map<Sv, GnssRandomHandler>;
 
 struct NAVP_EXPORT GnssStationInfo {
   u8 type;                                        // 0: rover, 1: base
@@ -58,7 +53,7 @@ struct NAVP_EXPORT GnssRecord {
 
   // update gnss record and return the new runtime info
   // return true if update succeed, false if not
-  bool update(GnssRuntimeInfo* runtime_info);
+  bool update();
 };
 
 struct NAVP_EXPORT GnssSettings {
@@ -82,7 +77,7 @@ struct NAVP_EXPORT GnssSettings {
     return enabled_obs_code->at(sv.system());
   };
 
-  inline auto clock_index(Sv sv) const noexcept { return clock_map->at(sv.system()); }
+  inline u8 clock_index(Sv sv) const noexcept { return clock_map->at(sv.system()); }
 };
 
 struct NAVP_EXPORT RawObsHandler {
@@ -97,78 +92,33 @@ struct NAVP_EXPORT UnDiffObsHandler {
   const GObs* obs;
 };
 
-class NAVP_EXPORT GnssStationHandler {
+class NAVP_EXPORT GnssPayload {
   friend class navp::GlobalConfig;
 
  public:
-  GnssStationHandler() noexcept = default;
+  GnssPayload() noexcept = default;
 
-  GnssStationHandler(const GnssStationHandler& handler) noexcept = delete;
-  GnssStationHandler& operator=(const GnssStationHandler& handler) noexcept = delete;
+  GnssPayload(const GnssPayload& handler) noexcept = delete;
+  GnssPayload& operator=(const GnssPayload& handler) noexcept = delete;
 
-  GnssStationHandler(GnssStationHandler&& handler) noexcept = default;
-  GnssStationHandler& operator=(GnssStationHandler&& handler) noexcept = default;
+  GnssPayload(GnssPayload&& handler) noexcept = default;
+  GnssPayload& operator=(GnssPayload&& handler) noexcept = default;
 
-  virtual ~GnssStationHandler() = default;
-
-  /* station information */
-  inline auto station_info() const noexcept -> const GnssStationInfo* { return station_info_.get(); }
-  inline auto station_info() noexcept -> GnssStationInfo* { return const_cast<GnssStationInfo*>(station_info_.get()); }
-
-  /* runtime information */
-  inline auto runtime_info() const noexcept -> const GnssRuntimeInfo* { return runtime_info_.get(); }
-  inline auto runtime_info() noexcept -> GnssRuntimeInfo* { return const_cast<GnssRuntimeInfo*>(runtime_info_.get()); }
-
-  /* station settings */
-  inline auto settings() const noexcept -> const GnssSettings* { return settings_.get(); }
-  inline auto runtime_settings() noexcept -> GnssSettings* { return const_cast<GnssSettings*>(settings_.get()); }
-
-  /* station record */
-  inline auto record() const noexcept -> const GnssRecord* { return record_.get(); }
-  inline auto record() noexcept -> GnssRecord* { return const_cast<GnssRecord*>(record_.get()); }
-
-  /* station logger */
-  inline auto logger() const noexcept -> const std::shared_ptr<spdlog::logger>& { return logger_; }
-
-  // update gnss station record
-  virtual inline bool update_record() { return record_->update(runtime_info_.get()); }
-
-  // update runtime information
-  virtual inline void update_runtime_info() { runtime_info_->update(record_.get()); }
-
-  // generate a vector of RawObsHandler
-  // # usage
-  // - Spp
-  // - Analysis
-  NAV_NODISCARD_UNUNSED auto generate_rawobs_handler() const noexcept -> std::vector<RawObsHandler>;
-
-  NAV_NODISCARD_UNUNSED auto generate_undiffobs_handler() const noexcept -> std::vector<UnDiffObsHandler>;
-
-  // generate a gnss trop handler to get trop corrections
-  // - examples
-  // - auto trop_handler = gnss_handler.generate_trop_handler(sv);
-  // - auto trop_corrections = trop_handler(station_pos);
-  NAV_NODISCARD_UNUNSED auto generate_trop_handler(Sv sv) const noexcept
-      -> std::function<f64(const utils::CoordinateBlh*)>;
-
-  // NAV_NODISCARD_UNUNSED auto generate_trop_handler() const noexcept -> AtmosphereHandlerMap;
-
-  // generate a gnss trop handler to get trop corrections
-  // - examples
-  // - auto iono_handler = gnss_handler.generate_iono_handler(sv);
-  // - auto iono_corrections = iono_handler(station_pos);
-  NAV_NODISCARD_UNUNSED auto generate_iono_handler(Sv sv) const noexcept
-      -> std::function<f64(const utils::CoordinateBlh*)>;
-
-  // NAV_NODISCARD_UNUNSED auto generate_iono_handler() const noexcept -> AtmosphereHandlerMap;
-
-  // generate a gnss random model handler to get variance of pseudorange and carrier
-  // - examples
-  // - auto random_handler = gnss_handler.generate_random_handler(sv);
-  // - auto random_corrections = random_handler(ObsCodeEnum::C1C);
-  NAV_NODISCARD_UNUNSED auto generate_random_handler(Sv sv) const noexcept -> std::function<const Sig*(ObsCodeEnum)>;
+  virtual ~GnssPayload() = default;
 
  protected:
+  inline bool update_record() { return record_->update(); }
+
+  inline void update_runtime_info() { runtime_info_->update(record_.get()); }
+
+  NAV_NODISCARD_UNUNSED auto generate_rawobs_handler() const -> std::vector<RawObsHandler>;
+
+  NAV_NODISCARD_UNUNSED auto generate_undiffobs_handler() const -> std::vector<UnDiffObsHandler>;
+
+  NAV_NODISCARD_UNUNSED auto generate_atmosphere_handler(Sv sv) const -> AtmosphereHandler;
+
+  NAV_NODISCARD_UNUNSED auto generate_random_handler(Sv sv) const -> GnssRandomHandler;
+
   std::unique_ptr<GnssStationInfo> station_info_;  // station info
 
   std::unique_ptr<GnssRuntimeInfo> runtime_info_;  // runtime info

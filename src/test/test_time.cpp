@@ -5,10 +5,12 @@
 
 #include "doctest.h"
 #include "utils/time.hpp"
+#include "utils/utils.hpp"
 
 using namespace navp;
 using namespace std::chrono;
 using namespace navp::details;
+using namespace navp::utils;
 
 TEST_CASE("clock") {
   constexpr Date bds_begin_epoch = Date{
@@ -47,15 +49,14 @@ TEST_CASE("constructors") {
   constexpr auto gps_time = GpsTime{
       .weeks = 2000,
       .integer_second = 4000,
-      .decimal_second = 0.3,
+      .attoseconds = attoseconds_from(3, 1),
   };
-
   // gps time constructor
   EpochGps EpochGps1 = EpochGps::from_gps_time(gps_time);
   EpochBds EpochBds1 = EpochBds::from_gps_time(gps_time);
   auto gps_time_info = EpochGps1.gps_time();
   CHECK(gps_time_info.weeks == 2000);
-  CHECK(gps_time_info.decimal_second == (f128)0.3);
+  CHECK(gps_time_info.decimal_second() == 0.3);
   auto bds_time_info = EpochBds1.gps_time();
   CHECK(bds_time_info.weeks == 2000);
   CHECK(bds_time_info.integer_second == (f128)4000);
@@ -68,7 +69,7 @@ TEST_CASE("constructors") {
       .hour = 1,
       .minute = 40,
       .integer_second = 22,
-      .decimal_second = 0.001,
+      .attoseconds = attoseconds_from(3, 1),
   };
 
   EpochUtc EpochUtc2 = EpochUtc::from_date(date0);
@@ -79,7 +80,7 @@ TEST_CASE("constructors") {
   CHECK(date0_.hour == date0.hour);
   CHECK(date0_.minute == date0.minute);
   CHECK(date0_.integer_second == date0.integer_second);
-  CHECK(date0_.decimal_second == date0.decimal_second);
+  CHECK(date0_.decimal_second() == date0.decimal_second());
 
   // create a utc date with time zone local offset
   Date date1 = Date{
@@ -90,7 +91,7 @@ TEST_CASE("constructors") {
       .minute = 40,
       .integer_second = 22,
       .seconds_offset = TimeZoneOffset::local_offset(),
-      .decimal_second = 0.001,
+      .attoseconds = attoseconds_from(3, 1),
   };
 
   EpochUtc EpochUtc3 = EpochUtc::from_date(date1);
@@ -104,7 +105,7 @@ TEST_CASE("constructors") {
   CHECK(date1_.hour == date1.hour);
   CHECK(date1_.minute == date1.minute);
   CHECK(date1_.integer_second == date1.integer_second);
-  CHECK(date1_.decimal_second == date1.decimal_second);
+  CHECK(date1_.decimal_second() == date1.decimal_second());
   CHECK(date1_.seconds_offset == date1.seconds_offset);
 
   EpochGps gps0 = EpochGps::from_date(date0);
@@ -135,7 +136,14 @@ TEST_CASE("hash") {
 
 TEST_CASE("formatter") {
   EpochGps EpochGps0;
-  std::println("{:%Y-%m-%d %H:%M:%S}\n", EpochGps0);
+  std::println("{:%F %T}\n", EpochGps0);
+  std::formatter<int> x;
+  navp::GpsTime gps1{.weeks = 100, .integer_second = 123456, .attoseconds = 123456789012345678};
+  try {
+    std::println("{}", gps1);
+  } catch (const std::format_error& e) {
+    std::cerr << "Error: " << e.what() << std::endl;
+  }
 }
 
 TEST_CASE("parse") {

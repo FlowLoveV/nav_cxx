@@ -19,26 +19,24 @@ class NAVP_EXPORT AtmosphereHandler {
  public:
   AtmosphereHandler& set_time(const EpochUtc& tr) noexcept;
 
+  AtmosphereHandler& set_trop_model(TropModelEnum model) noexcept;
+
+  AtmosphereHandler& set_iono_model(IonoModelEnum model) noexcept;
+
   AtmosphereHandler& set_sv_info(const EphemerisResult* eph_result) noexcept;
 
-  AtmosphereHandler& set_station_pos(const utils::CoordinateBlh* pos) noexcept;
+  f64 handle_trop(const utils::CoordinateBlh* pos) const noexcept;
+
+  f64 handle_iono(const utils::CoordinateBlh* pos) const noexcept;
+
+  auto sv_info() const noexcept -> const EphemerisResult*;
 
  protected:
   bool solvable() const noexcept;
-
-  const utils::CoordinateBlh* station_pos_{};
-  const EpochUtc* tr_;
-  const EphemerisResult* sv_info_{};
-};
-
-class NAVP_EXPORT TropHandler : public AtmosphereHandler {
- public:
-  f64 handle(TropModelEnum model) const noexcept;
-};
-
-class NAVP_EXPORT IonoHandler : public AtmosphereHandler {
- public:
-  f64 handle(IonoModelEnum model) const noexcept;
+  TropModelEnum trop_model_ = TropModelEnum::STANDARD;
+  IonoModelEnum iono_model_ = IonoModelEnum::NONE;
+  const EpochUtc* tr_ = nullptr;
+  const EphemerisResult* sv_info_ = nullptr;
 };
 
 }  // namespace navp::sensors::gnss

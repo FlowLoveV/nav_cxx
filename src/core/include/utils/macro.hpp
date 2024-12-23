@@ -56,3 +56,10 @@
 #define NAVP_EXPORT
 #endif
 #endif
+
+// debug
+#ifdef GNSS_DEBUG
+#define ON_GNSS_DEBUG(code) code
+#else
+#define ON_GNSS_DEBUG(code)
+#endif

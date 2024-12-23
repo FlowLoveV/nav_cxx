@@ -271,14 +271,14 @@ static void glorbit(f64 t, f64* x, const NavVector3f64& acc) {
   f64 w[6];
 
   deq(x, k1, acc);
-  for (i32 i = 0; i < 6; i++) w[i] = x[i] + k1[i] * t / 2;
+  for (i32 i = 0; i < 6; ++i) w[i] = x[i] + k1[i] * t / 2;
   deq(w, k2, acc);
-  for (i32 i = 0; i < 6; i++) w[i] = x[i] + k2[i] * t / 2;
+  for (i32 i = 0; i < 6; ++i) w[i] = x[i] + k2[i] * t / 2;
   deq(w, k3, acc);
-  for (i32 i = 0; i < 6; i++) w[i] = x[i] + k3[i] * t;
+  for (i32 i = 0; i < 6; ++i) w[i] = x[i] + k3[i] * t;
   deq(w, k4, acc);
 
-  for (i32 i = 0; i < 6; i++) x[i] += (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]) * t / 6;
+  for (i32 i = 0; i < 6; ++i) x[i] += (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]) * t / 6;
 }
 
 struct BrdcKeplerEphHelper {
@@ -598,7 +598,7 @@ void EphSolver::presolve(Sv sv, const GTime& t) const noexcept {
       break;
     }
     _ek0 = _ek;
-    i++;
+    ++i;
   }
   if (i >= MaxIterNumber::KEPLER) {
     nav_error("{} kepler iteration overflow", std::format("{}", sv));
@@ -676,7 +676,7 @@ void EphSolver::presolve(Sv sv, const GTime& t) const noexcept {
 f64 EphSolver::pclk(const GTime& tr) const noexcept {
   f64 t, ts;
   t = ts = (tr - eph->toc).to_double();
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 2; ++i) {
     t = ts - (eph->f0 + eph->f1 * t + eph->f2 * t * t);
   }
   return eph->f0 + eph->f1 * t + eph->f2 * t * t;
@@ -751,7 +751,7 @@ void CephSolver::presolve(Sv sv, const GTime& t) const noexcept {
   while (abs(_ek - _ek0) >= 1e-10) {
     _ek = _mk + _eph->e * sin(_ek0);
     _ek0 = _ek;
-    i++;
+    ++i;
   }
   if (i >= MaxIterNumber::KEPLER) {
     nav_error("{} kepler iteration overflow", std::format("{}", sv));
@@ -823,7 +823,7 @@ void CephSolver::presolve(Sv sv, const GTime& t) const noexcept {
 f64 CephSolver::pclk(const GTime& tr) const noexcept {
   f64 t, ts;
   t = ts = (tr - eph->toc).to_double();
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 2; ++i) {
     t = ts - (eph->f0 + eph->f1 * t + eph->f2 * t * t);
   }
   return eph->f0 + eph->f1 * t + eph->f2 * t * t;
@@ -874,7 +874,7 @@ const Geph* GephSolver::seleph(Sv sv, const GTime& t) const noexcept {
 
 f64 GephSolver::pclk(const GTime& tr) const noexcept {
   f64 t = (tr - eph->toe).to_double(), ts = t;
-  for (i32 i = 0; i < 2; i++) {
+  for (i32 i = 0; i < 2; ++i) {
     t = ts - (-eph->taun + eph->gammaN * t);
   }
   return -eph->taun + eph->gammaN * t;
@@ -890,7 +890,7 @@ EphemerisResult GephSolver::solve(Sv sv, const GTime& tr, const GTime& ts) const
   result.fd_dtsv = eph->gammaN;
 
   f64 x[6];
-  for (i32 i = 0; i < 3; i++) {
+  for (i32 i = 0; i < 3; ++i) {
     x[i] = eph->pos[i];
     x[i + 3] = eph->vel[i];
   }
@@ -898,10 +898,10 @@ EphemerisResult GephSolver::solve(Sv sv, const GTime& tr, const GTime& ts) const
     if (fabs(t) < 60.0) tt = t;
     glorbit(tt, x, eph->acc);
   }
-  for (i32 i = 0; i < 3; i++) {
+  for (i32 i = 0; i < 3; ++i) {
     result.pos[i] = x[i];
   }
-  for (i32 i = 3; i < 6; i++) {
+  for (i32 i = 3; i < 6; ++i) {
     result.vel[i - 3] = x[i];
   }
   result.var = var_uraeph(sv.system(), eph->sva);
@@ -936,7 +936,7 @@ const Seph* SephSolver::seleph(Sv sv, const GTime& t) const noexcept {
 
 f64 SephSolver::pclk(const GTime& tr) const noexcept {
   f64 t = (tr - eph->t0).to_double();
-  for (i32 i = 0; i < 2; i++) {
+  for (i32 i = 0; i < 2; ++i) {
     t -= eph->af0 + eph->af1 * t;
   }
   return eph->af0 + eph->af1 * t;
@@ -951,10 +951,10 @@ EphemerisResult SephSolver::solve(Sv sv, const GTime& tr, const GTime& ts) const
   result.dtsv = eph->af0 + eph->af1 * t;
   result.fd_dtsv = eph->af1;
 
-  for (i32 i = 0; i < 3; i++) {
+  for (i32 i = 0; i < 3; ++i) {
     result.pos[i] = eph->pos[i] + eph->vel[i] * t + eph->acc[i] * t * t * 0.5;
   }
-  for (i32 i = 0; i < 3; i++) {
+  for (i32 i = 0; i < 3; ++i) {
     result.vel[i] = eph->vel[i] + eph->acc[i] * t;
   }
   result.var = var_uraeph(sv.system(), eph->sva);
@@ -964,39 +964,14 @@ EphemerisResult SephSolver::solve(Sv sv, const GTime& tr, const GTime& ts) const
 /*
  * EphemerisSolver implementation
  */
-EphemerisSolver::EphemerisSolver() noexcept
-    : sv_status(std::make_shared<TimeSvMap>()),
-      bds_gd(std::make_shared<BdsGroupDelay>()),
-      gps_gd(std::make_shared<GpsGroupDelay>()),
-      gal_gd(std::make_shared<GalGroupDelay>()),
-      qzs_gd(std::make_shared<QzsGroupDelay>()),
-      glo_gd(std::make_shared<GloGroupDelay>()) {}
-
-EphemerisSolver::EphemerisSolver(const std::vector<const Navigation*>& _nav) noexcept
-    : nav(std::move(_nav)),
-      sv_status(std::make_shared<TimeSvMap>()),
-      bds_gd(std::make_shared<BdsGroupDelay>()),
-      gps_gd(std::make_shared<GpsGroupDelay>()),
-      gal_gd(std::make_shared<GalGroupDelay>()),
-      qzs_gd(std::make_shared<QzsGroupDelay>()),
-      glo_gd(std::make_shared<GloGroupDelay>()),
-      cache_bds_d1d2(nullptr),
-      cache_gps_lnav(nullptr),
-      cache_qzs_lnav(nullptr),
-      cache_gal_ifnav(nullptr),
-      cache_bds_cnv1(nullptr),
-      cache_bds_cnv2(nullptr),
-      cache_bds_cnv3(nullptr),
-      cache_gps_cnav(nullptr),
-      cache_gps_cnv2(nullptr),
-      cache_qzs_cnav(nullptr),
-      cache_qzs_cnv2(nullptr),
-      cache_glo_fdma(nullptr) {}
-
-EphemerisSolver::EphemerisSolver(const std::vector<GnssNavRecord>& record_gnss_nav) noexcept
-    : EphemerisSolver(record_gnss_nav |
-                      std::views::transform([](const GnssNavRecord& record) { return record.nav.get(); }) |
-                      std::ranges::to<std::vector<const Navigation*>>()) {}
+EphemerisSolver::EphemerisSolver(std::shared_ptr<spdlog::logger> logger) noexcept
+    : sv_status_(std::make_shared<TimeSvMap>()),
+      bds_gd_(std::make_shared<BdsGroupDelay>()),
+      gps_gd_(std::make_shared<GpsGroupDelay>()),
+      gal_gd_(std::make_shared<GalGroupDelay>()),
+      qzs_gd_(std::make_shared<QzsGroupDelay>()),
+      glo_gd_(std::make_shared<GloGroupDelay>()),
+      logger_(logger) {}
 
 bool update_newest_eph(Eph* _cur_eph, const utils::GTime& t, const Navigation* nav, ConstellationEnum cons,
                        NavMsgTypeEnum nav_msg_type) noexcept {
@@ -1065,82 +1040,83 @@ bool update_newest_geph(Geph* _cur_geph, const utils::GTime& t, const Navigation
 }
 
 bool EphemerisSolver::update_newest_gps_lnav(const utils::GTime& t) noexcept {
-  return std::ranges::any_of(nav, [&](const Navigation* _nav) {
-    return update_newest_eph(cache_gps_lnav, t, _nav, ConstellationEnum::GPS, NavMsgTypeEnum::LNAV);
+  return std::ranges::any_of(nav_vec_, [&](const Navigation* _nav) {
+    return update_newest_eph(cache_gps_lnav_, t, _nav, ConstellationEnum::GPS, NavMsgTypeEnum::LNAV);
   });
 }
 
 bool EphemerisSolver::update_newest_gps_cnav(const utils::GTime& t) noexcept {
-  return std::ranges::any_of(nav, [&](const Navigation* _nav) {
-    return update_newest_ceph(cache_gps_cnav, t, _nav, ConstellationEnum::GPS, NavMsgTypeEnum::CNAV);
+  return std::ranges::any_of(nav_vec_, [&](const Navigation* _nav) {
+    return update_newest_ceph(cache_gps_cnav_, t, _nav, ConstellationEnum::GPS, NavMsgTypeEnum::CNAV);
   });
 }
 
 bool EphemerisSolver::update_newest_gps_cnv2(const utils::GTime& t) noexcept {
-  return std::ranges::any_of(nav, [&](const Navigation* _nav) {
-    return update_newest_ceph(cache_gps_cnv2, t, _nav, ConstellationEnum::GPS, NavMsgTypeEnum::CNV2);
+  return std::ranges::any_of(nav_vec_, [&](const Navigation* _nav) {
+    return update_newest_ceph(cache_gps_cnv2_, t, _nav, ConstellationEnum::GPS, NavMsgTypeEnum::CNV2);
   });
 }
 
 bool EphemerisSolver::update_newest_bds_d1d2(const utils::GTime& t) noexcept {
-  return std::ranges::any_of(nav, [&](const Navigation* _nav) {
-    return update_newest_eph(cache_bds_d1d2, t, _nav, ConstellationEnum::BDS, NavMsgTypeEnum::D1D2) ||
-           update_newest_eph(cache_bds_d1d2, t, _nav, ConstellationEnum::BDS, NavMsgTypeEnum::D1) ||
-           update_newest_eph(cache_bds_d1d2, t, _nav, ConstellationEnum::BDS, NavMsgTypeEnum::D2);
+  return std::ranges::any_of(nav_vec_, [&](const Navigation* _nav) {
+    return update_newest_eph(cache_bds_d1d2_, t, _nav, ConstellationEnum::BDS, NavMsgTypeEnum::D1D2) ||
+           update_newest_eph(cache_bds_d1d2_, t, _nav, ConstellationEnum::BDS, NavMsgTypeEnum::D1) ||
+           update_newest_eph(cache_bds_d1d2_, t, _nav, ConstellationEnum::BDS, NavMsgTypeEnum::D2);
   });
 }
 
 bool EphemerisSolver::update_newest_bds_cnv1(const utils::GTime& t) noexcept {
-  return std::ranges::any_of(nav, [&](const Navigation* _nav) {
-    return update_newest_ceph(cache_bds_cnv1, t, _nav, ConstellationEnum::BDS, NavMsgTypeEnum::CNV1);
+  return std::ranges::any_of(nav_vec_, [&](const Navigation* _nav) {
+    return update_newest_ceph(cache_bds_cnv1_, t, _nav, ConstellationEnum::BDS, NavMsgTypeEnum::CNV1);
   });
 }
 
 bool EphemerisSolver::update_newest_bds_cnv2(const utils::GTime& t) noexcept {
-  return std::ranges::any_of(nav, [&](const Navigation* _nav) {
-    return update_newest_ceph(cache_bds_cnv2, t, _nav, ConstellationEnum::BDS, NavMsgTypeEnum::CNV2);
+  return std::ranges::any_of(nav_vec_, [&](const Navigation* _nav) {
+    return update_newest_ceph(cache_bds_cnv2_, t, _nav, ConstellationEnum::BDS, NavMsgTypeEnum::CNV2);
   });
 }
 
 bool EphemerisSolver::update_newest_bds_cnv3(const utils::GTime& t) noexcept {
-  return std::ranges::any_of(nav, [&](const Navigation* _nav) {
-    return update_newest_ceph(cache_bds_cnv3, t, _nav, ConstellationEnum::BDS, NavMsgTypeEnum::CNV3);
+  return std::ranges::any_of(nav_vec_, [&](const Navigation* _nav) {
+    return update_newest_ceph(cache_bds_cnv3_, t, _nav, ConstellationEnum::BDS, NavMsgTypeEnum::CNV3);
   });
 }
 
 bool EphemerisSolver::update_newest_gal_ifnav(const utils::GTime& t) noexcept {
-  return std::ranges::any_of(nav, [&](const Navigation* _nav) {
-    return update_newest_eph(cache_gal_ifnav, t, _nav, ConstellationEnum::GAL, NavMsgTypeEnum::INAV) ||
-           update_newest_eph(cache_gal_ifnav, t, _nav, ConstellationEnum::GAL, NavMsgTypeEnum::FNAV) ||
-           update_newest_eph(cache_gal_ifnav, t, _nav, ConstellationEnum::GAL, NavMsgTypeEnum::IFNV);
+  return std::ranges::any_of(nav_vec_, [&](const Navigation* _nav) {
+    return update_newest_eph(cache_gal_ifnav_, t, _nav, ConstellationEnum::GAL, NavMsgTypeEnum::INAV) ||
+           update_newest_eph(cache_gal_ifnav_, t, _nav, ConstellationEnum::GAL, NavMsgTypeEnum::FNAV) ||
+           update_newest_eph(cache_gal_ifnav_, t, _nav, ConstellationEnum::GAL, NavMsgTypeEnum::IFNV);
   });
 }
 
 bool EphemerisSolver::update_newest_qzs_lnav(const utils::GTime& t) noexcept {
-  return std::ranges::any_of(nav, [&](const Navigation* _nav) {
-    return update_newest_eph(cache_qzs_lnav, t, _nav, ConstellationEnum::QZS, NavMsgTypeEnum::LNAV);
+  return std::ranges::any_of(nav_vec_, [&](const Navigation* _nav) {
+    return update_newest_eph(cache_qzs_lnav_, t, _nav, ConstellationEnum::QZS, NavMsgTypeEnum::LNAV);
   });
 }
 
 bool EphemerisSolver::update_newest_qzs_cnav(const utils::GTime& t) noexcept {
-  return std::ranges::any_of(nav, [&](const Navigation* _nav) {
-    return update_newest_ceph(cache_qzs_cnav, t, _nav, ConstellationEnum::QZS, NavMsgTypeEnum::CNAV);
+  return std::ranges::any_of(nav_vec_, [&](const Navigation* _nav) {
+    return update_newest_ceph(cache_qzs_cnav_, t, _nav, ConstellationEnum::QZS, NavMsgTypeEnum::CNAV);
   });
 }
 
 bool EphemerisSolver::update_newest_qzs_cnv2(const utils::GTime& t) noexcept {
-  return std::ranges::any_of(nav, [&](const Navigation* _nav) {
-    return update_newest_ceph(cache_qzs_cnv2, t, _nav, ConstellationEnum::QZS, NavMsgTypeEnum::CNV2);
+  return std::ranges::any_of(nav_vec_, [&](const Navigation* _nav) {
+    return update_newest_ceph(cache_qzs_cnv2_, t, _nav, ConstellationEnum::QZS, NavMsgTypeEnum::CNV2);
   });
 }
 
 bool EphemerisSolver::update_newest_glo_fdma(const utils::GTime& t) noexcept {
-  return std::ranges::any_of(
-      nav, [&](const Navigation* _nav) { return update_newest_geph(cache_glo_fdma, t, _nav, NavMsgTypeEnum::FDMA); });
+  return std::ranges::any_of(nav_vec_, [&](const Navigation* _nav) {
+    return update_newest_geph(cache_glo_fdma_, t, _nav, NavMsgTypeEnum::FDMA);
+  });
 }
 
 bool EphemerisSolver::launch_ceph_solver(const utils::GTime& tr, Sv _sv, f64 pr, bool correct_transmission) noexcept {
-  return std::ranges::any_of(nav, [&](const Navigation* _nav) {
+  return std::ranges::any_of(nav_vec_, [&](const Navigation* _nav) {
     if (!_nav) return false;  // check pointer vaild
     CephSolver _ceph_solver(&_nav->cephMap, _sv, tr);
     if (_ceph_solver.available()) {
@@ -1149,7 +1125,7 @@ bool EphemerisSolver::launch_ceph_solver(const utils::GTime& tr, Sv _sv, f64 pr,
         ts.bigTime -= pr / Constants::CLIGHT;
         ts.bigTime -= _ceph_solver.pclk(ts);
       }
-      (*sv_status)[static_cast<EpochUtc>(tr)][_sv] = _ceph_solver.solve(_sv, tr, ts);
+      (*sv_status_)[static_cast<EpochUtc>(tr)][_sv] = _ceph_solver.solve(_sv, tr, ts);
       return true;
     }
     return false;
@@ -1157,7 +1133,7 @@ bool EphemerisSolver::launch_ceph_solver(const utils::GTime& tr, Sv _sv, f64 pr,
 }
 
 bool EphemerisSolver::launch_eph_solver(const utils::GTime& tr, Sv _sv, f64 pr, bool correct_transmission) noexcept {
-  return std::ranges::any_of(nav, [&](const Navigation* _nav) {
+  return std::ranges::any_of(nav_vec_, [&](const Navigation* _nav) {
     if (!_nav) return false;  // check pointer vaild
     EphSolver _eph_solver(&_nav->ephMap, _sv, tr);
     if (_eph_solver.available()) {
@@ -1166,7 +1142,7 @@ bool EphemerisSolver::launch_eph_solver(const utils::GTime& tr, Sv _sv, f64 pr, 
         ts.bigTime -= pr / Constants::CLIGHT;
         ts.bigTime -= _eph_solver.pclk(ts);
       }
-      (*sv_status)[static_cast<EpochUtc>(tr)][_sv] = _eph_solver.solve(_sv, tr, ts);
+      (*sv_status_)[static_cast<EpochUtc>(tr)][_sv] = _eph_solver.solve(_sv, tr, ts);
       return true;
     }
     return false;
@@ -1174,7 +1150,7 @@ bool EphemerisSolver::launch_eph_solver(const utils::GTime& tr, Sv _sv, f64 pr, 
 }
 
 bool EphemerisSolver::launch_geph_solver(const utils::GTime& tr, Sv _sv, f64 pr, bool correct_transmission) noexcept {
-  return std::ranges::any_of(nav, [&](const Navigation* _nav) {
+  return std::ranges::any_of(nav_vec_, [&](const Navigation* _nav) {
     if (!_nav) return false;  // check pointer vaild
     GephSolver _geph_solver(&_nav->gephMap, _sv, tr);
     if (_geph_solver.available()) {
@@ -1183,7 +1159,7 @@ bool EphemerisSolver::launch_geph_solver(const utils::GTime& tr, Sv _sv, f64 pr,
         ts.bigTime -= pr / Constants::CLIGHT;
         ts.bigTime -= _geph_solver.pclk(ts);
       }
-      (*sv_status)[static_cast<EpochUtc>(tr)][_sv] = _geph_solver.solve(_sv, tr, ts);
+      (*sv_status_)[static_cast<EpochUtc>(tr)][_sv] = _geph_solver.solve(_sv, tr, ts);
       return true;
     }
     return false;
@@ -1191,7 +1167,7 @@ bool EphemerisSolver::launch_geph_solver(const utils::GTime& tr, Sv _sv, f64 pr,
 }
 
 bool EphemerisSolver::launch_seph_solver(const utils::GTime& tr, Sv _sv, f64 pr, bool correct_transmission) noexcept {
-  return std::ranges::any_of(nav, [&](const Navigation* _nav) {
+  return std::ranges::any_of(nav_vec_, [&](const Navigation* _nav) {
     if (!_nav) return false;  // check pointer vaild
     SephSolver _seph_solver(&_nav->sephMap, _sv, tr);
     if (_seph_solver.available()) {
@@ -1200,14 +1176,14 @@ bool EphemerisSolver::launch_seph_solver(const utils::GTime& tr, Sv _sv, f64 pr,
         ts.bigTime -= pr / Constants::CLIGHT;
         ts.bigTime -= _seph_solver.pclk(ts);
       }
-      (*sv_status)[static_cast<EpochUtc>(tr)][_sv] = _seph_solver.solve(_sv, tr, ts);
+      (*sv_status_)[static_cast<EpochUtc>(tr)][_sv] = _seph_solver.solve(_sv, tr, ts);
       return true;
     }
     return false;
   });
 }
 
-void EphemerisSolver::add_ephemeris(const Navigation* _nav) noexcept { nav.emplace_back(_nav); }
+void EphemerisSolver::add_ephemeris(const Navigation* _nav) noexcept { nav_vec_.emplace_back(_nav); }
 
 auto EphemerisSolver::solve_sv_status(EpochUtc tr,
                                       const GnssObsRecord::ObsMap* visible_sv) noexcept -> std::vector<Sv> {
@@ -1224,16 +1200,18 @@ auto EphemerisSolver::solve_sv_status(EpochUtc tr,
     }
     if (pr == 0.0) return;
 
-    brdc_solve_sv_status(tr, sv, pr);
+    if (brdc_solve_sv_status(tr, sv, pr)) {
+      logger_->debug("solve sv status: {}", sv);
+    }
   });
-  return sv_status->at(tr) | std::views::keys | std::ranges::to<std::vector>();
+  return sv_status_->at(tr) | std::views::keys | std::ranges::to<std::vector>();
 }
 
 std::vector<Sv> EphemerisSolver::solve_sv_status(EpochUtc tr, const std::vector<Sv>& sv) noexcept {
   for (auto _sv : sv) {
     brdc_solve_sv_status(tr, _sv, 0.0);
   }
-  return sv_status->at(tr) | std::views::keys | std::ranges::to<std::vector>();
+  return sv_status_->at(tr) | std::views::keys | std::ranges::to<std::vector>();
 }
 
 bool EphemerisSolver::brdc_solve_sv_status(EpochUtc tr, Sv _sv, f64 pr) noexcept {
@@ -1260,82 +1238,82 @@ void EphemerisSolver::update_tgd(ConstellationEnum sys, const utils::GTime& t) n
     case ConstellationEnum::BDS: {
       // update d1d2
       if (update_newest_bds_d1d2(t)) {
-        bds_gd->update_d1d2(cache_bds_d1d2);
+        bds_gd_->update_d1d2(cache_bds_d1d2_);
       } else {
-        bds_gd->reset_d1d2();
+        bds_gd_->reset_d1d2();
       }
       // update cnv1
       if (update_newest_bds_cnv1(t)) {
-        bds_gd->update_cnv1(cache_bds_cnv1);
+        bds_gd_->update_cnv1(cache_bds_cnv1_);
       } else {
-        bds_gd->reset_cnv1();
+        bds_gd_->reset_cnv1();
       }
       // update cnv2
       if (update_newest_bds_cnv2(t)) {
-        bds_gd->update_cnv2(cache_bds_cnv2);
+        bds_gd_->update_cnv2(cache_bds_cnv2_);
       } else {
-        bds_gd->reset_cnv2();
+        bds_gd_->reset_cnv2();
       }
       // update cnv3
       if (update_newest_bds_cnv3(t)) {
-        bds_gd->update_cnv3(cache_bds_cnv3);
+        bds_gd_->update_cnv3(cache_bds_cnv3_);
       } else {
-        bds_gd->reset_cnv3();
+        bds_gd_->reset_cnv3();
       }
     }
     case ConstellationEnum::GPS: {
       // update lnav
       if (update_newest_gps_lnav(t)) {
-        gps_gd->update_lnav(cache_gps_lnav);
+        gps_gd_->update_lnav(cache_gps_lnav_);
       } else {
-        gps_gd->reset_lnav();
+        gps_gd_->reset_lnav();
       }
       // update cnav
       if (update_newest_gps_cnav(t)) {
-        gps_gd->update_cnav(cache_gps_cnav);
+        gps_gd_->update_cnav(cache_gps_cnav_);
       } else {
-        gps_gd->reset_cnav();
+        gps_gd_->reset_cnav();
       }
       // update cnv2
       if (update_newest_gps_cnv2(t)) {
-        gps_gd->update_cnv2(cache_gps_cnv2);
+        gps_gd_->update_cnv2(cache_gps_cnv2_);
       } else {
-        gps_gd->reset_cnv2();
+        gps_gd_->reset_cnv2();
       }
     }
     case ConstellationEnum::GAL: {
       // update ifnav
       if (update_newest_gal_ifnav(t)) {
-        gal_gd->update_ifnav(cache_gal_ifnav);
+        gal_gd_->update_ifnav(cache_gal_ifnav_);
       } else {
-        gal_gd->reset_ifnav();
+        gal_gd_->reset_ifnav();
       }
     }
     case ConstellationEnum::QZS: {
       // update lnav
       if (update_newest_qzs_lnav(t)) {
-        qzs_gd->update_lnav(cache_qzs_lnav);
+        qzs_gd_->update_lnav(cache_qzs_lnav_);
       } else {
-        qzs_gd->reset_lnav();
+        qzs_gd_->reset_lnav();
       }
       // update cnav
       if (update_newest_qzs_cnav(t)) {
-        qzs_gd->update_cnav(cache_qzs_cnav);
+        qzs_gd_->update_cnav(cache_qzs_cnav_);
       } else {
-        qzs_gd->reset_cnav();
+        qzs_gd_->reset_cnav();
       }
       // update cnv2
       if (update_newest_qzs_cnv2(t)) {
-        qzs_gd->update_cnv2(cache_qzs_cnv2);
+        qzs_gd_->update_cnv2(cache_qzs_cnv2_);
       } else {
-        qzs_gd->reset_cnv2();
+        qzs_gd_->reset_cnv2();
       }
     }
     case ConstellationEnum::GLO: {
       if (update_newest_glo_fdma(t)) {
-        glo_gd->update_fdma(cache_glo_fdma);
+        glo_gd_->update_fdma(cache_glo_fdma_);
       } else {
-        glo_gd->reset_fdma();
+        glo_gd_->reset_fdma();
       }
     }
     default: {
@@ -1345,29 +1323,29 @@ void EphemerisSolver::update_tgd(ConstellationEnum sys, const utils::GTime& t) n
 }
 
 auto EphemerisSolver::quary_sv_status(EpochUtc t) const noexcept -> const SvMap* {
-  if (sv_status->contains(t)) {
-    return &sv_status->at(t);
+  if (sv_status_->contains(t)) {
+    return &sv_status_->at(t);
   } else {
     return nullptr;
   }
 }
 
 auto EphemerisSolver::quary_sv_status(EpochUtc t, Sv sv) const noexcept -> const EphemerisResult* {
-  if (!sv_status->contains(t) && !sv_status->at(t).contains(sv)) {
+  if (!sv_status_->contains(t) && !sv_status_->at(t).contains(sv)) {
     return nullptr;
   } else {
-    return &sv_status->at(t).at(sv);
+    return &sv_status_->at(t).at(sv);
   }
 }
 
 std::vector<const EphemerisResult*> EphemerisSolver::quary_sv_status(EpochUtc t,
                                                                      const std::vector<Sv>& sv) const noexcept {
-  if (!sv_status->contains(t)) {
+  if (!sv_status_->contains(t)) {
     return {};
   }
   std::vector<const EphemerisResult*> res(sv.size());
-  const auto& sv_map = sv_status->at(t);
-  for (u16 i = 0; i < sv.size(); i++) {
+  const auto& sv_map = sv_status_->at(t);
+  for (u16 i = 0; i < sv.size(); ++i) {
     res[i] = &sv_map.at(sv[i]);
   }
   return std::move(res);
@@ -1376,40 +1354,40 @@ std::vector<const EphemerisResult*> EphemerisSolver::quary_sv_status(EpochUtc t,
 std::vector<const EphemerisResult*> EphemerisSolver::quary_sv_status_unchecked(EpochUtc t,
                                                                                const std::vector<Sv>& sv) const {
   std::vector<const EphemerisResult*> res(sv.size());
-  const auto& sv_map = sv_status->at(t);
-  for (u16 i = 0; i < sv.size(); i++) {
+  const auto& sv_map = sv_status_->at(t);
+  for (u16 i = 0; i < sv.size(); ++i) {
     res[i] = &sv_map.at(sv[i]);
   }
   return std::move(res);
 }
 
 auto EphemerisSolver::quary_sv_status_unchecked(EpochUtc t, Sv sv) const -> const EphemerisResult* {
-  return &sv_status->at(t).at(sv);
+  return &sv_status_->at(t).at(sv);
 }
 
 auto EphemerisSolver::quary_gps_tgd(EpochUtc t) noexcept -> const GpsGroupDelay* {
   update_tgd(ConstellationEnum::GPS, static_cast<GTime>(t));
-  return this->gps_gd.get();
+  return this->gps_gd_.get();
 }
 
 auto EphemerisSolver::quary_bds_tgd(EpochUtc t) noexcept -> const BdsGroupDelay* {
   update_tgd(ConstellationEnum::BDS, static_cast<GTime>(t));
-  return this->bds_gd.get();
+  return this->bds_gd_.get();
 }
 
 auto EphemerisSolver::quary_gal_tgd(EpochUtc t) noexcept -> const GalGroupDelay* {
   update_tgd(ConstellationEnum::GAL, static_cast<GTime>(t));
-  return this->gal_gd.get();
+  return this->gal_gd_.get();
 }
 
 auto EphemerisSolver::quary_glo_tgd(EpochUtc t) noexcept -> const GloGroupDelay* {
   update_tgd(ConstellationEnum::GLO, static_cast<GTime>(t));
-  return this->glo_gd.get();
+  return this->glo_gd_.get();
 }
 
 auto EphemerisSolver::quary_qzs_tgd(EpochUtc t) noexcept -> const QzsGroupDelay* {
   update_tgd(ConstellationEnum::QZS, static_cast<GTime>(t));
-  return this->qzs_gd.get();
+  return this->qzs_gd_.get();
 }
 
 }  // namespace navp::sensors::gnss

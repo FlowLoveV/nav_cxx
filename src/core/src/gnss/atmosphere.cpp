@@ -64,7 +64,7 @@ TropSaasResult tropSAAS(utils::GTime time, const utils::CoordinateBlh* pos, f64 
   lat = fabs(lat);
   f64 ah[3];
   f64 aw[3];
-  for (int i = 0; i < 3; i++) { /* year average           +    seasonal variation  */
+  for (int i = 0; i < 3; ++i) { /* year average           +    seasonal variation  */
     ah[i] = interpc(coefNMF[i], lat) - interpc(coefNMF[i + 3], lat) * cosy;
     aw[i] = interpc(coefNMF[i + 6], lat);
   }
@@ -85,13 +85,18 @@ TropSaasResult tropSAAS(utils::GTime time, const utils::CoordinateBlh* pos, f64 
 
 namespace navp::sensors::gnss {
 
-AtmosphereHandler& AtmosphereHandler::set_station_pos(const utils::CoordinateBlh* pos) noexcept {
-  station_pos_ = pos;
+AtmosphereHandler& AtmosphereHandler::set_time(const EpochUtc& tr) noexcept {
+  tr_ = &tr;
   return *this;
 }
 
-AtmosphereHandler& AtmosphereHandler::set_time(const EpochUtc& tr) noexcept {
-  tr_ = &tr;
+AtmosphereHandler& AtmosphereHandler::set_trop_model(TropModelEnum model) noexcept {
+  trop_model_ = model;
+  return *this;
+}
+
+AtmosphereHandler& AtmosphereHandler::set_iono_model(IonoModelEnum model) noexcept {
+  iono_model_ = model;
   return *this;
 }
 
@@ -100,13 +105,15 @@ AtmosphereHandler& AtmosphereHandler::set_sv_info(const EphemerisResult* eph_res
   return *this;
 }
 
-bool AtmosphereHandler::solvable() const noexcept { return station_pos_ && sv_info_; }
+auto AtmosphereHandler::sv_info() const noexcept -> const EphemerisResult* { return sv_info_; }
 
-f64 TropHandler::handle(TropModelEnum model) const noexcept {
+bool AtmosphereHandler::solvable() const noexcept { return sv_info_; }
+
+f64 AtmosphereHandler::handle_trop(const utils::CoordinateBlh* pos) const noexcept {
   if (!solvable()) return 0.0;
-  switch (static_cast<TropModelEnum>(model)) {
+  switch (static_cast<TropModelEnum>(trop_model_)) {
     case TropModelEnum::STANDARD: {
-      auto trop_saas_res = details::tropSAAS(static_cast<utils::GTime>(*tr_), station_pos_, sv_info_->elevation);
+      auto trop_saas_res = details::tropSAAS(static_cast<utils::GTime>(*tr_), pos, sv_info_->elevation);
       return trop_saas_res.trop();
     }
     case TropModelEnum::SBAS: {
@@ -132,9 +139,9 @@ f64 TropHandler::handle(TropModelEnum model) const noexcept {
   }
 }
 
-f64 IonoHandler::handle(IonoModelEnum model) const noexcept {
+f64 AtmosphereHandler::handle_iono(const utils::CoordinateBlh* pos) const noexcept {
   if (!solvable()) return 0.0;
-  switch (static_cast<IonoModelEnum>(model)) {
+  switch (static_cast<IonoModelEnum>(iono_model_)) {
     case IonoModelEnum::NONE: {
       nav_error("not implmented!");
       return 0.0;
