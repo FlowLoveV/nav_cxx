@@ -155,7 +155,7 @@ void EphemerisResult::rotate_correct() noexcept {
   pos[0] = x, pos[1] = y;
 }
 
-void EphemerisResult::calculate_ea_from(const utils::CoordinateXyz& position) const noexcept {
+void EphemerisResult::update_ea_from(const utils::CoordinateXyz& position) const noexcept {
   auto enu = position.to_enu(pos);
   elevation = asin(sqrt(pow(enu.z(), 2) / enu.squaredNorm()));
   azimuth = atan2(enu.x(), enu.y());
@@ -965,7 +965,7 @@ EphemerisResult SephSolver::solve(Sv sv, const GTime& tr, const GTime& ts) const
  * EphemerisSolver implementation
  */
 EphemerisSolver::EphemerisSolver(std::shared_ptr<spdlog::logger> logger) noexcept
-    : sv_status_(std::make_shared<TimeSvMap>()),
+    : sv_status_(std::make_unique<TimeSvMap>()),
       bds_gd_(std::make_shared<BdsGroupDelay>()),
       gps_gd_(std::make_shared<GpsGroupDelay>()),
       gal_gd_(std::make_shared<GalGroupDelay>()),
@@ -1201,9 +1201,9 @@ auto EphemerisSolver::solve_sv_status(EpochUtc tr,
     if (pr == 0.0) return;
 
     if (brdc_solve_sv_status(tr, sv, pr)) {
-      logger_->debug("solve sv status: {}", sv);
     }
   });
+  erase();
   return sv_status_->at(tr) | std::views::keys | std::ranges::to<std::vector>();
 }
 
@@ -1211,6 +1211,7 @@ std::vector<Sv> EphemerisSolver::solve_sv_status(EpochUtc tr, const std::vector<
   for (auto _sv : sv) {
     brdc_solve_sv_status(tr, _sv, 0.0);
   }
+  erase();
   return sv_status_->at(tr) | std::views::keys | std::ranges::to<std::vector>();
 }
 
@@ -1220,7 +1221,7 @@ bool EphemerisSolver::brdc_solve_sv_status(EpochUtc tr, Sv _sv, f64 pr) noexcept
   auto _cons = _sv.system();
   if (_cons == ConstellationEnum::GPS || _cons == ConstellationEnum::BDS || _cons == ConstellationEnum::QZS) {
     done = launch_ceph_solver(tr, _sv, pr, correct_transmission);
-    if (!done) launch_eph_solver(tr, _sv, pr, correct_transmission);
+    if (!done) done = launch_eph_solver(tr, _sv, pr, correct_transmission);
   } else if (_cons == ConstellationEnum::GAL) {
     done = launch_eph_solver(tr, _sv, pr, correct_transmission);
   } else if (_cons == ConstellationEnum::GLO) {
@@ -1388,6 +1389,18 @@ auto EphemerisSolver::quary_glo_tgd(EpochUtc t) noexcept -> const GloGroupDelay*
 auto EphemerisSolver::quary_qzs_tgd(EpochUtc t) noexcept -> const QzsGroupDelay* {
   update_tgd(ConstellationEnum::QZS, static_cast<GTime>(t));
   return this->qzs_gd_.get();
+}
+
+EphemerisSolver& EphemerisSolver::set_storage(i32 storage) noexcept {
+  storage_ = storage;
+  return *this;
+}
+
+void EphemerisSolver::erase() noexcept {
+  if (storage_ < 0) return;
+  while (sv_status_->size() > storage_) {
+    sv_status_->erase(sv_status_->begin());
+  }
 }
 
 }  // namespace navp::sensors::gnss

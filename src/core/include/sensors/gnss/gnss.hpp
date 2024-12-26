@@ -30,7 +30,7 @@ class NAVP_EXPORT GnssHandler {
 
   virtual auto update_runtime_info() -> const GnssRuntimeInfo* = 0;
 
-  virtual auto generate_rawobs_handler() const -> std::vector<RawObsHandler> = 0;
+  virtual auto generate_rawobs_handler() const -> std::vector<GnssRawObsHandler> = 0;
 
   virtual auto generate_undiffobs_handler() const -> std::vector<UnDiffObsHandler> = 0;
 
@@ -62,8 +62,6 @@ class NAVP_EXPORT Gnss : public GnssHandler, public GnssPayload {
   virtual bool update_record() override {
     std::lock_guard<Mutex> lock(mutex_);
     if (GnssPayload::update_record()) {
-      logger_->debug("Update gnss observation record, epoch: {:%F%Z%T}",
-                     clock_cast<GpsClock>(record_->obs->end_time()));
       return true;
     }
     return false;
@@ -75,7 +73,7 @@ class NAVP_EXPORT Gnss : public GnssHandler, public GnssPayload {
     return runtime_info_.get();
   }
 
-  virtual auto generate_rawobs_handler() const -> std::vector<RawObsHandler> override {
+  virtual auto generate_rawobs_handler() const -> std::vector<GnssRawObsHandler> override {
     std::lock_guard<Mutex> lock(mutex_);
     return GnssPayload::generate_rawobs_handler();
   }

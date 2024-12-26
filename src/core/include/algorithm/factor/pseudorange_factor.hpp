@@ -2,13 +2,13 @@
 
 #include <ceres/sized_cost_function.h>
 
-#include "sensors/gnss/observation.hpp"
+#include "sensors/gnss/gnss_handler.hpp"
 #include "utils/eigen.hpp"
 #include "utils/macro.hpp"
 
 namespace navp::fgo {
 
-using sensors::gnss::Sig;
+using sensors::gnss::GnssRawObsHandler;
 using utils::NavVector3f64;
 
 //   Discription      Dimension         Meaning
@@ -50,8 +50,6 @@ struct NAVP_EXPORT PseudorangeFactor : ceres::SizedCostFunction<1, 3, 1> {
 //   Discription      Dimension         Meaning
 //  -Residual            1          Pseudorange residual
 //  -Parameter1          3          ECEF coordinate correction(dX,dY,dZ,m)
-struct NAVP_EXPORT DdPseudorangeFunctor : ceres::SizedCostFunction<1, 3, 1, 1> {
-  const utils::NavVector3f64 *ref_sv_pos, *mob_sv_pos;
-};
+struct NAVP_EXPORT DdPseudorangeFunctor : ceres::SizedCostFunction<1, 3, 1, 1> {};
 
 }  // namespace navp::fgo

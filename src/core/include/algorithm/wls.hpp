@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Eigen/Dense>
+#include "utils/eigen.hpp"
 
 namespace navp::algorithm {
 
@@ -21,7 +21,9 @@ class WeightedLeastSquare {
         jacobian_(observation_size, parameter_size),
         weight_(observation_size, observation_size),
         cofactor_(parameter_size, parameter_size),
-        sigma_(100) {}
+        sigma_(100) {
+    reset_();
+  }
 
   ~WeightedLeastSquare() = default;
 
@@ -31,7 +33,7 @@ class WeightedLeastSquare {
     parameter_ += parameter_correction_;
   }
 
-  bool evaluate() {
+  void evaluate() {
     observation_correction_ = jacobian_ * parameter_correction_ - observation_;
     auto observation_size = observation_.size(), parameter_size = parameter_.size();
     _Float_t r = observation_size - parameter_size;
@@ -57,6 +59,15 @@ class WeightedLeastSquare {
   constexpr inline const DynamicMatrix& cofactor() const noexcept { return cofactor_; }
 
  protected:
+  void reset_() noexcept {
+    parameter_.setZero();
+    parameter_correction_.setZero();
+    observation_.setZero();
+    observation_correction_.setZero();
+    jacobian_.setZero();
+    weight_.setZero();
+    cofactor_.setZero();
+  }
   // L = HX            Taylor first-order expansion
   // Q = H'P^{-1}H
   // dx = QH'PL

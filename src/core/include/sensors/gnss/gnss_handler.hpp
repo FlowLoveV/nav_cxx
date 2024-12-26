@@ -49,7 +49,7 @@ struct NAVP_EXPORT GnssRecord {
   std::list<GnssNavRecord> nav;                 // record of gnss navigation
   std::unique_ptr<EphemerisSolver> eph_solver;  // ephemeris solver
   std::unique_ptr<GnssObsRecord> obs;           // record of gnss observation
-  std::unique_ptr<io::Stream> obs_stream;       // obs stream
+  std::unique_ptr<io::Fstream> obs_stream;      // obs stream
 
   // update gnss record and return the new runtime info
   // return true if update succeed, false if not
@@ -57,42 +57,42 @@ struct NAVP_EXPORT GnssRecord {
 };
 
 struct NAVP_EXPORT GnssSettings {
-  TropModelEnum trop;                            // trop model
-  IonoModelEnum iono;                            // iono model
-  RandomModelEnum random;                        // random model
-  i32 capacity;                                  // observation capacity
-  std::unique_ptr<CodeMap> enabled_obs_code;     // enabled observation Type Map, when it is empty,
-                                                 // meaning > all system and codes are defaultly enabled
-  std::unique_ptr<ClockParameterMap> clock_map;  // clock parameter map
+  TropModelEnum trop;                         // trop model
+  IonoModelEnum iono;                         // iono model
+  RandomModelEnum random;                     // random model
+  i32 capacity;                               // observation capacity
+  std::unique_ptr<CodeMap> enabled_obs_code;  // enabled observation Type Map, when it is empty,
+                                              // meaning > all system and codes are defaultly enabled
 
-  inline bool enabled(Sv sv, const Sig& sig) const noexcept {
-    return enabled(sv) && enabled_codes(sv).contains(sig.code);
+  bool enabled(Sv sv, const Sig& sig) const noexcept {
+    return enabled_obs_code->empty() ||
+           (enabled_obs_code->contains(sv.system()) && enabled_obs_code->at(sv.system()).contains(sig.code));
   }
 
-  inline bool enabled(Sv sv) const noexcept {
-    return enabled_obs_code->empty() || enabled_obs_code->contains(sv.system());
-  }
+  bool enabled(Sv sv) const noexcept { return enabled_obs_code->empty() || enabled_obs_code->contains(sv.system()); }
 
-  inline auto enabled_codes(Sv sv) const noexcept -> const std::unordered_set<ObsCodeEnum>& {
+  auto enabled_codes(Sv sv) const noexcept -> const std::unordered_set<ObsCodeEnum>& {
     return enabled_obs_code->at(sv.system());
   };
-
-  inline u8 clock_index(Sv sv) const noexcept { return clock_map->at(sv.system()); }
 };
 
-struct NAVP_EXPORT RawObsHandler {
-  const GObs* obs;
-  std::vector<const Sig*> sig;
+struct NAVP_EXPORT GnssRawObsHandler {
+  const GObs* obs;                 // observation
+  const EphemerisResult* sv_info;  // satellite information
+  std::vector<const Sig*> sig;     // sigs vector
+
+  f64 trop_corr(const utils::CoordinateBlh* station_pos, TropModelEnum model) const noexcept;
+
+  f64 iono_corr(const utils::CoordinateBlh* station_pos, IonoModelEnum model) const noexcept;
 };
 
+// todo
 struct NAVP_EXPORT UnDiffObsHandler {
-  bool trop_corr;
-  bool iono_corr;
   CombObsMeta meta;
   const GObs* obs;
 };
 
-class NAVP_EXPORT GnssPayload {
+class GnssPayload {
   friend class navp::GlobalConfig;
 
  public:
@@ -111,7 +111,7 @@ class NAVP_EXPORT GnssPayload {
 
   inline void update_runtime_info() { runtime_info_->update(record_.get()); }
 
-  NAV_NODISCARD_UNUNSED auto generate_rawobs_handler() const -> std::vector<RawObsHandler>;
+  NAV_NODISCARD_UNUNSED auto generate_rawobs_handler() const -> std::vector<GnssRawObsHandler>;
 
   NAV_NODISCARD_UNUNSED auto generate_undiffobs_handler() const -> std::vector<UnDiffObsHandler>;
 

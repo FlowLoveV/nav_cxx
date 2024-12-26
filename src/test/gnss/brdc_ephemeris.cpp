@@ -16,13 +16,13 @@ TEST_CASE("GPS BDS BRDC") {
   std::string nav_gps_path = "/root/project/nav_cxx/test_resources/SPP/NovatelOEM20211114-01.21N";
   std::string obs_path = "/root/project/nav_cxx/test_resources/SPP/NovatelOEM20211114-01-GPS&BDS-Double.obs";
 
-  RinexStream bds_nav_stream(nav_bds_path, std::ios::in);
-  RinexStream gps_nav_stream(nav_gps_path, std::ios::in);
-  RinexStream obs_stream(obs_path, std::ios::in);
+  RinexStream bds_nav_stream(nav_bds_path, std::ios::in, navp::details::global_formatted_logger);
+  RinexStream gps_nav_stream(nav_gps_path, std::ios::in, navp::details::global_formatted_logger);
+  RinexStream obs_stream(obs_path, std::ios::in, navp::details::global_formatted_logger);
 
   // decode navigation record
   GnssNavRecord bds_nav, gps_nav;
-  GnssObsRecord obs;
+  GnssObsRecord obs(navp::details::global_formatted_logger);
   obs.set_storage(-1);
   bds_nav.get_record(bds_nav_stream);
   gps_nav.get_record(gps_nav_stream);
@@ -32,7 +32,7 @@ TEST_CASE("GPS BDS BRDC") {
     obs.get_record(obs_stream);
   }
 
-  EphemerisSolver eph_solver;
+  EphemerisSolver eph_solver(navp::details::global_formatted_logger);
   eph_solver.add_ephemeris(bds_nav.nav.get());
   eph_solver.add_ephemeris(gps_nav.nav.get());
   auto ref_epoch = EpochUtc::from_gps_time<std::chrono::gps_clock>(2184, 26700);

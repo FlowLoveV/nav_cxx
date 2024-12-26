@@ -12,9 +12,9 @@ namespace navp::io::custom {
 
 class SolutionStream;
 
-class NAVP_EXPORT SolutionStream : public Stream {
+class NAVP_EXPORT SolutionStream : public Fstream {
  public:
-  using Stream::Stream;
+  using Fstream::Fstream;
   virtual ~SolutionStream() override = default;
 
  protected:

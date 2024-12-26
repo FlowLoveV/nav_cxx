@@ -16,7 +16,7 @@ template <size_t Row, size_t Col>
 using NavMatrixf32 = Eigen::Matrix<f32, Row, Col>;
 template <size_t Row>
 using NavVectorf32 = Eigen::Vector<f32, Row>;
-template<size_t Row>
+template <size_t Row>
 using NavVectorf64 = Eigen::Vector<f64, Row>;
 
 template <size_t Row>
@@ -136,3 +136,14 @@ using AngleAxisf64 = Eigen::AngleAxis<f64>;
 using AngleAxisf32 = Eigen::AngleAxis<f32>;
 
 }  // namespace navp::utils
+
+#include <format>
+#include "utils/ostream_formatter.hpp"
+
+namespace std {
+
+template <typename T>
+  requires std::is_base_of_v<Eigen::DenseBase<T>, T>
+struct formatter<T> : navp::utils::ostream_formatter {};
+
+}  // namespace std

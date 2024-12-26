@@ -1,7 +1,12 @@
 add_rules("mode.debug", "mode.release")
 
 set_project("nav_benchmark")
-set_targetdir("$(projectdir)/bin/benchmark")
+
+if is_mode("debug") then
+    set_targetdir("$(projectdir)/bin/benchmark/debug")
+else 
+    set_targetdir("$(projectdir)/bin/benchmark/release")
+end
 set_objectdir("$(projectdir)/libs/benchmark")
 set_languages("c++23", "c11")
 set_toolchains("gcc")

@@ -73,6 +73,8 @@ struct NAVP_EXPORT GObs {
       }
     }
   }
+
+  void check_vaild() noexcept;
 };
 
 /** List of observations for an epoch

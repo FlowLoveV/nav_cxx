@@ -11,15 +11,15 @@ namespace navp::io {
 // forward declaration
 class Record;
 
-class Stream;
+class Fstream;
 
-class NAVP_EXPORT Stream : public std::fstream {
+class NAVP_EXPORT Fstream : public std::fstream {
  public:
-  Stream();
+  Fstream();
 
-  virtual ~Stream();
+  virtual ~Fstream();
 
-  Stream(std::string_view filename, std::ios::openmode mode, std::shared_ptr<spdlog::logger> logger = nullptr);
+  Fstream(std::string_view filename, std::ios::openmode mode, std::shared_ptr<spdlog::logger> logger = nullptr);
 
   virtual void open(std::string_view filename, std::ios::openmode mode);
 
@@ -39,6 +39,6 @@ class NAVP_EXPORT Stream : public std::fstream {
 };
 
 template <typename Derived>
-concept nav_stream_type = std::is_base_of_v<Stream, Derived>;
+concept nav_stream_type = std::is_base_of_v<Fstream, Derived>;
 
 }  // namespace navp::io

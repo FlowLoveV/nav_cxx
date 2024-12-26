@@ -1,7 +1,12 @@
 add_rules("mode.debug", "mode.release")
 
 set_project("nav_test")
-set_targetdir("$(projectdir)/bin/test")
+
+if is_mode("debug") then
+    set_targetdir("$(projectdir)/bin/test/debug")
+else 
+    set_targetdir("$(projectdir)/bin/test/release")
+end
 set_objectdir("$(projectdir)/libs/test")
 set_languages("c++23", "c11")
 set_toolchains("gcc")

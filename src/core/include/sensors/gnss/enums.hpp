@@ -293,7 +293,14 @@ enum class NAVP_EXPORT IonoModeEnum : u8 {
 };
 
 /// unused
-enum class NAVP_EXPORT IonoModelEnum : u8 { NONE, MEAS_OUT, BSPLINE, SPHERICAL_CAPS, SPHERICAL_HARMONICS, LOCAL };
+enum class NAVP_EXPORT IonoModelEnum : u8 {
+  NONE,  /// none
+  MEAS_OUT,
+  BSPLINE,
+  SPHERICAL_CAPS,
+  SPHERICAL_HARMONICS,
+  LOCAL
+};
 
 /// unused
 enum class NAVP_EXPORT RandomModelEnum : u8 {

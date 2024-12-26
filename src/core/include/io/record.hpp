@@ -5,7 +5,7 @@
 namespace navp::io {
 
 // forward declaration
-class Stream;
+class Fstream;
 
 class Record;
 
@@ -14,15 +14,15 @@ class NAVP_EXPORT Record {
   virtual ~Record();
 
   // send a "record" to the given stream
-  void put_record(Stream& stream);
+  void put_record(Fstream& stream);
 
   // get a "record" from the given stream
-  void get_record(Stream& s);
+  void get_record(Fstream& s);
 
  protected:
-  virtual void really_get_record(Stream& s);
+  virtual void really_get_record(Fstream& s);
 
-  virtual void really_put_record(Stream& s);
+  virtual void really_put_record(Fstream& s);
 };
 
 }  // namespace navp::io

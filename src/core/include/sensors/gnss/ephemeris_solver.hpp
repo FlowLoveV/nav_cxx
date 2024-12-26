@@ -26,7 +26,7 @@ struct NAVP_EXPORT EphemerisResult {
 
   void rotate_correct() noexcept;
 
-  void calculate_ea_from(const utils::CoordinateXyz& pos) const noexcept;
+  void update_ea_from(const utils::CoordinateXyz& pos) const noexcept;
 
   std::string format_as_string() const noexcept;
 
@@ -43,6 +43,9 @@ class NAVP_EXPORT EphemerisSolver {
   using TimeSvMap = std::map<EpochUtc, SvMap>;
 
   EphemerisSolver(std::shared_ptr<spdlog::logger> logger) noexcept;
+
+  // set satellites max storage
+  EphemerisSolver& set_storage(i32 storage) noexcept;
 
   // add new navigation
   void add_ephemeris(const Navigation* nav) noexcept;
@@ -101,8 +104,10 @@ class NAVP_EXPORT EphemerisSolver {
 
   std::vector<const Navigation*> nav_vec_;
 
-  // sv status
-  std::shared_ptr<TimeSvMap> sv_status_ = nullptr;
+  void erase() noexcept;
+
+  std::unique_ptr<TimeSvMap> sv_status_ = nullptr;  // sv status
+  i32 storage_ = -1;  // satellite status storage
 
   // cache newest ephemeris of different versions and system
   Eph *cache_bds_d1d2_, *cache_gps_lnav_, *cache_qzs_lnav_, *cache_gal_ifnav_;

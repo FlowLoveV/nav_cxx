@@ -143,7 +143,6 @@ f64 AtmosphereHandler::handle_iono(const utils::CoordinateBlh* pos) const noexce
   if (!solvable()) return 0.0;
   switch (static_cast<IonoModelEnum>(iono_model_)) {
     case IonoModelEnum::NONE: {
-      nav_error("not implmented!");
       return 0.0;
     }
     case IonoModelEnum::MEAS_OUT: {

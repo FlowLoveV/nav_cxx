@@ -3,7 +3,11 @@ set_xmakever("2.8.7")
 
 -- global settings
 set_project("nav_cxx")
-set_targetdir("$(projectdir)/bin")
+if is_mode("debug") then
+    set_targetdir("$(projectdir)/bin/debug")
+else 
+    set_targetdir("$(projectdir)/bin/release")
+end
 set_objectdir("$(projectdir)/libs")
 set_languages("c++23", "c11")
 set_toolchains("gcc")

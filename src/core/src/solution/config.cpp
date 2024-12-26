@@ -96,7 +96,7 @@ auto get_child_node(const toml::node* node, std::string_view key) noexcept -> Co
 
 template <io::nav_stream_type StreamType>
 auto get_stream(const toml::node* node, std::shared_ptr<spdlog::logger> logger = nullptr) noexcept
-    -> ConfigResult<std::unique_ptr<io::Stream>> {
+    -> ConfigResult<std::unique_ptr<io::Fstream>> {
   if (!node->is_string()) [[unlikely]] {
     return ConfigParseError(std::format("Parse error at {}, should be a string", node->source()));
   }
@@ -120,7 +120,7 @@ auto get_nav_record(const toml::node* node, std::shared_ptr<spdlog::logger> logg
       return ConfigParseError(std::format("Parse error at {}, should be a string", it->source()));
     }
     GnssNavRecord record;
-    RinexStream nav_stream(it->as_string()->get(), std::ios::in);
+    RinexStream nav_stream(it->as_string()->get(), std::ios::in, logger);
     record.get_record(nav_stream);
     result.emplace_back(std::move(record));
   }
@@ -350,7 +350,7 @@ auto NavConfigManger::executor_time() const noexcept -> EpochUtc {
   return EpochUtc::from_str("%Y-%m-%d %H:%M:%S", str.c_str()).unwrap_throw();
 }
 
-auto NavConfigManger::output_stream() const noexcept -> std::unique_ptr<io::Stream> {
+auto NavConfigManger::output_stream() const noexcept -> std::unique_ptr<io::Fstream> {
   auto node = get_node(this, OutputCfg, OutputPathCfg).unwrap_throw();
   return get_stream<SolutionStream>(node).unwrap_throw();
 }
@@ -389,6 +389,29 @@ std::unique_ptr<GnssPayload> GlobalConfig::get_station_handler(std::string_view 
   auto& logger = station->logger_;
 
   /*
+   * station settings
+   */
+  {
+    station->settings_ = std::make_unique<GnssSettings>();
+    auto& settings = *station->settings_;
+    // trop model
+    auto trop_node = get_child_node(station_node, StationTropCfg).unwrap_throw();
+    settings.trop = get_integer_as<TropModelEnum>(trop_node).unwrap_throw();
+    // iono model
+    auto iono_node = get_child_node(station_node, StationIonoCfg).unwrap_throw();
+    settings.iono = get_integer_as<IonoModelEnum>(iono_node).unwrap_throw();
+    // random model
+    auto random_node = get_child_node(station_node, StationRandomCfg).unwrap_throw();
+    settings.random = get_integer_as<RandomModelEnum>(random_node).unwrap_throw();
+    // capacity
+    auto capacity_node = get_child_node(station_node, StationCapacityCfg).unwrap_throw();
+    settings.capacity = get_integer_as<i32>(capacity_node).unwrap_throw();
+    // enabled obs codes
+    auto code_node = get_child_node(station_node, StationCodesCfg).unwrap_throw();
+    settings.enabled_obs_code = std::make_unique<CodeMap>(get_enabled_codes(code_node).unwrap_throw());
+  }
+
+  /*
    * station information
    */
   {
@@ -411,8 +434,8 @@ std::unique_ptr<GnssPayload> GlobalConfig::get_station_handler(std::string_view 
     auto frequency_node = get_child_node(station_node, StationFrequencyCfg).unwrap_throw();
     station_info.frequency = get_integer_as<u32>(frequency_node).unwrap_throw();
     // ref_pos
-    if (station_info.fixed == 0) {
-      auto ref_style = get_child_node(station_node, StationRefPosCfg).unwrap_throw();
+    if (station_info.fixed == true) {
+      auto ref_style = get_child_node(station_node, StationRefPosStyleCfg).unwrap_throw();
       auto ref_pos = get_child_node(station_node, StationRefPosCfg).unwrap_throw();
       station_info.ref_pos = std::make_unique<utils::CoordinateXyz>(
           get_coordinate(utils::CoordSystemEnum::XYZ, ref_style, ref_pos).unwrap_throw());
@@ -425,10 +448,10 @@ std::unique_ptr<GnssPayload> GlobalConfig::get_station_handler(std::string_view 
   {
     station->record_ = std::make_unique<GnssRecord>();
     // storage from file source
-    auto init_file_source = [station_node, logger](GnssRecord& storage) {
+    auto init_file_source = [&](GnssRecord& storage) {
       // navigation
       auto nav_node = get_child_node(station_node, StationNavPathCfg).unwrap_throw();
-      storage.nav = get_nav_record(nav_node).unwrap_throw();
+      storage.nav = get_nav_record(nav_node, logger).unwrap_throw();
       // observation stream
       auto obs_node = get_child_node(station_node, StationObsPathCfg).unwrap_throw();
       // todo
@@ -436,10 +459,15 @@ std::unique_ptr<GnssPayload> GlobalConfig::get_station_handler(std::string_view 
       storage.obs_stream = get_stream<RinexStream>(obs_node, logger).unwrap_throw();
       // obs
       storage.obs = std::make_unique<GnssObsRecord>(logger);
+      storage.obs->set_storage(station->settings_->capacity);
+      if (auto rinex_stream = dynamic_cast<RinexStream*>(storage.obs_stream.get())) {
+        rinex_stream->decode_header(*storage.obs);  // read observation header
+      }
       // ephemeris solver
       storage.eph_solver = std::make_unique<EphemerisSolver>(logger);
       std::ranges::for_each(storage.nav,
                             [&](const GnssNavRecord& record) { storage.eph_solver->add_ephemeris(record.nav.get()); });
+      storage.eph_solver->set_storage(station->settings_->capacity);
     };
     auto& storage = *station->record_;
     switch (station->station_info_->source) {
@@ -456,40 +484,6 @@ std::unique_ptr<GnssPayload> GlobalConfig::get_station_handler(std::string_view 
       case 2: {
         nav_error("not implemented!")
       }
-    }
-  }
-
-  /*
-   * station settings
-   */
-  {
-    station->settings_ = std::make_unique<GnssSettings>();
-    auto& settings = *station->settings_;
-    // trop model
-    auto trop_node = get_child_node(station_node, StationTropCfg).unwrap_throw();
-    settings.trop = get_integer_as<TropModelEnum>(trop_node).unwrap_throw();
-    // iono model
-    auto iono_node = get_child_node(station_node, StationIonoCfg).unwrap_throw();
-    settings.iono = get_integer_as<IonoModelEnum>(iono_node).unwrap_throw();
-    // random model
-    auto random_node = get_child_node(station_node, StationRandomCfg).unwrap_throw();
-    settings.random = get_integer_as<RandomModelEnum>(random_node).unwrap_throw();
-    // capacity
-    auto capacity_node = get_child_node(station_node, StationCapacityCfg).unwrap_throw();
-    settings.capacity = get_integer_as<i32>(capacity_node).unwrap_throw();
-    // enabled obs codes
-    auto code_node = get_child_node(station_node, StationCodesCfg).unwrap_throw();
-    settings.enabled_obs_code = std::make_unique<CodeMap>(get_enabled_codes(code_node).unwrap_throw());
-    // clock parameter map
-    settings.clock_map = std::make_unique<ClockParameterMap>();
-    u8 syss = 0;
-    if (settings.enabled_obs_code->empty()) {
-      // if no obs code enabled, using obs code from GnssObsRecord
-      std::ranges::for_each(station->record_->obs->code_map() | std::views::keys,
-                            [&](ConstellationEnum sys) { settings.clock_map->insert({sys, syss++}); });
-    } else {
-      std::ranges::for_each(*settings.enabled_obs_code | std::views::keys,
-                            [&](ConstellationEnum sys) { settings.clock_map->insert({sys, syss++}); });
     }
   }
 

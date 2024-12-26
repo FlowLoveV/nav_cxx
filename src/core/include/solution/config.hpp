@@ -72,7 +72,7 @@ class NAVP_EXPORT NavConfigManger : public toml::parse_result {
   NAV_NODISCARD_ERROR_HANDLE auto executor_time() const noexcept -> EpochUtc;
 
   // output stream
-  NAV_NODISCARD_ERROR_HANDLE auto output_stream() const noexcept -> std::unique_ptr<io::Stream>;
+  NAV_NODISCARD_ERROR_HANDLE auto output_stream() const noexcept -> std::unique_ptr<io::Fstream>;
 };
 
 }  // namespace navp::solution

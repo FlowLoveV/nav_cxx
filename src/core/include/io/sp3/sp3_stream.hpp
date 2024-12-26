@@ -7,9 +7,9 @@ inline constexpr auto  INVALID_CLOCK_VALUE = 999999.999999;
 
 class Sp3Stream;
 
-class NAVP_EXPORT Sp3Stream : public Stream {
+class NAVP_EXPORT Sp3Stream : public Fstream {
  public:
-  using Stream::Stream;
+  using Fstream::Fstream;
 
  protected:
   virtual void decode_record(Record& record) override;

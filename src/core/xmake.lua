@@ -11,12 +11,15 @@ target("nav_core")
         if is_plat("linux", "macos") then
             target:add("cxxflags","-fvisibility=hidden")
         end
+        if is_mode("debug") then 
+            target:add("defines","GNSS_DEBUG")
+        end 
     end)
 
     set_languages("c++23")
     add_cxxflags("-fpic")
     add_defines("SPDLOG_USE_STD_FORMAT",{public = true})
-    add_defines("NAVP_LIBRARY", "GNSS_DEBUG")
+    add_defines("NAVP_LIBRARY")
     add_packages("spdlog","magic_enum","cpptrace",{public = true})    
     add_includedirs("include",{public = true})
     add_deps("reflect-cpp",{public = true})
@@ -28,7 +31,6 @@ target("nav_core")
     add_files("src/io/*.cpp")
     add_files("src/solution/*.cpp")
     add_files("src/algorithm/*.cpp")
-    add_rpathdirs("$(projectdir)/bin")
 target_end()
 
 target("spp")

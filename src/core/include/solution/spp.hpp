@@ -6,6 +6,8 @@
 
 namespace navp::solution {
 
+using sensors::gnss::ClockParameterMap;
+using sensors::gnss::CodeMap;
 using sensors::gnss::GnssHandler;
 
 class NAVP_EXPORT Spp {
@@ -13,12 +15,17 @@ class NAVP_EXPORT Spp {
   Spp(std::shared_ptr<GnssHandler> handler) noexcept;
   std::shared_ptr<GnssHandler> gnss_handler() noexcept;
 
-  Option<PvtSolutionRecord> next_solution() noexcept;
+  bool next_solution() noexcept;
+
+  auto solution() const noexcept -> const PvtSolutionRecord*;
 
   ~Spp() = default;
 
  protected:
-  std::shared_ptr<GnssHandler> rover_;       ///> rover handler
+  void update_clock_map(const CodeMap& code_map) const noexcept;
+  std::unique_ptr<PvtSolutionRecord> sol_;  // solution
+  std::shared_ptr<GnssHandler> rover_;      // rover handler
+  mutable ClockParameterMap clock_map_;     // clock parameter map
 };
 
 class NAVP_EXPORT FgoSpp : public Spp {

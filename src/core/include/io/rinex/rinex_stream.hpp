@@ -14,10 +14,14 @@ namespace navp::io::rinex {
 class RinexStream;
 
 // rinex stream
-class NAVP_EXPORT RinexStream : public Stream, public RinexRecord {
+class NAVP_EXPORT RinexStream : public Fstream, public RinexRecord {
  public:
-  using Stream::Stream;
+  using Fstream::Fstream;
   virtual ~RinexStream() override;
+
+  void decode_header(Record& record);
+
+  void decode_body(Record& record);
 
  protected:
   virtual void decode_record(Record& record) override;

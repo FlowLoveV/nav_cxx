@@ -116,7 +116,6 @@ void GnssObsRecord::add_obs_list(ObsList&& obs_list) noexcept {
   for (const auto& obs_ptr : obs_list) {
     EpochUtc epoch(obs_ptr->time);
     obs_map_[epoch][obs_ptr->sv] = obs_ptr;
-    logger_->debug("add obs from : {}", obs_ptr->sv);
   }
   erase();
 }
@@ -182,6 +181,14 @@ GnssNavRecord::~GnssNavRecord() = default;
 const CodeMap& GnssObsRecord::code_map() const noexcept { return code_map_; }
 
 GnssObsRecord::GnssObsRecord(std::shared_ptr<spdlog::logger> logger) : logger_(logger) {}
+
+void GObs::check_vaild() noexcept {
+  std::ranges::for_each(sigs_list | std::views::values | std::views::join, [](Sig& sig) {
+    if (sig.pseudorange == 0.0 || sig.carrier == 0.0 || sig.doppler == 0.0 || sig.snr == 0.0) {
+      sig.invalid = true;
+    }
+  });
+}
 
 #undef NSYSGPS
 #undef NSATGPS

@@ -723,8 +723,6 @@ i32 decodeObsData(std::istream& inputStream, string& line, f64 ver,
   i32 stat = 1;
   char* buff = &line[0];
 
-  // 	BOOST_LOG_TRIVIAL(debug) << __FUNCTION__ << ": ver=" << ver;
-
   if (ver > 2.99) {
     // ver.3
     strncpy(satid, buff, 3);
@@ -734,9 +732,6 @@ i32 decodeObsData(std::istream& inputStream, string& line, f64 ver,
   }
 
   if (!obs.sv) {
-    // BOOST_LOG_TRIVIAL(debug)
-    // << "decodeObsdata: unsupported sat sat=" << satid;
-
     stat = 0;
   }
 
@@ -801,13 +796,8 @@ i32 decodeObsData(std::istream& inputStream, string& line, f64 ver,
         default:
           break;
       }
-
     j += 16;
   }
-
-  //     BOOST_LOG_TRIVIAL(debug)
-  // 	<< "decodeObsdata: time=" << obs.time.to_string()
-  // 	<< " sat=" << obs.sv.id();
 
   return 1;
 }
@@ -838,6 +828,7 @@ int readNextRnxObsB(std::istream& inputStream, double ver, TimeSystemEnum tsys,
       rawObs.time = time;
       // decode obs data
       bool pass = decodeObsData(inputStream, line, ver, sysCodeTypes, rawObs, sats[i - 1]);
+      rawObs.check_vaild();
       if (pass) {
         // save obs data
         obsList.emplace_back(std::make_shared<GObs>(std::move(rawObs)));
@@ -848,42 +839,6 @@ int readNextRnxObsB(std::istream& inputStream, double ver, TimeSystemEnum tsys,
   }
   return -1;
 }
-
-/** Read rinex obs data body
- */
-// i32 readAllRnxObsB(std::istream& inputStream, f64 ver, TimeSystemEnum tsys,
-//                    std::map<ConstellationEnum, std::map<i32, CodeType>>& sysCodeTypes, i32& flag, ObsList& obsList) {
-//   GTime time = {};
-//   i32 i = 0;
-//   i32 nSats = 0;
-//   std::vector<Sv> sats;
-
-//   string line;
-//   while (std::getline(inputStream, line)) {
-//     if (line[0] == '>') {
-//       i = 0;
-//       sats.clear();
-//       nSats = decodeObsEpoch(inputStream, line, ver, tsys, time, flag, sats);
-//       if (nSats <= 0) {
-//         continue;
-//       }
-//     } else if (flag <= 2 || flag == 6) {
-//       if (i < nSats) {
-//         GObs rawObs = {};
-//         rawObs.time = time;
-
-//         bool pass = decodeObsData(inputStream, line, ver, sysCodeTypes, rawObs, sats[i]);
-//         if (pass) {
-//           obsList.emplace_back(std::make_shared<GObs>(rawObs));
-//         }
-//         i++;
-//       } else {
-//         continue;
-//       }
-//     }
-//   }
-//   return obsList.size();
-// }
 
 /** Read rinex obs
  */

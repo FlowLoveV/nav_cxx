@@ -262,6 +262,10 @@ struct Duration {
   Seconds<i64> _m_seconds{};
   Attoseconds<i64> _m_attos{};
 
+  constexpr bool operator==(const Duration& other) const noexcept {
+    return _m_seconds == other._m_seconds && _m_attos == other._m_attos;
+  }
+
   // return to duration of clock_type_in
   template <typename in_clock_t, typename out_clock_t>
   constexpr static Duration from_date(u16 year, u8 month, u16 day, u8 hour, u8 minute, u8 integer_second, i64 attos,
@@ -713,6 +717,12 @@ class NAVP_EXPORT Epoch {
   constexpr Epoch operator-(const _Dur& _dur) const noexcept {
     auto result_dur = this->__dur.template operator- <_Dur>(_dur);
     return Epoch{.__dur = result_dur};
+  }
+
+  template <typename _Clock_t>
+  constexpr bool operator==(const Epoch<_Clock_t>& rhs) const noexcept {
+    auto _cast_rhs = clock_cast<clock_type>(rhs);
+    return this->__dur == _cast_rhs.__dur;
   }
 
   details::Duration __dur{};
