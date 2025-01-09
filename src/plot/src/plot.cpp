@@ -16,4 +16,4 @@ void example_01() {
   show();
 }
 
-}  // namespace nav::plotter
+}  // namespace navp::plotter

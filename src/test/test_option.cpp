@@ -365,7 +365,6 @@ TEST_CASE("Ref") {
   static_assert(std::is_same_v<std::remove_cvref_t<decltype(ref.unwrap())>, std::reference_wrapper<std::string>>);
 }
 
- 
 TEST_CASE("Nesting") {
   typedef Option<int> T;
   Option<T> x = Some(10);

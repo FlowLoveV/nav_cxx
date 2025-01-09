@@ -4,4 +4,4 @@ namespace navp::plotter {
 
 void example_01();
 
-}  // namespace nav::plotter
+}  // namespace navp::plotter

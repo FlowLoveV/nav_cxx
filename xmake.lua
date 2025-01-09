@@ -19,7 +19,6 @@ includes("src/rtklib/xmake.lua")
 includes("src/core/xmake.lua")
 includes("src/third/xmake.lua")
 includes("src/plot/xmake.lua")
-includes("src/third/ginan/cpp/xmake.lua")
 -- test modules
 includes("src/test/xmake.lua")
 -- benchmark modules

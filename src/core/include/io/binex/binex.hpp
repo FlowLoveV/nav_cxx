@@ -32,10 +32,11 @@
 // #define BINEX_GNSS_DATA			(0x00000002)
 // #define BINEX_SITE_DATA			(0x00000003)
 // #define BINEX_GNSS_DATA_PROTO		(0x0000007f)
-// #define BAD_BINEX_CHECKSUM		(0xfffffffc)	/* there will never be a BINEX record/subrecord/length with this value */
-// #define BAD_BINEX_READ			(0xfffffffd)	/* there will never be a BINEX record/subrecord/length with this value */
-// #define NORMAL_BINEX_EOF		(0xfffffffe)	/* there will never be a BINEX record/subrecord/length with this value */
-// #define NO_KNOWN_BINEX			(0xffffffff)	/* there will never be a BINEX record/subrecord/length with this value */
+// #define BAD_BINEX_CHECKSUM		(0xfffffffc)	/* there will never be a BINEX record/subrecord/length with this
+// value */ #define BAD_BINEX_READ			(0xfffffffd)	/* there will never be a BINEX
+// record/subrecord/length with this value */ #define NORMAL_BINEX_EOF		(0xfffffffe)	/* there will never be a
+// BINEX record/subrecord/length with this value */ #define NO_KNOWN_BINEX			(0xffffffff)	/* there
+// will never be a BINEX record/subrecord/length with this value */
 
 // #define BIT_0				(0x01)
 // #define BIT_1				(0x02)

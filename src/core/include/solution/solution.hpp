@@ -1,6 +1,5 @@
 #pragma once
 
-#include "algorithm/parameter_block.hpp"
 #include "io/record.hpp"
 #include "utils/macro.hpp"
 #include "utils/space.hpp"
@@ -28,14 +27,18 @@ struct NAVP_EXPORT PvtSolutionRecord : public io::Record {
   EpochUtc time;
   utils::CoordinateXyz position, velicity; /* position/velocity (m|m/s) */
   utils::CoordinateBlh blh;                /* latitude/longitude/height (rad|rad|m) */
-  f32 qr[6];                               /* position variance/covariance (m^2) */
-  f32 qv[6];                               /* velocity variance/covariance (m^2/s^2) */
-  f64 dtr[6];                              /* receiver clock bias to time systems (s) */
+  f32 qr[6];                               /* position variance/covariance xx,xy,xz,yy,yz,zz (m^2) */
+  f32 qv[6];                               /* velocity variance/covariance xx,xy,xz,yy,yz,zz (m^2/s^2) */
+  f64 sigma_r, sigma_v;                    /* position/velocity sigma */
+  f64 dtr[6];                              /* receiver clock bias to time systems (s)
+                                              [0] = BDS, [1] = GPS
+                                              ... to be determined
+                                              [5] = receiver clock speed
+                                            */
   SolutionModeEnum mode = SolutionModeEnum::NONE;
-  u8 type;            /* type (0:xyz-ecef,1:enu-baseline) */
-  u8 syss;            /* number of systems */
-  u8 ns;              /* number of valid satellites */
-  bool vaild = false; /* solution vaild flag */
+  u8 type; /* type (0:xyz-ecef,1:enu-baseline) */
+  u8 syss; /* number of systems */
+  u8 ns;   /* number of valid satellites */
 };
 
 }  // namespace navp::solution

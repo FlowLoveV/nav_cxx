@@ -56,6 +56,7 @@ class NAVP_EXPORT NavConfigManger : public toml::parse_result {
   // return config path
   NAV_NODISCARD_UNUNSED auto path() const noexcept -> std::string_view;
 
+ protected:
   // solution mode
   NAV_NODISCARD_ERROR_HANDLE auto solution_mode() const noexcept -> SolutionModeEnum;
 

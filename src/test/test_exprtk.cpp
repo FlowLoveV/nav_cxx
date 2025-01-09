@@ -21,13 +21,13 @@
 
 #include "exprtk.hpp"
 
-template <typename T> void trig_function() {
+template <typename T>
+void trig_function() {
   typedef exprtk::symbol_table<T> symbol_table_t;
   typedef exprtk::expression<T> expression_t;
   typedef exprtk::parser<T> parser_t;
 
-  const std::string expression_string =
-      "clamp(-1.0, sin(2 * pi * x) + cos(x / 2 * pi), +1.0)";
+  const std::string expression_string = "clamp(-1.0, sin(2 * pi * x) + cos(x / 2 * pi), +1.0)";
 
   T x;
 

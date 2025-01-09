@@ -35,8 +35,6 @@ class NAVP_EXPORT SppFactorGraph : public GnssFactorGraph {
 
   void reset();
 
-  // void input_gnss(EpochUtc time);
-
   virtual ~SppFactorGraph() override;
 
  protected:
@@ -48,11 +46,11 @@ class NAVP_EXPORT SppFactorGraph : public GnssFactorGraph {
 
   void assign_latest_state(Parameters& state) noexcept;
 
-  std::map<EpochUtc, Parameters> state_;  ///> parameters
+  std::map<EpochUtc, Parameters> state_;  // parameters
 
-  std::map<EpochUtc, std::map<Sv, Resuduals>> residual_;  ///> residuals
+  std::map<EpochUtc, std::map<Sv, Resuduals>> residual_;  // residuals
 
-  std::map<EpochUtc, std::map<Sv, FactorId[2]>> residual_id_;  ///> residuals id
+  std::map<EpochUtc, std::map<Sv, FactorId[2]>> residual_id_;  // residuals id
 };
 
 class NAVP_EXPORT RtkFactorGraph : public GnssFactorGraph {

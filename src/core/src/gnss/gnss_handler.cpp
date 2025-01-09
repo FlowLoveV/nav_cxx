@@ -1,10 +1,6 @@
 #include "sensors/gnss/gnss_handler.hpp"
 
-#include <ranges>
-
 #include "sensors/gnss/atmosphere.hpp"
-#include "sensors/gnss/constants.hpp"
-#include "sensors/gnss/navigation.hpp"
 #include "sensors/gnss/random.hpp"
 
 namespace navp::sensors::gnss {
@@ -34,12 +30,12 @@ NAV_NODISCARD_UNUNSED auto GnssPayload::generate_rawobs_handler() const -> std::
   u16 sv_count = 0;
   for (u16 i = 0; i < satellites_vector.size(); ++i) {
     Sv sv = satellites_vector[i];
-    if (!settings_->enabled(sv)) continue;  // filter sv and system
+    if (!settings_->enabled(sv)) continue;  // filter unabled sv and system
     GObs* obs = runtime_info_->obs_map->at(sv).get();
     auto sv_info = &runtime_info_->sv_map->at(sv);
     std::vector<const Sig*> sig;
     obs->for_each_code([&](const Sig& _sig) mutable {
-      if (settings_->enabled(sv, _sig) && !_sig.invalid) sig.push_back(&_sig);  // filter code
+      if (settings_->enabled(sv, _sig) && !_sig.invalid) sig.push_back(&_sig);  // filter unabled code
     });
     if (sig.empty()) continue;  // if no sigs in this obs, skip
     handler.emplace_back(obs, sv_info, std::move(sig));
@@ -68,6 +64,14 @@ auto GnssPayload::generate_random_handler(Sv sv) const -> GnssRandomHandler {
   return GnssRandomHandler{}.set_model(settings_->random).set_sv_info(&runtime_info_->sv_map->at(sv));
 }
 
+void GnssRawObsHandler::handle_signal_variance(RandomModelEnum model,
+                                               GnssRandomHandler::EvaluateRandomOptions options) const noexcept {
+  auto random_handler = GnssRandomHandler{}.set_model(model).set_options(options).set_sv_info(sv_info);
+  for (auto _sig : sig) {
+    auto sig = random_handler.handle(_sig);
+  }
+}
+
 f64 GnssRawObsHandler::trop_corr(const utils::CoordinateBlh* station_pos, TropModelEnum model) const noexcept {
   return AtmosphereHandler{}
       .set_time(static_cast<EpochUtc>(obs->time))
@@ -82,6 +86,11 @@ f64 GnssRawObsHandler::iono_corr(const utils::CoordinateBlh* station_pos, IonoMo
       .set_sv_info(sv_info)
       .set_iono_model(model)
       .handle_iono(station_pos);
+}
+
+// todo
+void GnssPayload::decode_header(io::Fstream& stream) const noexcept {
+  auto obs_file = std::format("{} obs file  : {}", io::Fstream::AnnotationSymbols, record_->obs_stream->filename);
 }
 
 }  // namespace navp::sensors::gnss

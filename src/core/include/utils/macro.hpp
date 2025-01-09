@@ -1,5 +1,8 @@
 #pragma once
 
+// version
+#define NAVP_VERSION "0.1.0"
+
 // Considering that c++20,23 features is not yet stable,
 // making macro substitutions for certain keywords is necessary
 

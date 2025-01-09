@@ -4,8 +4,8 @@
 #include <concepts>
 #include <numbers>
 
-#include "utils/types.hpp"
 #include "utils/macro.hpp"
+#include "utils/types.hpp"
 
 namespace navp {
 
@@ -37,23 +37,30 @@ NAVP_EXPORT constexpr inline T to_radians(const T deg) noexcept {
 // -  30.5° <=> 30°30'0'
 template <std::floating_point T>
 struct NAVP_EXPORT DDmmss {
-  T hh, mm, ss;
+  bool negative;
+  u8 mm;
+  u16 hh;
+  T ss;
 
   template <std::floating_point U = T>
     requires std::is_same_v<std::common_type_t<U, T>, T>
-  static constexpr DDmmss form_degress(U deg) {
-    T hh = i32(deg);
-    T temp1 = (deg - hh) * 60;
-    T mm = i32(temp1);
-    T temp2 = (temp1 - mm) * 60;
-    T ss = i32(temp2);
-    return DDmmss{hh, mm, ss};
+  static constexpr DDmmss from_degress(U deg) {
+    bool negative = false;
+    if (deg < 0) {
+      negative = true;
+      deg = -deg;
+    }
+    auto hh = static_cast<u16>(deg);
+    T temp1 = (deg - static_cast<T>(hh)) * 60;
+    auto mm = static_cast<u8>(temp1);
+    T ss = (temp1 - static_cast<T>(mm)) * 60;
+    return DDmmss{.negative = negative, .mm = mm, .hh = hh, .ss = ss};
   }
 
   template <std::floating_point U = T>
     requires std::is_same_v<std::common_type_t<U, T>, T>
   static constexpr DDmmss from_radians(U rad) {
-    return DDmmss::from_degress(navp::to_degress(rad));
+    return DDmmss::from_degress<U>(navp::to_degress(rad));
   }
 
   template <std::floating_point U = T>
@@ -71,7 +78,7 @@ struct NAVP_EXPORT DDmmss {
 
 // nmea style hhmm.mm or hhhmm.mm -> dms
 template <std::floating_point T>
-NAVP_EXPORT DDmmss<T> nmeaStyleDmsToDms(const T hhmm) {
+NAVP_EXPORT DDmmss<T> nmea_style_dms_to_dms(const T hhmm) {
   T intPart, fracPart;
   fracPart = std::modf(hhmm, &intPart);
   T ss = fracPart * 60;
@@ -84,13 +91,13 @@ NAVP_EXPORT DDmmss<T> nmeaStyleDmsToDms(const T hhmm) {
 
 // dms -> nmea style hhmm.mm or hhhmm.mm
 template <std::floating_point T>
-NAVP_EXPORT T dmsToNmeaStyleDms(const DDmmss<T> &dms) {
+NAVP_EXPORT T dms_to_nmea_style_dms(const DDmmss<T> &dms) {
   return (dms.hh * 100 + dms.mm + dms.ss / 60.0);
 }
 
 // nmea style hhmm.mm or hhhmm.mm -> deg
 template <std::floating_point T>
-NAVP_EXPORT T nmeaStyleDmsToDegress(const T hhmm) {
+NAVP_EXPORT T nmea_style_dms_to_degress(const T hhmm) {
   T intPart, fracPart;
   fracPart = std::modf(hhmm / 100.0, &intPart);
   return intPart + fracPart / 3.0 * 5.0;
@@ -98,7 +105,7 @@ NAVP_EXPORT T nmeaStyleDmsToDegress(const T hhmm) {
 
 // deg -> nmea style hhmm.mm or hhhmm.mm
 template <std::floating_point T>
-NAVP_EXPORT T degressToNmeaStyleDms(const T deg) {
+NAVP_EXPORT T degress_to_nmea_style_dms(const T deg) {
   T intPart, fracPart;
   fracPart = std::modf(deg, &intPart);
   return intPart * 100 + fracPart * 60;
@@ -106,14 +113,14 @@ NAVP_EXPORT T degressToNmeaStyleDms(const T deg) {
 
 // nmea style hhmm.mm or hhhmm.mm -> rad
 template <std::floating_point T>
-NAVP_EXPORT T nmeaStyleDmsToRadians(const T hhmm) {
-  return to_radians(nmeaStyleDmsToDegress(hhmm));
+NAVP_EXPORT T nmea_style_dms_to_radians(const T hhmm) {
+  return to_radians(nmea_style_dms_to_degress(hhmm));
 }
 
 // rad -> nmea style hhmm.mm or hhhmm.mm
 template <std::floating_point T>
-NAVP_EXPORT T radiansToNmeaStyleDms(const T rad) {
-  return degressToNmeaStyleDms(to_degress(rad));
+NAVP_EXPORT T radians_to_nmea_style_dms(const T rad) {
+  return degress_to_nmea_style_dms(to_degress(rad));
 }
 
 template <std::floating_point T>

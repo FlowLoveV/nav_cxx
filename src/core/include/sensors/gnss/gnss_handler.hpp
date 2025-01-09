@@ -4,16 +4,16 @@
 
 #include "io/stream.hpp"
 #include "sensors/gnss/analysis.hpp"
+#include "sensors/gnss/atmosphere.hpp"
 #include "sensors/gnss/ephemeris_solver.hpp"
 #include "sensors/gnss/observation.hpp"
+#include "sensors/gnss/random.hpp"
 #include "solution/config.hpp"
 #include "utils/time.hpp"
 
 namespace navp::sensors::gnss {
 
-// forward declaration
 class AtmosphereHandler;
-class GnssRandomHandler;
 
 struct GnssStationInfo;
 struct GnssRuntimeInfo;
@@ -81,6 +81,9 @@ struct NAVP_EXPORT GnssRawObsHandler {
   const EphemerisResult* sv_info;  // satellite information
   std::vector<const Sig*> sig;     // sigs vector
 
+  void handle_signal_variance(RandomModelEnum model, GnssRandomHandler::EvaluateRandomOptions options =
+                                                         GnssRandomHandler::Pseudorange) const noexcept;
+
   f64 trop_corr(const utils::CoordinateBlh* station_pos, TropModelEnum model) const noexcept;
 
   f64 iono_corr(const utils::CoordinateBlh* station_pos, IonoModelEnum model) const noexcept;
@@ -118,6 +121,8 @@ class GnssPayload {
   NAV_NODISCARD_UNUNSED auto generate_atmosphere_handler(Sv sv) const -> AtmosphereHandler;
 
   NAV_NODISCARD_UNUNSED auto generate_random_handler(Sv sv) const -> GnssRandomHandler;
+
+  void decode_header(io::Fstream& stream) const noexcept;
 
   std::unique_ptr<GnssStationInfo> station_info_;  // station info
 

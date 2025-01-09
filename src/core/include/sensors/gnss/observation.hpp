@@ -23,13 +23,14 @@ using CodeMap = std::unordered_map<ConstellationEnum, std::unordered_set<ObsCode
 /** Raw observation data from a receiver for a single frequency. Not to be modified by processing functions
  */
 struct NAVP_EXPORT RawSig {
-  ObsCodeEnum code = ObsCodeEnum::NONE;  ///< Reported code type
-  bool lli = false;                      ///< Loss of lock indicator
-  bool invalid = false;
-  f32 snr = 0;          ///< Signal to Noise ratio (dB-Hz)
-  f64 carrier = 0;      ///< Carrier phase (cycles)
-  f64 pseudorange = 0;  ///< Pseudorange (meters)
-  f64 doppler = 0;      ///< Doppler
+  ObsCodeEnum code = ObsCodeEnum::NONE;        // Reported code type
+  FreTypeEnum freq = FreTypeEnum::FTYPE_NONE;  // Frequency type
+  bool lli = false;                            // Loss of lock indicator
+  bool invalid = false;                        // invaild indicator
+  f32 snr = 0;                                 // Signal to Noise ratio (dB-Hz)
+  f32 doppler = 0;                             // Doppler
+  f64 carrier = 0;                             // Carrier phase (cycles)
+  f64 pseudorange = 0;                         // Pseudorange (meters)
 
   bool operator<(const RawSig& b) const { return (code < b.code); }
 };
@@ -37,10 +38,10 @@ struct NAVP_EXPORT RawSig {
 /** Per signal data that is calculated from the raw signals.
  */
 struct NAVP_EXPORT Sig : RawSig {
-  f64 code_var = 0;                ///< Variance of code measurement
-  f64 phase_var = 0;               ///< Variance of phase measurement
-  f64 biases[2] = {std::nan("")};  ///< bias of code measurement
-  f64 bias_vars[2] = {};           ///< Variance bias of phase measurement
+  f64 code_var = 0;                // Variance of code measurement
+  f64 phase_var = 0;               // Variance of phase measurement
+  f64 biases[2] = {std::nan("")};  // bias of code measurement
+  f64 bias_vars[2] = {};           // Variance bias of phase measurement
 };
 
 /** Raw observation data from a receiver. Not to be modified by processing functions

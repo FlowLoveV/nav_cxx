@@ -2,8 +2,8 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "cpptrace/cpptrace.hpp"
 #include "doctest.h"
-#include "solution/config.hpp"
 #include "sensors/gnss/gnss.hpp"
+#include "solution/config.hpp"
 
 // TEST_CASE("config") {
 //   cpptrace::register_terminate_handler();

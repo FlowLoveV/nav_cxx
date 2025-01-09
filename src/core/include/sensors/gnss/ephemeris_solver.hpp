@@ -107,7 +107,7 @@ class NAVP_EXPORT EphemerisSolver {
   void erase() noexcept;
 
   std::unique_ptr<TimeSvMap> sv_status_ = nullptr;  // sv status
-  i32 storage_ = -1;  // satellite status storage
+  i32 storage_ = -1;                                // satellite status storage
 
   // cache newest ephemeris of different versions and system
   Eph *cache_bds_d1d2_, *cache_gps_lnav_, *cache_qzs_lnav_, *cache_gal_ifnav_;

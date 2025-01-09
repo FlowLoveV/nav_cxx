@@ -1,8 +1,9 @@
 #pragma once
 
 #include <string>
-#include "utils/types.hpp"
+
 #include "utils/macro.hpp"
+#include "utils/types.hpp"
 
 namespace navp::utils {
 

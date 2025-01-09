@@ -1,4 +1,5 @@
 #include "io/sp3/sp3_stream.hpp"
+
 #include "sensors/gnss/enums.hpp"
 #include "sensors/gnss/ephemeris.hpp"
 #include "sensors/gnss/navigation.hpp"

@@ -5,12 +5,10 @@
 
 #include "doctest.h"
 #include "utils/time.hpp"
-#include "utils/utils.hpp"
 
 using namespace navp;
 using namespace std::chrono;
 using namespace navp::details;
-using namespace navp::utils;
 
 TEST_CASE("clock") {
   constexpr Date bds_begin_epoch = Date{

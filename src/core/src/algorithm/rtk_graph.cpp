@@ -14,4 +14,4 @@ void SppFactorGraph::init_state_at(EpochUtc time) noexcept { assign_latest_state
 
 void SppFactorGraph::init_residual_at(EpochUtc time, Sv sv) noexcept { residual_[time][sv] = {0, 0}; }
 
-}  // namespace navp::fgo 
+}  // namespace navp::fgo

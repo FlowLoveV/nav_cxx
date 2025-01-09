@@ -16,8 +16,6 @@ using utils::NavVector3f64;
 // - Parameter1          3          ECEF coordinate parameter(XYZ,m)
 // - Parameter2          1          receiver clock bias(m)
 struct NAVP_EXPORT PseudorangeFactor : ceres::SizedCostFunction<1, 3, 1> {
-  explicit PseudorangeFactor(const NavVector3f64* _sv_pos, f64 _pseudorange, f64 _var)
-      : sv_pos(_sv_pos), pseudorange(_pseudorange), var(_var) {}
   ~PseudorangeFactor() override = default;
 
   bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override {
@@ -45,6 +43,10 @@ struct NAVP_EXPORT PseudorangeFactor : ceres::SizedCostFunction<1, 3, 1> {
 
   const NavVector3f64* sv_pos;  //< satellite position
   double_t pseudorange, var;    //< corrected pseudorange and its variances
+
+ protected:
+  explicit PseudorangeFactor(const NavVector3f64* _sv_pos, f64 _pseudorange, f64 _var)
+      : sv_pos(_sv_pos), pseudorange(_pseudorange), var(_var) {}
 };
 
 //   Discription      Dimension         Meaning

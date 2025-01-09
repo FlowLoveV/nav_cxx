@@ -18,7 +18,7 @@ time = "2024-11-20 11:20:00"
 #   DR_TIGHT = 8,
 #   FGO = 9,
 mode = 9
-base = "base001"
+base = "base001" 
 rover = "default"
 
 [output]

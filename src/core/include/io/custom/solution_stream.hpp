@@ -1,5 +1,6 @@
 #pragma once
 
+#include "io/format_options.hpp"
 #include "io/stream.hpp"
 
 namespace navp::solution {
@@ -15,6 +16,13 @@ class SolutionStream;
 class NAVP_EXPORT SolutionStream : public Fstream {
  public:
   using Fstream::Fstream;
+
+  inline void set_format_options(const FormatOptions& options) noexcept { options_ = options; }
+
+  inline const FormatOptions& format_options() const noexcept { return options_; }
+
+  inline FormatOptions& format_options() noexcept { return options_; }
+
   virtual ~SolutionStream() override = default;
 
  protected:
@@ -22,7 +30,7 @@ class NAVP_EXPORT SolutionStream : public Fstream {
 
   virtual void encode_record(Record& record) override;
 
-  void encode_pvt_solution_record(solution::PvtSolutionRecord& record);
+  FormatOptions options_{};
 };
 
 }  // namespace navp::io::custom

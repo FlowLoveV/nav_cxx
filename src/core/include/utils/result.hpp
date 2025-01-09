@@ -40,36 +40,36 @@ struct result_construct_assgin_base {
       : val() {}
 
   // from value
-  template <typename U>
+  template <typename U = T>
   constexpr result_construct_assgin_base(U&& val) noexcept(std::is_nothrow_constructible_v<T, U>)
     requires std::is_constructible_v<T, U> && std::is_convertible_v<U, T>
       : val(std::forward<U>(val)) {}
 
-  template <typename U>
+  template <typename U = T>
   explicit constexpr result_construct_assgin_base(U&& val) noexcept(std::is_nothrow_constructible_v<T, U>)
     requires std::is_constructible_v<T, U> && (!std::is_convertible_v<U, T>)
       : val(std::forward<U>(val)) {}
 
   // from result_construct_assgin_base<U>
-  template <typename U>
+  template <typename U = T>
   constexpr result_construct_assgin_base(const result_construct_assgin_base<U, TagArgs...>& other) noexcept(
       std::is_nothrow_constructible_v<T, const U&>)
     requires(!std::is_same_v<U, T>) && std::is_constructible_v<T, const U&> && std::is_convertible_v<const U&, T>
       : val(other.val) {}
 
-  template <typename U>
+  template <typename U = T>
   explicit constexpr result_construct_assgin_base(const result_construct_assgin_base<U, TagArgs...>& other) noexcept(
       std::is_nothrow_constructible_v<T, const U&>)
     requires(!std::is_same_v<U, T>) && std::is_constructible_v<T, const U&> && (!std::is_convertible_v<const U&, T>)
       : val(std::move(other.val)) {}
 
-  template <typename U>
+  template <typename U = T>
   constexpr result_construct_assgin_base(result_construct_assgin_base<U, TagArgs...>&& other) noexcept(
       std::is_nothrow_constructible_v<T, const U&>)
     requires(!std::is_same_v<U, T>) && std::is_constructible_v<T, U> && std::is_convertible_v<U, T>
       : val(std::move(other.val)) {}
 
-  template <typename U>
+  template <typename U = T>
   explicit constexpr result_construct_assgin_base(result_construct_assgin_base<U, TagArgs...>&& other) noexcept(
       std::is_nothrow_constructible_v<T, const U&>)
     requires(!std::is_same_v<U, T>) && std::is_constructible_v<T, U> && (!std::is_convertible_v<U, T>)
@@ -80,13 +80,13 @@ struct result_construct_assgin_base {
     requires std::is_constructible_v<T, Args...>
       : val(std::forward<Args>(args)...) {}
 
-  template <typename U, typename... Args>
+  template <typename U = T, typename... Args>
   constexpr result_construct_assgin_base(std::initializer_list<U> list, Args&&... args) noexcept(
       std::is_nothrow_constructible_v<T, std::initializer_list<U>&, Args...>)
     requires std::is_constructible_v<T, std::initializer_list<U>&, Args...>
       : val(list, std::forward<Args>(args)...) {}
 
-  template <typename U>
+  template <typename U = T>
   constexpr result_construct_assgin_base& operator=(U&& val) noexcept(std::is_nothrow_constructible_v<T, U> &&
                                                                       std::is_nothrow_assignable_v<T, U>)
     requires std::is_constructible_v<T, U> && std::is_assignable_v<T, U>
@@ -95,7 +95,7 @@ struct result_construct_assgin_base {
     return *this;
   }
 
-  template <typename U>
+  template <typename U = T>
   constexpr result_construct_assgin_base& operator=(const result_construct_assgin_base<U, TagArgs...>& rhs) noexcept(
       std::is_nothrow_constructible_v<T, const U&> && std::is_nothrow_assignable_v<T, const U&>)
     requires std::is_constructible_v<T, const U&> && std::is_assignable_v<T, const U&>
@@ -104,7 +104,7 @@ struct result_construct_assgin_base {
     return *this;
   }
 
-  template <typename U>
+  template <typename U = T>
   constexpr result_construct_assgin_base& operator=(result_construct_assgin_base<U, TagArgs...>&& rhs) noexcept(
       std::is_nothrow_constructible_v<T, U> && std::is_nothrow_assignable_v<T, U>)
     requires std::is_constructible_v<T, U> && std::is_assignable_v<T, U>

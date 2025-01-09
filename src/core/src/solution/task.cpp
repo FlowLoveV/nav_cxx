@@ -1,5 +1,8 @@
 #include "solution/task.hpp"
 
+#include "filter/filter.hpp"
+#include "sensors/gnss/gnss.hpp"
+
 namespace navp::solution {
 
 Task::Task() = default;

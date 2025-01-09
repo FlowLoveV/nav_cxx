@@ -138,6 +138,7 @@ using AngleAxisf32 = Eigen::AngleAxis<f32>;
 }  // namespace navp::utils
 
 #include <format>
+
 #include "utils/ostream_formatter.hpp"
 
 namespace std {

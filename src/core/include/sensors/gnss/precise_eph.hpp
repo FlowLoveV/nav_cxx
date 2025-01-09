@@ -17,7 +17,7 @@ struct PreciseEphSettings;
 struct NAVP_EXPORT PreciseEphResult {
   Sv sv;
   utils::NavVector3f64 pos, vel, pos_std, vel_std;
-  
+
   // dcb pcv pco ...etc
 };
 

@@ -11,7 +11,7 @@ namespace navp {
 using spdlog::level::level_enum;
 
 namespace constants {
-inline static std::string LogDirection = "/root/project/nav_cxx/log/nav";
+inline static std::string LogDirection = "/root/project/nav_cxx/log/nav/";
 }  // namespace constants
 
 NAVP_EXPORT std::string source_information(std::source_location location = std::source_location::current());

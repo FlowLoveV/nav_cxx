@@ -1,4 +1,5 @@
 #include "ginan/common.hpp"
+
 #include "utils/types.hpp"
 
 using navp::f64;

@@ -70,9 +70,6 @@ enum class CarrierEnum : u8 {
 };
 
 struct NAVP_EXPORT Carrier {
-  // Carrier() : id(CarrierEnum::L1) {}
-  // Carrier(CarrierEnum carrier) : id(carrier) {}
-  // from_str
   static Result<Carrier, GnssParseCarrierError> from_str(const char* str) {
     std::string s(str);
     boost::algorithm::to_upper(s);
@@ -86,6 +83,8 @@ struct NAVP_EXPORT Carrier {
     }
     return Err(GnssParseCarrierError(std::format("can't parse unknown Carrier \'{}\'", str)));
   }
+
+  constexpr auto operator<=>(const Carrier&) const = default;
 
   CarrierEnum id;
 };

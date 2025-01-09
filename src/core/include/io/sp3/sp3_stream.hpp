@@ -3,7 +3,7 @@
 
 namespace navp::io::sp3 {
 
-inline constexpr auto  INVALID_CLOCK_VALUE = 999999.999999;
+inline constexpr auto INVALID_CLOCK_VALUE = 999999.999999;
 
 class Sp3Stream;
 

@@ -1,10 +1,10 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include <Eigen/Eigen>
 #include <expected>
 
 #include "doctest.h"
 #include "utils/option.hpp"
 #include "utils/result.hpp"
-#include <Eigen/Eigen>
 
 using navp::Err;
 using navp::Ok;

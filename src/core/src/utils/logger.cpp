@@ -56,9 +56,9 @@ std::string source_information(std::source_location location) {
 
 namespace details {
 
-std::shared_ptr<spdlog::logger> global_formatted_logger = create_common_spdlogger("navlogger", "nav_info_logger");
+std::shared_ptr<spdlog::logger> global_formatted_logger = create_common_spdlogger("navlogger.log", "nav_info_logger");
 
-std::shared_ptr<spdlog::logger> global_pure_logger = create_pure_spdlogger("navlogger", "nav_msg_logger");
+std::shared_ptr<spdlog::logger> global_pure_logger = create_pure_spdlogger("navlogger.log", "nav_msg_logger");
 
 }  // namespace details
 

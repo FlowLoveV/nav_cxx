@@ -759,6 +759,7 @@ i32 decodeObsData(std::istream& inputStream, string& line, f64 ver,
     auto& sigList = obs.sigs_list[ft];
 
     for (auto& sig : sigList) {
+      sig.freq = ft;  // assign frequency information
       if (sig.code == codeType.code) {
         rawSig = &sig;
         break;
@@ -781,14 +782,14 @@ i32 decodeObsData(std::istream& inputStream, string& line, f64 ver,
     if (val) switch (codeType.type) {
         case 'P':  // fallthrough
         case 'C':
-          sig.pseudorange = val;
+          sig.pseudorange = static_cast<decltype(Sig::pseudorange)>(val);
           break;
         case 'L':
           sig.carrier = val;
           sig.lli = static_cast<decltype(Sig::lli)>(lli);
           break;
         case 'D':
-          sig.doppler = val;
+          sig.doppler = static_cast<decltype(Sig::doppler)>(val);
           break;
         case 'S':
           sig.snr = static_cast<decltype(Sig::snr)>(val);

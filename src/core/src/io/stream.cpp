@@ -2,8 +2,6 @@
 
 #include <filesystem>
 
-// #include <string>
-
 namespace navp::io {
 
 Fstream::Fstream() : record_number(0) {}

@@ -5,9 +5,42 @@
 
 #include "utils/macro.hpp"
 
+namespace navp::filter {
+class MaskFilters;
+}
+
 namespace navp::solution {
 
+class TaskConfig;
 class Task;
+
+struct NAVP_EXPORT TaskConfig {
+  struct Meta {
+    std::string task_name;
+    std::string project_name;
+    std::string execute_time;
+    std::string executor;
+  };
+
+  struct Solution {
+    SolutionModeEnum mode;
+    std::unique_ptr<sensors::gnss::GnssHandler> base;
+    std::unique_ptr<sensors::gnss::GnssHandler> rover;
+  };
+
+  struct Output {
+    std::string output_path;
+  };
+
+  struct Filter {
+    std::unique_ptr<filter::MaskFilters> filter;
+  };
+
+  Meta __meta;
+  Solution __solution;
+  Output __output;
+  Filter __filter;
+};
 
 class NAVP_EXPORT Task {
  public:
@@ -31,6 +64,7 @@ class NAVP_EXPORT ConfigTask {
 
  protected:
   NavConfigManger config_;
+  std::unique_ptr<TaskConfig> config_task_;
 };
 
 class NAVP_EXPORT ConcurrentTask : public ConfigTask {

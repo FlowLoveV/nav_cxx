@@ -1,9 +1,7 @@
 #pragma once
 
 /// export header
-#include "sensors/gnss/atmosphere.hpp"
 #include "sensors/gnss/gnss_handler.hpp"
-#include "sensors/gnss/random.hpp"
 #include "utils/null_mutex.hpp"
 
 namespace navp::sensors::gnss {

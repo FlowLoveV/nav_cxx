@@ -94,7 +94,7 @@ auto get_child_node(const toml::node* node, std::string_view key) noexcept -> Co
   return child_node.node();
 }
 
-template <io::nav_stream_type StreamType>
+template <io::nav_fstream_type StreamType>
 auto get_stream(const toml::node* node, std::shared_ptr<spdlog::logger> logger = nullptr) noexcept
     -> ConfigResult<std::unique_ptr<io::Fstream>> {
   if (!node->is_string()) [[unlikely]] {
