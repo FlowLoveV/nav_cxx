@@ -9,12 +9,6 @@ using namespace navp::sensors::gnss;
 
 namespace navp::solution {
 
-// todo
-void wls_to_solution(const algorithm::WeightedLeastSquare<f64>& wls, PvtSolutionRecord* sol) noexcept {
-  sol->position = wls.parameter().block(0, 0, 3, 1);
-  sol->blh = sol->position.to_blh();
-}
-
 // this function is used to handle the position model
 // - jacobian    (modeled)
 // - observation (modeled)
@@ -59,12 +53,6 @@ void handle_spp_velocity_model(algorithm::WeightedLeastSquare<_Float_t>& wls,
                   distance;
   observation(doppler_index) = doppler - rate_row0 + Constants::CLIGHT * sv_info->fd_dtsv;
 }
-
-Spp::Spp(std::shared_ptr<GnssHandler> handler) noexcept : sol_(std::make_unique<PvtSolutionRecord>()), rover_(handler) {
-  _set_clock_map(rover_);
-}
-
-std::shared_ptr<GnssHandler> Spp::gnss_handler() noexcept { return rover_; }
 
 bool Spp::load_spp_payload() noexcept {
   if (!rover_->update_record()) return false;
@@ -211,6 +199,11 @@ void SppPayload::_velocity_evaluate() noexcept {
   sol_->qv[4] = static_cast<f32>(cofactor(1, 2)), sol_->qv[5] = static_cast<f32>(cofactor(2, 2));
   sol_->sigma_v = wls_->sigma();
   wls_.reset();  // reset wls
+}
+
+Spp::Spp(std::string_view cfg_path, bool enabled_mt)
+    : Task(cfg_path), rover_(config_.rover_station(enabled_mt)), sol_(std::make_unique<PvtSolutionRecord>()) {
+  this->_set_clock_map(rover_);
 }
 
 auto Spp::solution() const noexcept -> const PvtSolutionRecord* { return sol_.get(); }

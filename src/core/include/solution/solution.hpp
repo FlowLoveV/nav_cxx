@@ -18,7 +18,6 @@ enum class NAVP_EXPORT SolutionModeEnum : u8 {
   PPP = 6,
   DR_LOOSE = 7,
   DR_TIGHT = 8,
-  FGO = 9,
 };
 
 struct NAVP_EXPORT PvtSolutionRecord : public io::Record {

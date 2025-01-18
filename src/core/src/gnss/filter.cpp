@@ -121,6 +121,15 @@ auto Filter::apply(const FilterItem& item) const noexcept -> bool {
   return true;
 }
 
+auto MaskFilters::from_str(std::vector<std::string_view> str) -> Result<MaskFilters, FilterParseError> {
+  std::vector<Filter> filters;
+  filters.reserve(str.size());
+  for (const auto& item : str) {
+    filters.emplace_back(Filter::from_str(item).unwrap_throw());
+  }
+  return Ok(MaskFilters{.__filter = std::move(filters)});
+}
+
 Result<MaskFilters, FilterParseError> MaskFilters::from_str(std::string_view str) {
   std::vector<Filter> filters;
   std::string s(str);

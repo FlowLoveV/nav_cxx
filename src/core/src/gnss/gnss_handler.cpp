@@ -23,7 +23,8 @@ void GnssRuntimeInfo::update(const GnssRecord* record) {
   sv_map = record->eph_solver->quary_sv_status(epoch);              // satellites map
 }
 
-NAV_NODISCARD_UNUNSED auto GnssPayload::generate_rawobs_handler() const -> std::vector<GnssRawObsHandler> {
+NAV_NODISCARD_UNUNSED auto GnssPayload::generate_rawobs_handler(const filter::MaskFilters* mask_filter) const
+    -> std::vector<GnssRawObsHandler> {
   std::vector<GnssRawObsHandler> handler;
   auto& satellites_vector = runtime_info_->avilable_sv;
   handler.reserve(satellites_vector.size());

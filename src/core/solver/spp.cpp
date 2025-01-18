@@ -4,26 +4,38 @@
 #include <print>
 
 using navp::i32;
+using namespace navp::solution;
 
-i32 main(i32 argc, char* argv[]) {
-  using namespace navp::solution;
-  cpptrace::register_terminate_handler();
+class MySpp : public Spp {
+ public:
+  using Spp::Spp;
 
-  // initialize config
-  navp::GlobalConfig::initialize("/root/project/nav_cxx/bin/config.toml");
+  virtual ~MySpp() override = default;
 
-  Spp spp(navp::GlobalConfig::get_station_st("default"));
-  auto& ref = *spp.gnss_handler()->station_info()->ref_pos.get();
-  spp.gnss_handler()->logger()->info("begin");
-  while (true) {
-    if (spp.next_solution()) {
-      auto sol = spp.solution();
-      navp::utils::NavVector3f64 error = sol->position.coord() - ref.coord();
-      std::println("{} : {} {}", (sol->time), error.norm(), sol->velicity.norm());
-    } else {
-      break;
+ protected:
+  virtual void before_action() override { rover_->logger()->info("MySpp begin"); }
+
+  virtual void after_action() override { rover_->logger()->info("MySpp end"); }
+
+  virtual void action() override {
+    auto& ref = *rover_->station_info()->ref_pos.get();
+    while (true) {
+      if (next_solution()) {
+        auto sol = solution();
+        navp::utils::NavVector3f64 error = sol->position.coord() - ref.coord();
+        std::println("{} : {} {}", (sol->time), error.norm(), sol->velicity.norm());
+      } else {
+        break;
+      }
     }
   }
-  spp.gnss_handler()->logger()->info("end");
+};
+
+i32 main(i32 argc, char* argv[]) {
+  cpptrace::register_terminate_handler();
+  navp::GlobalConfig::initialize("/root/project/nav_cxx/bin/config.toml");  // initialize config
+  std::string_view config_path("/root/project/nav_cxx/config/rtk_config.toml");
+  MySpp spp(config_path);
+  spp.run();
   return 0;
 }

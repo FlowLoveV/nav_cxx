@@ -12,9 +12,11 @@ using sensors::gnss::GnssHandler;
 
 class Rtk;
 
-class NAVP_EXPORT Rtk : public ConfigTask {
+class NAVP_EXPORT Rtk : public Task {
  public:
-  Rtk(std::string_view cfg_path) noexcept;
+ Rtk(std::string_view cfg_path,bool enabled_mt = false);
+
+  virtual ~Rtk() override = default;
 
  protected:
   std::shared_ptr<GnssHandler> rover_, base_;  ///> rover server and base server

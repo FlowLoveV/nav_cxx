@@ -82,10 +82,9 @@ struct SppPayload {
   PvtSolutionRecord* sol_;                                    // solution
 };
 
-class NAVP_EXPORT Spp : protected SppPayload {
+class NAVP_EXPORT Spp : public Task, protected SppPayload {
  public:
-  Spp(std::shared_ptr<GnssHandler> handler) noexcept;
-  std::shared_ptr<GnssHandler> gnss_handler() noexcept;
+  Spp(std::string_view cfg_path, bool enabled_mt = false);
 
   bool next_solution() noexcept;
 
@@ -103,12 +102,7 @@ class NAVP_EXPORT Spp : protected SppPayload {
   virtual void model_spp_velocity() noexcept;
 
   std::unique_ptr<PvtSolutionRecord> sol_;  // solution
-  std::shared_ptr<GnssHandler> rover_;      // rover handler
-};
-
-class NAVP_EXPORT FgoSpp : public Spp {
- public:
-  using Spp::Spp;
+  std::shared_ptr<GnssHandler> rover_;      // rover station
 };
 
 }  // namespace navp::solution

@@ -38,7 +38,7 @@ class NAVP_EXPORT GnssHandler {
 };
 
 template <typename Mutex = utils::null_mutex>
-class NAVP_EXPORT Gnss : public GnssHandler, public GnssPayload {
+class Gnss : public GnssHandler, public GnssPayload {
  public:
   Gnss(GnssPayload&& handler) noexcept : GnssPayload(std::move(handler)) {}
   Gnss(const Gnss&) noexcept = delete;

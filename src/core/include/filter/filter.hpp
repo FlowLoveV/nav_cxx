@@ -22,6 +22,7 @@ struct NAVP_EXPORT Filter {
 };
 
 struct NAVP_EXPORT MaskFilters {
+  static auto from_str(std::vector<std::string_view> str) -> Result<MaskFilters, FilterParseError>;
   static auto from_str(std::string_view str) -> Result<MaskFilters, FilterParseError>;
 
   auto apply(const FilterItem& item) const noexcept -> bool;

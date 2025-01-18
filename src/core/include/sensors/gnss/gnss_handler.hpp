@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "filter/filter.hpp"
 #include "io/stream.hpp"
 #include "sensors/gnss/analysis.hpp"
 #include "sensors/gnss/atmosphere.hpp"
@@ -114,7 +115,8 @@ class GnssPayload {
 
   inline void update_runtime_info() { runtime_info_->update(record_.get()); }
 
-  NAV_NODISCARD_UNUNSED auto generate_rawobs_handler() const -> std::vector<GnssRawObsHandler>;
+  NAV_NODISCARD_UNUNSED auto generate_rawobs_handler(const filter::MaskFilters* mask_filter = nullptr) const
+      -> std::vector<GnssRawObsHandler>;
 
   NAV_NODISCARD_UNUNSED auto generate_undiffobs_handler() const -> std::vector<UnDiffObsHandler>;
 

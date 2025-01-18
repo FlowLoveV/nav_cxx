@@ -16,13 +16,20 @@ time = "2024-11-20 11:20:00"
 #   PPP = 6,
 #   DR_LOOSE = 7,
 #   DR_TIGHT = 8,
-#   FGO = 9,
-mode = 9
-base = "base001" 
+mode = 5
+# solution algorithm
+#   WeightedLeastSquare = 0,
+#   KalmanFilter = 1,
+#   FactorGraphOptimization = 2,
+algorithm = 0
+
+base = "base001"
+
 rover = "default"
 
 [output]
-path = "../output/"
+dir = "../output/"
 
 
 [filter]
+items = [">=15e", ">=35s"]

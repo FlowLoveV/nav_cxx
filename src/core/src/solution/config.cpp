@@ -4,9 +4,6 @@
 #include <spdlog/sinks/daily_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
-#include <ranges>
-
-#include "io/custom/solution_stream.hpp"
 #include "io/rinex/rinex_stream.hpp"
 #include "sensors/gnss/gnss.hpp"
 #include "solution/config.hpp"
@@ -26,14 +23,17 @@ REGISTER_CONFIG_ITEM(ExecutorCfg, "executor");    // std::string
 
 // solution config
 REGISTER_CONFIG_ITEM(SolutionCfg, "solution");
-REGISTER_CONFIG_ITEM(SolutionModeCfg, "mode");  // integer
+REGISTER_CONFIG_ITEM(SolutionModeCfg, "mode");    // integer
+REGISTER_CONFIG_ITEM(SolutionBaseCfg, "base");    // std::string
+REGISTER_CONFIG_ITEM(SolutionRoverCfg, "rover");  // std::string
 
 // output config
 REGISTER_CONFIG_ITEM(OutputCfg, "output");
-REGISTER_CONFIG_ITEM(OutputPathCfg, "path");  // std::string
+REGISTER_CONFIG_ITEM(OutputDirCfg, "dir");  // std::string
 
 // filter config
-REGISTER_CONFIG_ITEM(FilterCfg, "filter")  // std::string
+REGISTER_CONFIG_ITEM(FilterCfg, "filter")       // std::string
+REGISTER_CONFIG_ITEM(FilterItemsCfg, "items");  // table
 
 // station config
 REGISTER_CONFIG_ITEM(GlobalStationCfg, "stations");                      // std::string
@@ -67,7 +67,6 @@ REGISTER_CONFIG_ITEM(LoggerFileTypeCfg, "type");                     // integer
 
 #undef REGISTER_CONFIG_ITEM
 
-using navp::io::custom::SolutionStream;
 using navp::io::rinex::RinexStream;
 using CodeMap = navp::sensors::gnss::CodeMap;
 using spdlog::level::level_enum;
@@ -214,6 +213,38 @@ auto get_enabled_codes(const toml::node* node) noexcept -> ConfigResult<CodeMap>
   return std::move(code_map);
 }
 
+template <typename T>
+auto get_table_as(const toml::node* node) noexcept -> ConfigResult<std::vector<T>> {
+  if (!node->is_array()) {
+    return ConfigParseError(std::format("Parsing error at {}, should be a array", node->source()));
+  }
+  std::vector<T> result;
+  for (const auto& item : *node->as_array()) {
+    if (auto res = item.as<T>()) {
+      result.emplace_back(*res);
+    } else {
+      return ConfigParseError(std::format("Parsing error at {}, should be a {}", item.source(), typeid(T).name()));
+    }
+  }
+  return std::move(result);
+}
+
+template <>
+auto get_table_as<std::string_view>(const toml::node* node) noexcept -> ConfigResult<std::vector<std::string_view>> {
+  if (!node->is_array()) {
+    return ConfigParseError(std::format("Parsing error at {}, should be a array", node->source()));
+  }
+  std::vector<std::string_view> result;
+  for (const auto& item : *node->as_array()) {
+    if (item.is_string()) {
+      result.emplace_back(item.as_string()->get());
+    } else {
+      return ConfigParseError(std::format("Parsing error at {}, should be a string", item.source()));
+    }
+  }
+  return std::move(result);
+}
+
 /*
  * logger config reading
  */
@@ -329,6 +360,11 @@ auto NavConfigManger::solution_mode() const noexcept -> SolutionModeEnum {
   return get_integer_as<SolutionModeEnum>(node).unwrap_throw();
 }
 
+auto NavConfigManger::algorithm() const noexcept -> algorithm::AlgorithmEnum {
+  auto node = get_node(this, SolutionCfg, SolutionModeCfg).unwrap_throw();
+  return get_integer_as<algorithm::AlgorithmEnum>(node).unwrap_throw();
+}
+
 auto NavConfigManger::task_name() const noexcept -> std::string {
   auto node = get_node(this, ProjCfg, TaskNameCfg).unwrap_throw();
   return solution::get_as<std::string>(node).unwrap_throw();
@@ -350,9 +386,34 @@ auto NavConfigManger::executor_time() const noexcept -> EpochUtc {
   return EpochUtc::from_str("%Y-%m-%d %H:%M:%S", str.c_str()).unwrap_throw();
 }
 
-auto NavConfigManger::output_stream() const noexcept -> std::unique_ptr<io::Fstream> {
-  auto node = get_node(this, OutputCfg, OutputPathCfg).unwrap_throw();
-  return get_stream<SolutionStream>(node).unwrap_throw();
+auto NavConfigManger::base_station(bool enabled_mt) const noexcept -> std::shared_ptr<sensors::gnss::GnssHandler> {
+  auto node = get_node(this, SolutionCfg, SolutionBaseCfg).unwrap_throw();
+  auto station_name = solution::get_as<std::string>(node).unwrap_throw();
+  if (enabled_mt) {
+    return navp::GlobalConfig::get_station_mt(station_name);
+  } else {
+    return navp::GlobalConfig::get_station_st(station_name);
+  }
+}
+
+auto NavConfigManger::rover_station(bool enabled_mt) const noexcept -> std::shared_ptr<sensors::gnss::GnssHandler> {
+  auto node = get_node(this, SolutionCfg, SolutionRoverCfg).unwrap_throw();
+  auto station_name = solution::get_as<std::string>(node).unwrap_throw();
+  if (enabled_mt) {
+    return navp::GlobalConfig::get_station_mt(station_name);
+  } else {
+    return navp::GlobalConfig::get_station_st(station_name);
+  }
+}
+
+auto NavConfigManger::filters() const noexcept -> std::vector<std::string_view> {
+  auto node = get_node(this, FilterCfg, FilterItemsCfg);
+  return get_table_as<std::string_view>(node.unwrap_throw()).unwrap_throw();
+}
+
+auto NavConfigManger::output_dir() const noexcept -> std::string {
+  auto node = get_node(this, OutputCfg, OutputDirCfg).unwrap_throw();
+  return solution::get_as<std::string>(node).unwrap_throw();
 }
 
 }  // namespace navp::solution

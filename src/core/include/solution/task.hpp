@@ -1,41 +1,41 @@
 #pragma once
 
-#include <iostream>
 #include <solution/config.hpp>
 
+#include "filter/filter.hpp"
 #include "utils/macro.hpp"
-
-namespace navp::filter {
-class MaskFilters;
-}
 
 namespace navp::solution {
 
-class TaskConfig;
-class Task;
-
 struct NAVP_EXPORT TaskConfig {
+  TaskConfig(NavConfigManger& config);
+
   struct Meta {
     std::string task_name;
     std::string project_name;
-    std::string execute_time;
+    EpochUtc execute_time;
     std::string executor;
   };
 
   struct Solution {
     SolutionModeEnum mode;
-    std::unique_ptr<sensors::gnss::GnssHandler> base;
-    std::unique_ptr<sensors::gnss::GnssHandler> rover;
+    algorithm::AlgorithmEnum algorithm;
   };
 
   struct Output {
-    std::string output_path;
+    std::string output_dir;
   };
 
   struct Filter {
-    std::unique_ptr<filter::MaskFilters> filter;
+    std::unique_ptr<filter::MaskFilters> mask_filter;
   };
 
+  inline auto meta() const noexcept -> const TaskConfig::Meta& { return __meta; }
+  inline auto solution() const noexcept -> const TaskConfig::Solution& { return __solution; }
+  inline auto filter() const noexcept -> const TaskConfig::Filter& { return __filter; }
+  inline auto output() const noexcept -> const TaskConfig::Output& { return __output; }
+
+ private:
   Meta __meta;
   Solution __solution;
   Output __output;
@@ -44,35 +44,31 @@ struct NAVP_EXPORT TaskConfig {
 
 class NAVP_EXPORT Task {
  public:
-  Task();
-  virtual ~Task() = 0;
-};
+  Task(std::string_view cfg_path);
 
-class NAVP_EXPORT ConfigTask {
- public:
-  virtual ~ConfigTask();
+  virtual ~Task() = default;
 
-  ConfigTask(std::string_view cfg_path);
+  void run();
 
-  ConfigTask(const ConfigTask&) = delete;
-  ConfigTask(ConfigTask&&) = default;
+  inline const TaskConfig& task_config() { return *task_config_; }
 
-  ConfigTask& operator=(const ConfigTask&) = delete;
-  ConfigTask& operator=(ConfigTask&&) = default;
+  Task(const Task&) = delete;
+  Task(Task&&) = default;
 
-  void export_config(std::ostream& os = std::cout) const noexcept;
+  Task& operator=(const Task&) = delete;
+  Task& operator=(Task&&) = default;
 
  protected:
+  virtual void before_action() = 0;
+
+  virtual void after_action() = 0;
+
+  virtual void action() = 0;
+
   NavConfigManger config_;
-  std::unique_ptr<TaskConfig> config_task_;
-};
 
-class NAVP_EXPORT ConcurrentTask : public ConfigTask {
- public:
-  using ConfigTask::ConfigTask;
-
- protected:
-  std::mutex mutex_;
+ private:
+  std::unique_ptr<TaskConfig> task_config_;
 };
 
 }  // namespace navp::solution

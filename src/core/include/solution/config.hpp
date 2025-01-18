@@ -2,6 +2,7 @@
 
 #include <spdlog/logger.h>
 
+#include "algorithm/algorithm.hpp"
 #include "sensors/gnss/enums.hpp"
 #include "solution/solution.hpp"
 #include "toml++/toml.hpp"
@@ -56,9 +57,11 @@ class NAVP_EXPORT NavConfigManger : public toml::parse_result {
   // return config path
   NAV_NODISCARD_UNUNSED auto path() const noexcept -> std::string_view;
 
- protected:
   // solution mode
   NAV_NODISCARD_ERROR_HANDLE auto solution_mode() const noexcept -> SolutionModeEnum;
+
+  // algorithm
+  NAV_NODISCARD_ERROR_HANDLE auto algorithm() const noexcept -> algorithm::AlgorithmEnum;
 
   // task name
   NAV_NODISCARD_ERROR_HANDLE auto task_name() const noexcept -> std::string;
@@ -72,8 +75,19 @@ class NAVP_EXPORT NavConfigManger : public toml::parse_result {
   // executor time
   NAV_NODISCARD_ERROR_HANDLE auto executor_time() const noexcept -> EpochUtc;
 
+  // solution base station
+  NAV_NODISCARD_ERROR_HANDLE auto base_station(bool enabled_mt = false) const noexcept
+      -> std::shared_ptr<sensors::gnss::GnssHandler>;
+
+  // solution rover station
+  NAV_NODISCARD_ERROR_HANDLE auto rover_station(bool enabled_mt = false) const noexcept
+      -> std::shared_ptr<sensors::gnss::GnssHandler>;
+
+  // filters
+  NAV_NODISCARD_ERROR_HANDLE auto filters() const noexcept -> std::vector<std::string_view>;
+
   // output stream
-  NAV_NODISCARD_ERROR_HANDLE auto output_stream() const noexcept -> std::unique_ptr<io::Fstream>;
+  NAV_NODISCARD_ERROR_HANDLE auto output_dir() const noexcept -> std::string;
 };
 
 }  // namespace navp::solution
