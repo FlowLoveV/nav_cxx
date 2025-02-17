@@ -14,7 +14,7 @@ class NAVP_EXPORT Sp3Stream : public Fstream {
  protected:
   virtual void decode_record(Record& record) override;
 
-  virtual void encode_record(Record& record) override;
+  virtual void encode_record(const Record& record) override;
 };
 
 }  // namespace navp::io::sp3

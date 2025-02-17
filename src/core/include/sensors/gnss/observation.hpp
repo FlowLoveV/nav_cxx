@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_set>
+#include <list>
 
 #include "io/record.hpp"
 #include "sensors/gnss/enums.hpp"

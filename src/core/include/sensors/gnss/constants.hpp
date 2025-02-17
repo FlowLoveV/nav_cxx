@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sensors/gnss/carrier.hpp"
 #include "sensors/gnss/enums.hpp"
 #include "sensors/gnss/sv.hpp"
 #include "utils/macro.hpp"
@@ -7,6 +8,7 @@
 namespace navp::sensors::gnss {
 
 namespace details {
+
 // clang-format off
 #define SET_FREQUENCY(freq, val) [static_cast<u8>(FreTypeEnum::freq)] = val
 static f64 FREQ_ARRAY[]{
@@ -131,8 +133,72 @@ static constexpr FreTypeEnum sbs_code_freq(ObsCodeEnum code) {
 }
 #undef CASE_CODE 
 };
-// FreTypeEnum Code2Freq::gps[0] = FreTypeEnum::B1;
+
+// struct Freq2Carrier {
+//   static CarrierEnum gps_freq_to_carrier(FreTypeEnum freq) {
+//     switch (freq) {
+//           case FreTypeEnum::L1:   return CarrierEnum::L1;
+//           case FreTypeEnum::L2:   return CarrierEnum::L2;
+//           case FreTypeEnum::L5:   return CarrierEnum::L5;
+//           default:                return CarrierEnum::None;
+//     }
+//   };
+
+//   static CarrierEnum gal_freq_to_carrier(FreTypeEnum freq) {
+//     switch (freq) {
+//           case FreTypeEnum::E1:   return CarrierEnum::E1;
+//           case FreTypeEnum::E5A:  return CarrierEnum::E5a;
+//           case FreTypeEnum::E5B:  return CarrierEnum::E5b;
+//           case FreTypeEnum::E5:   return CarrierEnum::E5;
+//           case FreTypeEnum::E6:   return CarrierEnum::E6;
+//           default:                return CarrierEnum::None;
+//     }
+//   };
+
+//   static CarrierEnum glo_freq_to_carrier(FreTypeEnum freq) {
+//     switch (freq) {
+//           case FreTypeEnum::G1:   return CarrierEnum::G1;
+//           case FreTypeEnum::G2:   return CarrierEnum::G2;
+//           case FreTypeEnum::G3:   return CarrierEnum::G3;
+//           default:                return CarrierEnum::None;
+//     }
+//   }
+
+//   static CarrierEnum bds_freq_to_carrier(FreTypeEnum freq) {
+//     switch (freq) {
+
+//           case FreTypeEnum::B1C:   return CarrierEnum::B1C;
+//           case FreTypeEnum::B1A:   return CarrierEnum::B1A;
+//           case FreTypeEnum::B2A:   return CarrierEnum::B2A;
+//           case FreTypeEnum::B2:    return CarrierEnum::B2;
+//           case FreTypeEnum::B2B:   return CarrierEnum::B2B;
+//           case FreTypeEnum::B2AB:  return CarrierEnum::B2AB;
+//           case FreTypeEnum::B3:    return CarrierEnum::B3;
+//           default:                 return CarrierEnum::None;
+//     }
+//   }
+
+//   static CarrierEnum qzs_freq_to_carrier(FreTypeEnum freq) {
+//     switch (freq) {
+//           case FreTypeEnum::L1:   return CarrierEnum::L1;
+//           case FreTypeEnum::L2:   return CarrierEnum::L2;
+//           case FreTypeEnum::L5:   return CarrierEnum::L5;
+//           case FreTypeEnum::L6:   return CarrierEnum::L6;
+//           default:                return CarrierEnum::None;
+//     }
+//   }
+
+//   static CarrierEnum irn_freq_to_carrier(FreTypeEnum freq) {
+//     switch (freq) {
+//           case FreTypeEnum::L1:   return CarrierEnum::S;
+//           case FreTypeEnum::L5:   return CarrierEnum::S;
+//           case FreTypeEnum::I9:   return CarrierEnum::S;
+//           default:                return CarrierEnum::None;
+//     }
+//   }
+// };
 // clang-format on
+
 }  // namespace details
 
 // GM(MU)
@@ -174,7 +240,7 @@ struct NAVP_EXPORT MaxIterNumber {
 struct NAVP_EXPORT Constants {
   inline static constexpr f64 CLIGHT = 299792458.0;
 
-  static constexpr f64 gm(Sv sv) {
+  static f64 gm(Sv sv) {
     switch (sv.system()) {
       case ConstellationEnum::BDS:
         return GM::BDS;
@@ -187,7 +253,7 @@ struct NAVP_EXPORT Constants {
     }
   }
 
-  static constexpr f64 omega(Sv sv) {
+  static f64 omega(Sv sv) {
     switch (sv.system()) {
       case ConstellationEnum::BDS:
         return Omega::BDS;

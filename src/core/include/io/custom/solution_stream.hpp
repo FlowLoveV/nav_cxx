@@ -28,7 +28,7 @@ class NAVP_EXPORT SolutionStream : public Fstream {
  protected:
   virtual void decode_record(Record& record) override;
 
-  virtual void encode_record(Record& record) override;
+  virtual void encode_record(const Record& record) override;
 
   FormatOptions options_{};
 };

@@ -26,7 +26,7 @@ class NAVP_EXPORT RinexStream : public Fstream, public RinexRecord {
  protected:
   virtual void decode_record(Record& record) override;
 
-  virtual void encode_record(Record& record) override;
+  virtual void encode_record(const Record& record) override;
 };
 
 }  // namespace navp::io::rinex

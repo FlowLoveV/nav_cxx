@@ -14,7 +14,7 @@ class NAVP_EXPORT Record {
   virtual ~Record();
 
   // send a "record" to the given stream
-  void put_record(Fstream& stream);
+  void put_record(Fstream& stream) const;
 
   // get a "record" from the given stream
   void get_record(Fstream& s);
@@ -22,7 +22,7 @@ class NAVP_EXPORT Record {
  protected:
   virtual void really_get_record(Fstream& s);
 
-  virtual void really_put_record(Fstream& s);
+  virtual void really_put_record(Fstream& s) const;
 };
 
 }  // namespace navp::io

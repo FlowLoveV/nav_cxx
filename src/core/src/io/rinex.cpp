@@ -153,7 +153,7 @@ void RinexStream::decode_record(Record& record) {
   decode_body(record);
 }
 
-void RinexStream::encode_record(Record& record) {
+void RinexStream::encode_record(const Record& record) {
   // todo
   logger_->error("Not implentted yet!");
   exit(-1);

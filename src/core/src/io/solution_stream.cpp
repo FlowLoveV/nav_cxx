@@ -6,7 +6,7 @@
 
 namespace navp::io::custom {
 
-void decode_time(SolutionStream& stream, const EpochUtc& time) noexcept {
+void encode_time(SolutionStream& stream, const EpochUtc& time) noexcept {
   switch (stream.format_options().time_type) {
     case TimeTypeEnum::UTC: {
       stream << std::format("{}", time);
@@ -27,7 +27,7 @@ void decode_time(SolutionStream& stream, const EpochUtc& time) noexcept {
   }
 }
 
-void decode_angle(SolutionStream& stream, f64 angle) noexcept {
+void encode_angle(SolutionStream& stream, f64 angle) noexcept {
   switch (stream.format_options().angle_type) {
     case AngleTypeEnum::DMS: {
       auto dms = DDmmss<f64>::from_radians(angle);
@@ -53,7 +53,7 @@ void decode_angle(SolutionStream& stream, f64 angle) noexcept {
   }
 }
 
-void decode_coordinate(SolutionStream& stream, const utils::coordinate_t& coordinate, char separator) noexcept {
+void encode_coordinate(SolutionStream& stream, const utils::coordinate_t& coordinate, char separator) noexcept {
   switch (stream.format_options().coordinate_type) {
     case CoordinateTypeEnum::XYZ: {
       stream << std::format("{:>14.4f}{}{:>14.4f}{}{:>14.4f}", coordinate.x(), separator, coordinate.y(), separator,
@@ -61,9 +61,9 @@ void decode_coordinate(SolutionStream& stream, const utils::coordinate_t& coordi
       break;
     }
     case CoordinateTypeEnum::BLH: {
-      decode_angle(stream, coordinate.x());
+      encode_angle(stream, coordinate.x());
       stream << separator;
-      decode_angle(stream, coordinate.y());
+      encode_angle(stream, coordinate.y());
       stream << separator;
       stream << std::format("{:>7.4f}", coordinate.z());
       break;
@@ -81,23 +81,45 @@ void decode_coordinate(SolutionStream& stream, const utils::coordinate_t& coordi
   }
 }
 
-void decode_pvt_record_header(SolutionStream& stream) {}
+void encode_velocity(SolutionStream& stream, const utils::coordinate_t& coordinate, char separator) noexcept {
+  switch (stream.format_options().coordinate_type) {
+    case CoordinateTypeEnum::XYZ:  // break through
+    case CoordinateTypeEnum::ENU: {
+      stream << std::format("{:>10.4f}{}{:>10.4f}{}{:>10.4f}", coordinate.x(), separator, coordinate.y(), separator,
+                            coordinate.z());
+      break;
+    }
+    default: {
+      stream.error("Unsupported velocity type, the CoordinateTypeEnum should be 0(XYZ), 1(ENU), {} is invalid",
+                   (u8)stream.format_options().coordinate_type);
+    }
+  }
+}
 
-void decode_pvt_record(SolutionStream& stream, solution::PvtSolutionRecord& record) {
+// todo
+void encode_solution_info(SolutionStream& stream, const solution::PvtSolutionRecord& pvt_record,
+                          char separator) noexcept {
+  stream << std::format("{:1d}", static_cast<u8>(pvt_record.mode)) << separator;
+  stream << std::format("{:02d}", pvt_record.ns);
+}
+
+void encode_pvt_record_header(SolutionStream& stream) {}
+
+void encode_pvt_record(SolutionStream& stream, const solution::PvtSolutionRecord& record) {
   const auto& format_options = stream.format_options();
   auto separator = format_options.separator;
 
-  decode_time(stream, record.time);  // epoch
+  encode_time(stream, record.time);  // epoch
   stream << separator;
 
   // position
   switch (format_options.coordinate_type) {
     case CoordinateTypeEnum::XYZ: {
-      decode_coordinate(stream, record.position, separator);
+      encode_coordinate(stream, record.position, separator);
       break;
     }
     case CoordinateTypeEnum::BLH: {
-      decode_coordinate(stream, record.blh, separator);
+      encode_coordinate(stream, record.blh, separator);
       break;
     }
     default: {
@@ -108,9 +130,21 @@ void decode_pvt_record(SolutionStream& stream, solution::PvtSolutionRecord& reco
   stream << separator;
 
   // velocity
+  encode_velocity(stream, record.velocity, separator);
+  stream << separator;
+
+  // solution information
+  encode_solution_info(stream, record, separator);
 }
+
+// todo
 void SolutionStream::decode_record(Record& record) { nav_error("Not implemented"); }
 
-void SolutionStream::encode_record(Record& record) { nav_error("Not implemented"); }
+void SolutionStream::encode_record(const Record& record) {
+  if (auto pvt_record_ptr = dynamic_cast<const solution::PvtSolutionRecord*>(&record)) {
+    encode_pvt_record(*this, *pvt_record_ptr);
+    new_line();
+  }
+}
 
 }  // namespace navp::io::custom

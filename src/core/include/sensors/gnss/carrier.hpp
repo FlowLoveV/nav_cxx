@@ -1,10 +1,8 @@
 #pragma once
 
-#include <boost/algorithm/string.hpp>
-#include <boost/bimap.hpp>
 #include <format>
+#include <magic_enum.hpp>
 
-#include "magic_enum.hpp"
 #include "sensors/gnss/gnss_exception.hpp"
 #include "utils/macro.hpp"
 #include "utils/result.hpp"
@@ -13,6 +11,7 @@
 namespace navp::sensors::gnss {
 
 enum class CarrierEnum : u8 {
+  None,
   /// L1 (GPS, SBAS, QZSS)
   L1,
   /// L2 (GPS, QZSS)
@@ -70,19 +69,7 @@ enum class CarrierEnum : u8 {
 };
 
 struct NAVP_EXPORT Carrier {
-  static Result<Carrier, GnssParseCarrierError> from_str(const char* str) {
-    std::string s(str);
-    boost::algorithm::to_upper(s);
-    boost::algorithm::trim(s);
-    /*
-     * GPS, Galieo
-     */
-    auto result = magic_enum::enum_cast<CarrierEnum>(str);
-    if (result.has_value()) {
-      return result.value();
-    }
-    return Err(GnssParseCarrierError(std::format("can't parse unknown Carrier \'{}\'", str)));
-  }
+  static Result<Carrier, GnssParseCarrierError> from_str(const char* str);
 
   constexpr auto operator<=>(const Carrier&) const = default;
 

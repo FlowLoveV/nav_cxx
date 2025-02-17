@@ -1,5 +1,7 @@
 #include "solution/task.hpp"
 
+#include <filesystem>
+
 namespace navp::solution {
 
 TaskConfig::TaskConfig(NavConfigManger& config) {
@@ -15,6 +17,15 @@ TaskConfig::TaskConfig(NavConfigManger& config) {
 
   // output
   __output.output_dir = config.output_dir();
+  if (!std::filesystem::exists(__output.output_dir)) {
+    try {
+      std::filesystem::create_directories(__output.output_dir);
+    } catch (const std::filesystem::filesystem_error& e) {
+      throw std::format("Create output directory failed: {}", e.what());
+    }
+  } else if (!std::filesystem::is_directory(__output.output_dir)) {
+    throw std::format("Output path exists but is not a directory: {}", __output.output_dir);
+  }
 
   // filter
   __filter.mask_filter =

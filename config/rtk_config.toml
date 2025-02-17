@@ -28,7 +28,7 @@ base = "base001"
 rover = "default"
 
 [output]
-dir = "../output/"
+dir = "/root/project/nav_cxx/ouut"
 
 
 [filter]

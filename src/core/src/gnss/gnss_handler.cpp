@@ -23,20 +23,44 @@ void GnssRuntimeInfo::update(const GnssRecord* record) {
   sv_map = record->eph_solver->quary_sv_status(epoch);              // satellites map
 }
 
+// todo
 NAV_NODISCARD_UNUNSED auto GnssPayload::generate_rawobs_handler(const filter::MaskFilters* mask_filter) const
     -> std::vector<GnssRawObsHandler> {
   std::vector<GnssRawObsHandler> handler;
+  if (mask_filter && !mask_filter->apply(runtime_info_->epoch)) {
+    return handler;  // if epoch mask filter not pass, return empty handler
+  }
   auto& satellites_vector = runtime_info_->avilable_sv;
   handler.reserve(satellites_vector.size());
   u16 sv_count = 0;
   for (u16 i = 0; i < satellites_vector.size(); ++i) {
+    if (mask_filter && !mask_filter->apply(satellites_vector[i].constellation)) {
+      continue;  // if constellation mask filter not pass, skip
+    }
+    if (mask_filter && !mask_filter->apply(satellites_vector[i])) {
+      continue;  // if sv mask filter not pass, skip
+    }
     Sv sv = satellites_vector[i];
     if (!settings_->enabled(sv)) continue;  // filter unabled sv and system
     GObs* obs = runtime_info_->obs_map->at(sv).get();
     auto sv_info = &runtime_info_->sv_map->at(sv);
+    if (mask_filter) {
+      // if elevation mask filter not pass, skip
+      if (sv_info->elevation != 0.0 && !mask_filter->apply(filter::ElevationItem(sv_info->elevation))) {
+        continue;
+      }
+      // if azimuth mask filter not pass, skip
+      if (sv_info->azimuth != 0.0 && !mask_filter->apply(filter::AzimuthItem(sv_info->azimuth))) {
+        continue;
+      }
+    }
     std::vector<const Sig*> sig;
-    obs->for_each_code([&](const Sig& _sig) mutable {
-      if (settings_->enabled(sv, _sig) && !_sig.invalid) sig.push_back(&_sig);  // filter unabled code
+    obs->for_each_code([&](const Sig& _sig) {
+      if (settings_->enabled(sv, _sig) && !_sig.invalid) {    // filter unabled code
+        if (mask_filter->apply(filter::SnrItem(_sig.snr))) {  // filter snr
+          sig.push_back(&_sig);
+        }
+      }
     });
     if (sig.empty()) continue;  // if no sigs in this obs, skip
     handler.emplace_back(obs, sv_info, std::move(sig));

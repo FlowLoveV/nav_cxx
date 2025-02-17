@@ -24,7 +24,7 @@ struct NAVP_EXPORT PvtSolutionRecord : public io::Record {
   virtual ~PvtSolutionRecord() = default;
 
   EpochUtc time;
-  utils::CoordinateXyz position, velicity; /* position/velocity (m|m/s) */
+  utils::CoordinateXyz position, velocity; /* position/velocity (m|m/s) */
   utils::CoordinateBlh blh;                /* latitude/longitude/height (rad|rad|m) */
   f32 qr[6];                               /* position variance/covariance xx,xy,xz,yy,yz,zz (m^2) */
   f32 qv[6];                               /* velocity variance/covariance xx,xy,xz,yy,yz,zz (m^2/s^2) */

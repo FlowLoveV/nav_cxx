@@ -2,6 +2,7 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include "utils/angle.hpp"
 #include "utils/string_utils.hpp"
 
 namespace navp::filter {
@@ -72,14 +73,14 @@ Result<FilterItem, FilterParseItemError> FilterItem::from_str(std::string_view s
   if (_type_char == 'e' || _type_char == 'E') {
     f64 val = 0;
     if (auto [p, ec] = std::from_chars(str.data(), str.data() + str.size() - 1, val); ec == std::errc()) {
-      return Ok(ElevationItem{val});
+      return Ok(ElevationItem{to_radians(val)});
     }
   }
   // azimuth
   if (_type_char == 'a' || _type_char == 'A') {
     f64 val = 0;
     if (auto [p, ec] = std::from_chars(str.data(), str.data() + str.size() - 1, val); ec == std::errc()) {
-      return Ok(AzimuthItem{val});
+      return Ok(AzimuthItem{to_radians(val)});
     }
   }
   return Err(FilterParseItemError(std::format("Can't parse \'{}\' into \'FilterItem\'!", str)));
@@ -96,27 +97,45 @@ auto Filter::from_str(std::string_view str) -> Result<Filter, FilterParseError> 
 
 auto Filter::apply(const FilterItem& item) const noexcept -> bool {
   if (__item.matched_with(item)) {
-    if (std::holds_alternative<EpochItem>(item)) {
-      return __op.apply(std::get<EpochItem>(item), std::get<EpochItem>(__item));
+    switch (item.index()) {
+      case 0:
+        return __op.apply(std::get<EpochItem>(item), std::get<EpochItem>(__item));
+      case 1:
+        return __op.apply(std::get<CarrierItem>(item), std::get<CarrierItem>(__item));
+      case 2:
+        return __op.apply(std::get<ConstellationItem>(item), std::get<ConstellationItem>(__item));
+      case 3:
+        return __op.apply(std::get<SvItem>(item), std::get<SvItem>(__item));
+      case 4:
+        return __op.apply(std::get<SnrItem>(item), std::get<SnrItem>(__item));
+      case 5:
+        return __op.apply(std::get<ElevationItem>(item), std::get<ElevationItem>(__item));
+      case 6:
+        return __op.apply(std::get<AzimuthItem>(item), std::get<AzimuthItem>(__item));
+      default:
+        return true;
     }
-    if (std::holds_alternative<CarrierItem>(item)) {
-      return __op.apply(std::get<CarrierItem>(item), std::get<CarrierItem>(__item));
-    }
-    if (std::holds_alternative<ConstellationItem>(item)) {
-      return __op.apply(std::get<ConstellationItem>(item), std::get<ConstellationItem>(__item));
-    }
-    if (std::holds_alternative<SvItem>(item)) {
-      return __op.apply(std::get<SvItem>(item), std::get<SvItem>(__item));
-    }
-    if (std::holds_alternative<SnrItem>(item)) {
-      return __op.apply(std::get<SnrItem>(item), std::get<SnrItem>(__item));
-    }
-    if (std::holds_alternative<ElevationItem>(item)) {
-      return __op.apply(std::get<ElevationItem>(item), std::get<ElevationItem>(__item));
-    }
-    if (std::holds_alternative<AzimuthItem>(item)) {
-      return __op.apply(std::get<AzimuthItem>(item), std::get<AzimuthItem>(__item));
-    }
+    // if (std::holds_alternative<EpochItem>(item)) {
+    //   return __op.apply(std::get<EpochItem>(item), std::get<EpochItem>(__item));
+    // }
+    // if (std::holds_alternative<CarrierItem>(item)) {
+    //   return __op.apply(std::get<CarrierItem>(item), std::get<CarrierItem>(__item));
+    // }
+    // if (std::holds_alternative<ConstellationItem>(item)) {
+    //   return __op.apply(std::get<ConstellationItem>(item), std::get<ConstellationItem>(__item));
+    // }
+    // if (std::holds_alternative<SvItem>(item)) {
+    //   return __op.apply(std::get<SvItem>(item), std::get<SvItem>(__item));
+    // }
+    // if (std::holds_alternative<SnrItem>(item)) {
+    //   return __op.apply(std::get<SnrItem>(item), std::get<SnrItem>(__item));
+    // }
+    // if (std::holds_alternative<ElevationItem>(item)) {
+    //   return __op.apply(std::get<ElevationItem>(item), std::get<ElevationItem>(__item));
+    // }
+    // if (std::holds_alternative<AzimuthItem>(item)) {
+    //   return __op.apply(std::get<AzimuthItem>(item), std::get<AzimuthItem>(__item));
+    // }
   }
   return true;
 }

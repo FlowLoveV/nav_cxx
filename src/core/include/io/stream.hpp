@@ -71,11 +71,13 @@ class NAVP_EXPORT Fstream : public std::fstream {
   static constexpr char AnnotationSymbols = '%';
 
  protected:
+  void new_line() noexcept;
+
   void reset(std::string_view filename, std::ios::openmode mode);
 
   virtual void decode_record(Record& record) = 0;
 
-  virtual void encode_record(Record& record) = 0;
+  virtual void encode_record(const Record& record) = 0;
 
   std::shared_ptr<spdlog::logger> logger_;
 };

@@ -28,7 +28,8 @@ class NAVP_EXPORT GnssHandler {
 
   virtual auto update_runtime_info() -> const GnssRuntimeInfo* = 0;
 
-  virtual auto generate_rawobs_handler() const -> std::vector<GnssRawObsHandler> = 0;
+  virtual auto generate_rawobs_handler(const filter::MaskFilters* mask_filter = nullptr) const
+      -> std::vector<GnssRawObsHandler> = 0;
 
   virtual auto generate_undiffobs_handler() const -> std::vector<UnDiffObsHandler> = 0;
 
@@ -71,9 +72,10 @@ class Gnss : public GnssHandler, public GnssPayload {
     return runtime_info_.get();
   }
 
-  virtual auto generate_rawobs_handler() const -> std::vector<GnssRawObsHandler> override {
+  virtual auto generate_rawobs_handler(const filter::MaskFilters* mask_filter = nullptr) const
+      -> std::vector<GnssRawObsHandler> override {
     std::lock_guard<Mutex> lock(mutex_);
-    return GnssPayload::generate_rawobs_handler();
+    return GnssPayload::generate_rawobs_handler(mask_filter);
   }
 
   virtual auto generate_undiffobs_handler() const -> std::vector<UnDiffObsHandler> override {

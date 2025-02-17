@@ -1,8 +1,11 @@
+#include <boost/algorithm/string.hpp>
 #include <ranges>
 
+#include "sensors/gnss/carrier.hpp"
 #include "sensors/gnss/constants.hpp"
 #include "sensors/gnss/navigation.hpp"
 #include "sensors/gnss/observation.hpp"
+#include "sensors/gnss/sv.hpp"
 
 namespace navp::sensors::gnss {
 
@@ -189,6 +192,151 @@ void GObs::check_vaild() noexcept {
     }
   });
 }
+
+Result<Carrier, GnssParseCarrierError> Carrier::from_str(const char* str) {
+  std::string s(str);
+  boost::algorithm::to_upper(s);
+  boost::algorithm::trim(s);
+  /*
+   * GPS, Galieo
+   */
+  auto result = magic_enum::enum_cast<CarrierEnum>(str);
+  if (result.has_value()) {
+    return Ok(Carrier(result.value()));
+  }
+  return Err(GnssParseCarrierError(std::format("can't parse unknown Carrier \'{}\'", str)));
+}
+
+Result<Constellation, GnssParseConstellationError> Constellation::form_str(const char* str) {
+  std::string s(str);
+  boost::algorithm::trim(s);
+  boost::algorithm::to_lower(s);
+  ConstellationEnum result;
+  if (s == "g" || s == "gps")
+    result = ConstellationEnum::GPS;
+  else if (s == "c" || s == "bds")
+    result = ConstellationEnum::BDS;
+  else if (s == "e" || s == "gal")
+    result = ConstellationEnum::GAL;
+  else if (s == "r" || s == "glo")
+    result = ConstellationEnum::GLO;
+  else if (s == "j" || s == "qzss")
+    result = ConstellationEnum::QZS;
+  else if (s == "i" || s == "irnss")
+    result = ConstellationEnum::IRN;
+  else if (s == "s" || s == "sbas")
+    result = ConstellationEnum::SBS;
+  else if (s == "m" || s == "mixed")
+    result = ConstellationEnum::Mixed;
+  else if (s == "ausnz")
+    result = ConstellationEnum::AusNZ;
+  else if (s == "egnos")
+    result = ConstellationEnum::EGNOS;
+  else if (s == "waas")
+    result = ConstellationEnum::WAAS;
+  else if (s == "kass")
+    result = ConstellationEnum::KASS;
+  else if (s == "gagan")
+    result = ConstellationEnum::GAGAN;
+  else if (s == "asbas")
+    result = ConstellationEnum::ASBAS;
+  else if (s == "nsas")
+    result = ConstellationEnum::NSAS;
+  else if (s == "asal")
+    result = ConstellationEnum::ASAL;
+  else if (s == "msas")
+    result = ConstellationEnum::MSAS;
+  else if (s == "span")
+    result = ConstellationEnum::SPAN;
+  else if (s == "gbas")
+    result = ConstellationEnum::GBAS;
+  else if (s == "sdcm")
+    result = ConstellationEnum::SDCM;
+  else if (s == "bdsbas")
+    result = ConstellationEnum::BDSBAS;
+  else if (s.find("gps") != std::string::npos)
+    result = ConstellationEnum::GPS;
+  else if (s.find("glonass") != std::string::npos)
+    result = ConstellationEnum::GLO;
+  else if (s.find("beidou") != std::string::npos)
+    result = ConstellationEnum::BDS;
+  else if (s.find("galileo") != std::string::npos)
+    result = ConstellationEnum::GAL;
+  else if (s.find("qzss") != std::string::npos)
+    result = ConstellationEnum::QZS;
+  else if (s.find("sbas") != std::string::npos || s.find("geo") != std::string::npos)
+    result = ConstellationEnum::SBS;
+  else if (s.find("irnss") != std::string::npos || s.find("navic") != std::string::npos)
+    result = ConstellationEnum::IRN;
+  else if (s.find("mix") != std::string::npos)
+    result = ConstellationEnum::Mixed;
+  else {
+    return Err(GnssParseConstellationError(std::format("can't parse unknwon Constellation \'{}\'", str)));
+  }
+
+  return Ok(Constellation(result));
+}
+
+bool Constellation::is_sbas() const {
+  return id == ConstellationEnum::WAAS || id == ConstellationEnum::EGNOS || id == ConstellationEnum::MSAS ||
+         id == ConstellationEnum::GAGAN || id == ConstellationEnum::BDSBAS || id == ConstellationEnum::KASS ||
+         id == ConstellationEnum::SDCM || id == ConstellationEnum::ASBAS || id == ConstellationEnum::SPAN ||
+         id == ConstellationEnum::SBS || id == ConstellationEnum::AusNZ || id == ConstellationEnum::GBAS ||
+         id == ConstellationEnum::NSAS || id == ConstellationEnum::ASAL;
+}
+
+bool Constellation::is_mixed() const { return id == ConstellationEnum::Mixed; }
+
+std::string_view Constellation::name() const { return magic_enum::enum_name(id); }
+
+bool Constellation::operator==(const Constellation& rhs) const { return this->id == rhs.id; }
+
+bool Constellation::operator!=(const Constellation& rhs) const { return this->id != rhs.id; }
+
+std::strong_ordering Constellation::operator<=>(const Constellation& rhs) const { return id <=> rhs.id; }
+
+Result<Sv, GnssRuntimeError> Sv::from_str(const char* str) {
+  std::string_view view(&str[1]);
+  char first[] = {str[0], '\0'};
+  auto constellation = Constellation::form_str(first);
+  if (constellation.is_err()) {
+    return constellation.unwrap_err();
+  }
+  u8 prn;
+  if (std::all_of(view.begin(), view.end(), [](char c) { return std::isspace(c); })) {
+    prn = 0;
+  } else {
+    auto [ptr, ec] = std::from_chars(view.data(), view.data() + view.size(), prn);
+    if (ec != std::errc()) {
+      return Err(GnssParseSvError(std::format("can't parse unknown Sv \'{}\'", str)));
+    }
+  }
+  return Ok(Sv{prn, constellation.unwrap_unchecked()});
+};
+
+bool Sv::operator!=(const Sv& rhs) const noexcept { return !(*this == rhs); }
+
+bool Sv::operator==(const Sv& rhs) const noexcept {
+  // When prn is 0, Sv degenerates into a Constellation identifier, which is used to determine
+  // whether it is the same Constellation.
+  if (this->prn == 0 || rhs.prn == 0) {
+    return this->constellation == rhs.constellation;
+  }
+  return prn == rhs.prn && constellation == rhs.constellation;
+}
+
+std::strong_ordering Sv::operator<=>(const Sv& rhs) const {
+  if (rhs.constellation != constellation) {
+    return rhs.system() <=> system();
+  }
+  return prn <=> rhs.prn;
+}
+
+Sv::operator bool() const noexcept { return !(system() == ConstellationEnum::NONE || prn == 0); }
+
+ConstellationEnum Sv::system() const noexcept { return constellation.id; }
+
+ConstellationEnum& Sv::system() noexcept { return constellation.id; }
 
 #undef NSYSGPS
 #undef NSATGPS

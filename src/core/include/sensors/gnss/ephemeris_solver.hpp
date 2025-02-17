@@ -19,10 +19,10 @@ struct GloGroupDelay;
 // A structure representing satellite status information
 struct NAVP_EXPORT EphemerisResult {
   Sv sv;
-  utils::CoordinateXyz pos, vel;   // satellite position (ecef) {x,y,z} (m)
-  f64 var;                         // satellite position and clock variance (m^2)
-  f64 dt_trans, dtsv, fd_dtsv;     // signal transmission time(s) 、 clock bias(s) 、 clock speed
-  mutable f64 elevation, azimuth;  // satellite elevation、azimuth （rad)
+  utils::CoordinateXyz pos, vel;         // satellite position (ecef) {x,y,z} (m)
+  f64 var;                               // satellite position and clock variance (m^2)
+  f64 dt_trans, dtsv, fd_dtsv;           // signal transmission time(s) 、 clock bias(s) 、 clock speed
+  mutable f64 elevation{0}, azimuth{0};  // satellite elevation、azimuth （rad)
 
   void rotate_correct() noexcept;
 

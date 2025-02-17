@@ -58,7 +58,7 @@ bool Spp::load_spp_payload() noexcept {
   if (!rover_->update_record()) return false;
   (*this)
       ._set_information(rover_)                                                     // first set information
-      ._set_obs_handler(rover_)                                                     // set observation handler
+      ._set_obs_handler(rover_, task_config())                                      // set observation handler
       ._set_solution(sol_.get())                                                    // set solution to output
       ._set_atmosphere_error(_satellite_number())                                   // set atmosphere error
       ._set_wls(3 + _clock_parameter_number(), _signal_number(), rover_->logger())  // set wls
@@ -71,8 +71,10 @@ SppPayload& SppPayload::_set_information(std::shared_ptr<GnssHandler>& handler) 
   return *this;
 }
 
-SppPayload& SppPayload::_set_obs_handler(std::shared_ptr<GnssHandler>& handler) noexcept {
-  obs_handler_ = std::make_unique<ObsHandlerType>(handler->generate_rawobs_handler());
+SppPayload& SppPayload::_set_obs_handler(std::shared_ptr<GnssHandler>& handler,
+                                         const TaskConfig& task_config) noexcept {
+  obs_handler_ =
+      std::make_unique<ObsHandlerType>(handler->generate_rawobs_handler(task_config.filter().mask_filter.get()));
   return *this;
 }
 
@@ -192,7 +194,7 @@ void SppPayload::_position_evaluate() noexcept {
 void SppPayload::_velocity_evaluate() noexcept {
   wls_->evaluate();
   // velocity
-  sol_->velicity = wls_->parameter().block(0, 0, 3, 1);
+  sol_->velocity = wls_->parameter().block(0, 0, 3, 1);
   auto& cofactor = wls_->cofactor();
   sol_->qv[0] = static_cast<f32>(cofactor(0, 0)), sol_->qv[1] = static_cast<f32>(cofactor(0, 1)),
   sol_->qv[2] = static_cast<f32>(cofactor(0, 2)), sol_->qv[3] = static_cast<f32>(cofactor(1, 1)),
@@ -220,7 +222,7 @@ void Spp::model_spp_position() noexcept {
                               3 + clock_index);
     }
   }
-  wls.weight() = wls.weight().inverse();  // inverse convariance to weight, because the previous setting was the
+  wls.weight() = wls.weight().inverse();  // inverse convariance to weight
 }
 
 void Spp::model_spp_velocity() noexcept {

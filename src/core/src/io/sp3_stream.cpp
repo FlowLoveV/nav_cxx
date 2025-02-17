@@ -283,7 +283,7 @@ void Sp3Stream::decode_record(Record& record) {
   }
 };
 
-void Sp3Stream::encode_record(Record& record) {
+void Sp3Stream::encode_record(const Record& record) {
   nav_error("not implmentted");
   exit(-1);
 }

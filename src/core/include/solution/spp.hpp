@@ -17,7 +17,7 @@ struct SppPayload {
 
   SppPayload& _set_information(std::shared_ptr<GnssHandler>& handler) noexcept;
 
-  SppPayload& _set_obs_handler(std::shared_ptr<GnssHandler>& handler) noexcept;
+  SppPayload& _set_obs_handler(std::shared_ptr<GnssHandler>& handler, const TaskConfig& task_config) noexcept;
 
   SppPayload& _set_clock_map(const std::shared_ptr<GnssHandler>& handler) noexcept;
 
