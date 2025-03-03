@@ -1,7 +1,7 @@
 #pragma once
 
-#include <unordered_set>
 #include <list>
+#include <unordered_set>
 
 #include "io/record.hpp"
 #include "sensors/gnss/enums.hpp"
@@ -24,16 +24,25 @@ using CodeMap = std::unordered_map<ConstellationEnum, std::unordered_set<ObsCode
 /** Raw observation data from a receiver for a single frequency. Not to be modified by processing functions
  */
 struct NAVP_EXPORT RawSig {
-  ObsCodeEnum code = ObsCodeEnum::NONE;        // Reported code type
-  FreTypeEnum freq = FreTypeEnum::FTYPE_NONE;  // Frequency type
-  bool lli = false;                            // Loss of lock indicator
-  bool invalid = false;                        // invaild indicator
-  f32 snr = 0;                                 // Signal to Noise ratio (dB-Hz)
-  f32 doppler = 0;                             // Doppler
-  f64 carrier = 0;                             // Carrier phase (cycles)
-  f64 pseudorange = 0;                         // Pseudorange (meters)
+  enum ValidIndicator : u8 {
+    Valid = 0,
+    CycleSlip = 1,
+  };
 
-  bool operator<(const RawSig& b) const { return (code < b.code); }
+  ObsCodeEnum code = ObsCodeEnum::NONE;          // Reported code type
+  FreTypeEnum freq = FreTypeEnum::FTYPE_NONE;    // Frequency type
+  bool lli = false;                              // Loss of lock indicator
+  ValidIndicator valid = ValidIndicator::Valid;  // invaild indicator
+  f32 snr = 0;                                   // Signal to Noise ratio (dB-Hz)
+  f32 doppler = 0;                               // Doppler
+  f64 carrier = 0;                               // Carrier phase (cycles)
+  f64 pseudorange = 0;                           // Pseudorange (meters)
+
+  inline bool operator<(const RawSig& b) const { return (code < b.code); }
+
+  inline bool is_valid() const noexcept { return valid == Valid; }
+
+  inline bool is_cycle_slip() const noexcept { return valid == CycleSlip; }
 };
 
 /** Per signal data that is calculated from the raw signals.

@@ -25,8 +25,8 @@ class GnssFactorGraph : public FactorGraph {
   GnssFactorGraph();
   virtual ~GnssFactorGraph() override;
 
-  void set_slide_window_length(u8 length) noexcept;
-  u8 slide_window_length() const noexcept;
+  void set_slide_window_length(this auto& self, u8 length) noexcept;
+  u8 slide_window_length(this const auto& self) noexcept;
 
  private:
   u8 window_length_;  ///> sliding window length

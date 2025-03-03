@@ -56,7 +56,7 @@ NAV_NODISCARD_UNUNSED auto GnssPayload::generate_rawobs_handler(const filter::Ma
     }
     std::vector<const Sig*> sig;
     obs->for_each_code([&](const Sig& _sig) {
-      if (settings_->enabled(sv, _sig) && !_sig.invalid) {    // filter unabled code
+      if (settings_->enabled(sv, _sig) && _sig.is_valid()) {  // filter unabled code
         if (mask_filter->apply(filter::SnrItem(_sig.snr))) {  // filter snr
           sig.push_back(&_sig);
         }

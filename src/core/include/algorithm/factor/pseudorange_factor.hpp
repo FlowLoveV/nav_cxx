@@ -11,6 +11,7 @@ namespace navp::fgo {
 using sensors::gnss::GnssRawObsHandler;
 using utils::NavVector3f64;
 
+//   Psedorange factor
 //   Discription      Dimension         Meaning
 // - Residual            1          Pseudorange residual
 // - Parameter1          3          ECEF coordinate parameter(XYZ,m)
@@ -49,6 +50,7 @@ struct NAVP_EXPORT PseudorangeFactor : ceres::SizedCostFunction<1, 3, 1> {
       : sv_pos(_sv_pos), pseudorange(_pseudorange), var(_var) {}
 };
 
+//   Double differenced pseudorange factor
 //   Discription      Dimension         Meaning
 //  -Residual            1          Pseudorange residual
 //  -Parameter1          3          ECEF coordinate correction(dX,dY,dZ,m)

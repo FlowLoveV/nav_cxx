@@ -188,7 +188,7 @@ GnssObsRecord::GnssObsRecord(std::shared_ptr<spdlog::logger> logger) : logger_(l
 void GObs::check_vaild() noexcept {
   std::ranges::for_each(sigs_list | std::views::values | std::views::join, [](Sig& sig) {
     if (sig.pseudorange == 0.0 || sig.carrier == 0.0 || sig.doppler == 0.0 || sig.snr == 0.0) {
-      sig.invalid = true;
+      sig.valid = RawSig::Valid;
     }
   });
 }
