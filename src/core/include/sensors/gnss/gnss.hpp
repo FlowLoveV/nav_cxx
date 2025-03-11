@@ -33,6 +33,8 @@ class NAVP_EXPORT GnssHandler {
 
   virtual auto generate_undiffobs_handler() const -> std::vector<UnDiffObsHandler> = 0;
 
+  // virtual auto generate_bstasd_obs_handler() const -> std::vector<GnssBstaSdObsHandler> = 0;
+
   virtual auto generate_atmosphere_handler(Sv sv) const -> AtmosphereHandler = 0;
 
   virtual auto generate_random_handler(Sv sv) const -> GnssRandomHandler = 0;

@@ -8,7 +8,7 @@
 namespace navp::solution {
 
 struct NAVP_EXPORT TaskConfig {
-  TaskConfig(NavConfigManger& config);
+  TaskConfig(std::string_view cfg_path);
 
   struct Meta {
     std::string task_name;
@@ -20,6 +20,7 @@ struct NAVP_EXPORT TaskConfig {
   struct Solution {
     SolutionModeEnum mode;
     algorithm::AlgorithmEnum algorithm;
+    i32 capacity;
   };
 
   struct Output {
@@ -34,8 +35,17 @@ struct NAVP_EXPORT TaskConfig {
   inline auto solution() const noexcept -> const TaskConfig::Solution& { return __solution; }
   inline auto filter() const noexcept -> const TaskConfig::Filter& { return __filter; }
   inline auto output() const noexcept -> const TaskConfig::Output& { return __output; }
+  inline auto config() const noexcept -> const NavConfigManger& { return config_; }
+  inline auto logger() const noexcept -> std::shared_ptr<spdlog::logger> { return config_.logger(); }
+  inline auto rover_station(bool enabled_mt = false) const noexcept -> std::shared_ptr<sensors::gnss::GnssHandler> {
+    return config_.rover_station(enabled_mt);
+  }
+  inline auto base_station(bool enabled_mt = false) const noexcept -> std::shared_ptr<sensors::gnss::GnssHandler> {
+    return config_.rover_station(enabled_mt);
+  }
 
  private:
+  NavConfigManger config_;
   Meta __meta;
   Solution __solution;
   Output __output;
@@ -59,13 +69,11 @@ class NAVP_EXPORT Task {
   Task& operator=(Task&&) = default;
 
  protected:
-  virtual void before_action() = 0;
+  virtual void before_action();
 
-  virtual void after_action() = 0;
+  virtual void after_action();
 
   virtual void action() = 0;
-
-  NavConfigManger config_;
 
  private:
   std::unique_ptr<TaskConfig> task_config_;

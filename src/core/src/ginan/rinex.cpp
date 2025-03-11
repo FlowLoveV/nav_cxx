@@ -761,7 +761,7 @@ i32 decodeObsData(std::istream& inputStream, string& line, f64 ver,
     for (auto& sig : sigList) {
       sig.freq = ft;  // assign frequency information
       if (sig.code == codeType.code) {
-        rawSig = &sig;
+        rawSig = std::addressof(sig);
         break;
       }
     }
@@ -771,7 +771,7 @@ i32 decodeObsData(std::istream& inputStream, string& line, f64 ver,
       raw.code = codeType.code;
 
       sigList.emplace_back(Sig{raw});
-      rawSig = &sigList.back();
+      rawSig = std::addressof(sigList.back());
     }
 
     f64 val = str2num(buff, j, 14);
@@ -804,11 +804,11 @@ i32 decodeObsData(std::istream& inputStream, string& line, f64 ver,
 }
 
 /// read observation at next epoch
-int readNextRnxObsB(std::istream& inputStream, double ver, TimeSystemEnum tsys,
-                    std::map<ConstellationEnum, std::map<int, CodeType>>& sysCodeTypes, int& flag, ObsList& obsList) {
+i32 readNextRnxObsB(std::istream& inputStream, f64 ver, TimeSystemEnum tsys,
+                    std::map<ConstellationEnum, std::map<i32, CodeType>>& sysCodeTypes, i32& flag, ObsList& obsList) {
   GTime time = {};
-  int i = 0;
-  int nSats = 0;  // cant replace with sats.size()
+  i32 i = 0;
+  i32 nSats = 0;  // cant replace with sats.size()
   std::vector<Sv> sats;
 
   // read record

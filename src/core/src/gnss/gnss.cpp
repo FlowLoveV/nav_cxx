@@ -1,6 +1,7 @@
 #include <boost/algorithm/string.hpp>
 #include <ranges>
 
+#include "filter/filter.hpp"
 #include "sensors/gnss/carrier.hpp"
 #include "sensors/gnss/constants.hpp"
 #include "sensors/gnss/navigation.hpp"
@@ -9,7 +10,6 @@
 
 namespace navp::sensors::gnss {
 
-#define NSYSGPS 1
 #define NSATGPS 32  ///< potential number of GPS satellites, PRN goes from 1 to this number
 #define NSATGLO 27  ///< potential number of GLONASS satellites, PRN goes from 1 to this number
 #define NSATGAL 36  ///< potential number of Galileo satellites, PRN goes from 1 to this number
@@ -23,7 +23,7 @@ const Sig* GObs::find_code(ObsCodeEnum code) const noexcept {
   if (sigs_list.contains(freq)) {
     for (const auto& sig : sigs_list.at(freq)) {
       if (sig.code == code) {
-        return &sig;
+        return std::addressof(sig);
       }
     }
   }
@@ -120,7 +120,7 @@ void GnssObsRecord::add_obs_list(ObsList&& obs_list) noexcept {
     EpochUtc epoch(obs_ptr->time);
     obs_map_[epoch][obs_ptr->sv] = obs_ptr;
   }
-  erase();
+  trim_storage();
 }
 
 GnssObsRecord& GnssObsRecord::merge_record(GnssObsRecord&& record) noexcept {
@@ -128,7 +128,7 @@ GnssObsRecord& GnssObsRecord::merge_record(GnssObsRecord&& record) noexcept {
   return *this;
 }
 
-void GnssObsRecord::erase() noexcept {
+void GnssObsRecord::trim_storage() noexcept {
   if (storage_ < 0) return;
   while (obs_map_.size() > storage_) {
     obs_map_.erase(obs_map_.begin());
@@ -161,7 +161,7 @@ auto GnssObsRecord::operator[](i64 index) const -> const ObsMap* {
     if (it == obs_map_.end()) {
       throw GnssObsRecordError("Index out of range");
     }
-    return &it->second;
+    return std::addressof(it->second);
   } else {
     // Negative index
     auto it = obs_map_.rbegin();
@@ -169,7 +169,7 @@ auto GnssObsRecord::operator[](i64 index) const -> const ObsMap* {
     if (it == obs_map_.rend()) {
       throw GnssObsRecordError("Index out of range");
     }
-    return &it->second;
+    return std::addressof(it->second);
   }
 }
 
@@ -187,9 +187,16 @@ GnssObsRecord::GnssObsRecord(std::shared_ptr<spdlog::logger> logger) : logger_(l
 
 void GObs::check_vaild() noexcept {
   std::ranges::for_each(sigs_list | std::views::values | std::views::join, [](Sig& sig) {
-    if (sig.pseudorange == 0.0 || sig.carrier == 0.0 || sig.doppler == 0.0 || sig.snr == 0.0) {
-      sig.valid = RawSig::Valid;
-    }
+    if (sig.pseudorange == 0.0)
+      sig.valid = Sig::MissingPseudorange;
+    else if (sig.carrier == 0.0)
+      sig.valid = Sig::MissingCarrierPhase;
+    else if (sig.doppler == 0.0)
+      sig.valid = Sig::MissingDoppler;
+    else if (sig.snr == 0.0)
+      sig.valid = Sig::MissingSnr;
+    else
+      sig.valid = Sig::Valid;
   });
 }
 
@@ -296,7 +303,7 @@ bool Constellation::operator!=(const Constellation& rhs) const { return this->id
 std::strong_ordering Constellation::operator<=>(const Constellation& rhs) const { return id <=> rhs.id; }
 
 Result<Sv, GnssRuntimeError> Sv::from_str(const char* str) {
-  std::string_view view(&str[1]);
+  std::string_view view(std::addressof(str[1]));
   char first[] = {str[0], '\0'};
   auto constellation = Constellation::form_str(first);
   if (constellation.is_err()) {
@@ -334,11 +341,35 @@ std::strong_ordering Sv::operator<=>(const Sv& rhs) const {
 
 Sv::operator bool() const noexcept { return !(system() == ConstellationEnum::NONE || prn == 0); }
 
-ConstellationEnum Sv::system() const noexcept { return constellation.id; }
+Constellation Sv::system() const noexcept { return constellation; }
 
-ConstellationEnum& Sv::system() noexcept { return constellation.id; }
+Constellation& Sv::system() noexcept { return constellation; }
 
-#undef NSYSGPS
+u8 Constellation::max_prn() const noexcept {
+  switch (id) {
+    case ConstellationEnum::GPS:
+      return NSATGPS;
+    case ConstellationEnum::GLO:
+      return NSATGLO;
+    case ConstellationEnum::GAL:
+      return NSATGAL;
+    case ConstellationEnum::BDS:
+      return NSATBDS;
+    case ConstellationEnum::QZS:
+      return NSATQZS;
+    case ConstellationEnum::SBS:
+      return NSATSBS;
+    default: {
+      nav_error("Constellation::max_prn() : unknown constellation");
+      return 0;
+    }
+  }
+}
+
+bool RawSig::is_valid(const filter::MaskFilters* mask_filter) const noexcept {
+  return valid == Valid && (!mask_filter || mask_filter->apply(filter::SnrItem(snr)));
+}
+
 #undef NSATGPS
 #undef NSATGLO
 #undef NSATGAL

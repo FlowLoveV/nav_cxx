@@ -44,8 +44,8 @@ i32 readRnxH(std::istream& inputStream, f64& ver, char& type, ConstellationEnum&
              char* glo_fcn, f64* glo_cpbias);
 
 /// read rinex observation at next epoch
-int readNextRnxObsB(std::istream& inputStream, double ver, TimeSystemEnum tsys,
-                    std::map<ConstellationEnum, std::map<int, CodeType>>& sysCodeTypes, int& flag, ObsList& obsList);
+i32 readNextRnxObsB(std::istream& inputStream, f64 ver, TimeSystemEnum tsys,
+                    std::map<ConstellationEnum, std::map<i32, CodeType>>& sysCodeTypes, i32& flag, ObsList& obsList);
 
 /// read rinex obsrvation file body
 i32 readRnxObs(std::istream& inputStream, f64 ver, TimeSystemEnum tsys,

@@ -64,7 +64,7 @@ TropSaasResult tropSAAS(utils::GTime time, const utils::CoordinateBlh* pos, f64 
   lat = fabs(lat);
   f64 ah[3];
   f64 aw[3];
-  for (int i = 0; i < 3; ++i) { /* year average           +    seasonal variation  */
+  for (auto i = 0; i < 3; ++i) { /* year average           +    seasonal variation  */
     ah[i] = interpc(coefNMF[i], lat) - interpc(coefNMF[i + 3], lat) * cosy;
     aw[i] = interpc(coefNMF[i + 6], lat);
   }
@@ -86,7 +86,7 @@ TropSaasResult tropSAAS(utils::GTime time, const utils::CoordinateBlh* pos, f64 
 namespace navp::sensors::gnss {
 
 AtmosphereHandler& AtmosphereHandler::set_time(const EpochUtc& tr) noexcept {
-  tr_ = &tr;
+  tr_ = std::addressof(tr);
   return *this;
 }
 

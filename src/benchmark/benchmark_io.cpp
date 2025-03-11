@@ -31,8 +31,8 @@ BENCHMARK(rtklib_rinex_obs)->Iterations(2)->MinWarmUpTime(1);
 static void nav_read_rinex(benchmark::State& state) {
   using namespace navp::sensors::gnss;
   using namespace navp::solution;
-  navp::GlobalConfig::initialize("/root/project/nav_cxx/bin/config.toml");
-  auto handler = navp::GlobalConfig::get_station_mt("default");
+  navp::GlobalConfig::initialize("/root/project/nav_cxx/config/config.toml");
+  auto handler = navp::GlobalConfig::get_station_mt("static_rover001");
   for (auto _ : state) {
     while (handler->update_record()) {
     }

@@ -6,9 +6,9 @@ namespace navp::sensors::gnss {
 
 /** polynomial interpolation by Neville's algorithm
  */
-f64 interpolate(const f64 *x, f64 *y, int n) {
-  for (int j = 1; j < n; j++) {
-    for (int i = 0; i < n - j; ++i) {
+f64 interpolate(const f64 *x, f64 *y, i32 n) {
+  for (auto j = 1; j < n; j++) {
+    for (auto i = 0; i < n - j; ++i) {
       y[i] = (x[i + j] * y[i] - x[i] * y[i + 1]) / (x[i + j] - x[i]);
     }
   }
@@ -54,13 +54,13 @@ auto PreciseEphSolver::solve_sv_pephpos(EpochUtc t, Sv sv) noexcept -> bool {
   }
   auto middle0 = peph_it;
   // find the appropriate interpolation interval
-  for (int i = 0; i < settings.nmax / 2; ++i) {
+  for (auto i = 0; i < settings.nmax / 2; ++i) {
     peph_it++;
     if (peph_it == peph_map.end()) {
       break;
     }
   }
-  for (int i = 0; i <= settings.nmax; ++i) {
+  for (auto i = 0; i <= settings.nmax; ++i) {
     peph_it--;
     if (peph_it == peph_map.begin()) {
       break;
@@ -72,7 +72,7 @@ auto PreciseEphSolver::solve_sv_pephpos(EpochUtc t, Sv sv) noexcept -> bool {
   std::vector<utils::NavVector3f64> p_vec(settings.nmax + 1);
   f64 c[2], s[3];
 
-  for (int i = 0; i < settings.nmax; ++i, begin_it++) {
+  for (auto i = 0; i < settings.nmax; ++i, begin_it++) {
     auto &peph = begin_it->second;
     if (peph.pos.isZero()) {
       return false;

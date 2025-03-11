@@ -1,7 +1,5 @@
 #pragma once
 
-#include <memory>
-
 #include "filter/filter.hpp"
 #include "io/stream.hpp"
 #include "sensors/gnss/analysis.hpp"
@@ -52,8 +50,7 @@ struct NAVP_EXPORT GnssRecord {
   std::unique_ptr<GnssObsRecord> obs;           // record of gnss observation
   std::unique_ptr<io::Fstream> obs_stream;      // obs stream
 
-  // update gnss record and return the new runtime info
-  // return true if update succeed, false if not
+  // return true if update observation succeed, false if not
   bool update();
 };
 
@@ -77,6 +74,8 @@ struct NAVP_EXPORT GnssSettings {
   };
 };
 
+// - Gnss Raw Observation Handler
+// - Each instance records the signal of a single satellite
 struct NAVP_EXPORT GnssRawObsHandler {
   const GObs* obs;                 // observation
   const EphemerisResult* sv_info;  // satellite information
@@ -91,10 +90,14 @@ struct NAVP_EXPORT GnssRawObsHandler {
 };
 
 // todo
+// Gnss un-difference Observation Handler
 struct NAVP_EXPORT UnDiffObsHandler {
   CombObsMeta meta;
   const GObs* obs;
 };
+
+// - Gnss Double-Difference Observation Handler
+// - Each instance records the double-difference observations of a single system
 
 class GnssPayload {
   friend class navp::GlobalConfig;

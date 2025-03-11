@@ -21,7 +21,7 @@ TEST_CASE("test format_num") {
 
 TEST_CASE("test logger") {
   nav_log(spdlog::level::debug, "this is a debug message");
-  nav_trace("this a trace message");  // can't be display
+  nav_trace("this a trace message");  // can't be displayed
   nav_debug("{}", "another debug message");
   nav_info("this is a information message");
   nav_warn("this is a warn message");

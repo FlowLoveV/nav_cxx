@@ -17,13 +17,12 @@ bool GnssRecord::update() {
 
 void GnssRuntimeInfo::update(const GnssRecord* record) {
   auto& [_epoch, _obs] = record->obs->latest();
-  epoch = _epoch;                                                   // epoch assgin
-  obs_map = &_obs;                                                  // observation map
-  avilable_sv = record->eph_solver->solve_sv_status(epoch, &_obs);  // available satellites
-  sv_map = record->eph_solver->quary_sv_status(epoch);              // satellites map
+  epoch = _epoch;                                                     // epoch assgin
+  obs_map = std::addressof(_obs);                                     // observation map
+  avilable_sv = record->eph_solver->solve_sv_status(epoch, obs_map);  // available satellites
+  sv_map = record->eph_solver->quary_sv_status(epoch);                // satellites map
 }
 
-// todo
 NAV_NODISCARD_UNUNSED auto GnssPayload::generate_rawobs_handler(const filter::MaskFilters* mask_filter) const
     -> std::vector<GnssRawObsHandler> {
   std::vector<GnssRawObsHandler> handler;
@@ -43,7 +42,7 @@ NAV_NODISCARD_UNUNSED auto GnssPayload::generate_rawobs_handler(const filter::Ma
     Sv sv = satellites_vector[i];
     if (!settings_->enabled(sv)) continue;  // filter unabled sv and system
     GObs* obs = runtime_info_->obs_map->at(sv).get();
-    auto sv_info = &runtime_info_->sv_map->at(sv);
+    auto sv_info = std::addressof(runtime_info_->sv_map->at(sv));
     if (mask_filter) {
       // if elevation mask filter not pass, skip
       if (sv_info->elevation != 0.0 && !mask_filter->apply(filter::ElevationItem(sv_info->elevation))) {
@@ -56,10 +55,8 @@ NAV_NODISCARD_UNUNSED auto GnssPayload::generate_rawobs_handler(const filter::Ma
     }
     std::vector<const Sig*> sig;
     obs->for_each_code([&](const Sig& _sig) {
-      if (settings_->enabled(sv, _sig) && _sig.is_valid()) {  // filter unabled code
-        if (mask_filter->apply(filter::SnrItem(_sig.snr))) {  // filter snr
-          sig.push_back(&_sig);
-        }
+      if (settings_->enabled(sv, _sig) && _sig.is_valid(mask_filter)) {  // filter unabled code and invalid signal
+        sig.push_back(std::addressof(_sig));
       }
     });
     if (sig.empty()) continue;  // if no sigs in this obs, skip
@@ -93,7 +90,7 @@ void GnssRawObsHandler::handle_signal_variance(RandomModelEnum model,
                                                GnssRandomHandler::EvaluateRandomOptions options) const noexcept {
   auto random_handler = GnssRandomHandler{}.set_model(model).set_options(options).set_sv_info(sv_info);
   for (auto _sig : sig) {
-    auto sig = random_handler.handle(_sig);
+    random_handler.handle(_sig);
   }
 }
 

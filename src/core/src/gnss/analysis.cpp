@@ -124,7 +124,7 @@ auto DDobsMeta::carrier(const GObs& base_obs_ref, const GObs& base_obs, const GO
 }
 
 void NdCombineObsMeta::get_sigs(const GObs& _obs) noexcept {
-  obs = &_obs;
+  obs = std::addressof(_obs);
   sig1 = _obs.find_code(code1);
   if (sig1 == nullptr) {
     nav_debug("{} {} missing {} observation", EpochUtc(_obs.time), _obs.sv, magic_enum::enum_name(code1));

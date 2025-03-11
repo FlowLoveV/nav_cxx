@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sensors/gnss/carrier.hpp"
-#include "sensors/gnss/enums.hpp"
 #include "sensors/gnss/sv.hpp"
 #include "utils/macro.hpp"
 
@@ -305,8 +304,8 @@ struct NAVP_EXPORT Constants {
   }
 
   // clang-format off
-  static constexpr FreTypeEnum code_to_freq_enum(ConstellationEnum sys, ObsCodeEnum code) noexcept {
-    switch (sys) {
+  static constexpr FreTypeEnum code_to_freq_enum(Constellation sys, ObsCodeEnum code) noexcept {
+    switch (sys.id) {
           case ConstellationEnum::GPS: return (details::Code2Freq::gps_code_freq(code));
           case ConstellationEnum::BDS: return (details::Code2Freq::bds_code_freq(code));
           case ConstellationEnum::GAL: return (details::Code2Freq::gal_code_freq(code));
@@ -318,11 +317,11 @@ struct NAVP_EXPORT Constants {
   }
   // clang-format on
 
-  inline static constexpr f64 code_to_freq(ConstellationEnum sys, ObsCodeEnum code) noexcept {
+  inline static constexpr f64 code_to_freq(Constellation sys, ObsCodeEnum code) noexcept {
     return frequency(code_to_freq_enum(sys, code));
   }
 
-  inline static constexpr f64 code_to_wave_length(ConstellationEnum sys, ObsCodeEnum code) noexcept {
+  inline static constexpr f64 code_to_wave_length(Constellation sys, ObsCodeEnum code) noexcept {
     return wave_length(code_to_freq_enum(sys, code));
   }
 };

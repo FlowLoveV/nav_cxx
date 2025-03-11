@@ -28,9 +28,8 @@ void handle_spp_signal_model(algorithm::WeightedLeastSquare<_Float_t>& wls, cons
   observation(obs_index) =
       sig->pseudorange - distance - parameter(clock_index) + Constants::CLIGHT * sv_info->dtsv - iono_err - trop_err;
   jacobian(obs_index, clock_index) = 1;
-  weight(obs_index, obs_index) =
-      sig->code_var * sig->code_var;  // set weight (notice : here is the observation variance, not weight,
-                                      // need to inverse the weight later
+  weight(obs_index, obs_index) = sig->code_var;  // set weight (notice : here is the observation variance, not weight,
+                                                 // need to inverse the weight later
 }
 
 // this function is used to handle the velocity model
@@ -54,90 +53,91 @@ void handle_spp_velocity_model(algorithm::WeightedLeastSquare<_Float_t>& wls,
   observation(doppler_index) = doppler - rate_row0 + Constants::CLIGHT * sv_info->fd_dtsv;
 }
 
-bool Spp::load_spp_payload() noexcept {
-  if (!rover_->update_record()) return false;
+void Spp::load_spp_payload() noexcept {
   (*this)
-      ._set_information(rover_)                                                     // first set information
-      ._set_obs_handler(rover_, task_config())                                      // set observation handler
-      ._set_solution(sol_.get())                                                    // set solution to output
-      ._set_atmosphere_error(_satellite_number())                                   // set atmosphere error
-      ._set_wls(3 + _clock_parameter_number(), _signal_number(), rover_->logger())  // set wls
-      ._handle_variance(rover_->settings()->random);                                // handle variance
-  return true;
+      ._set_information(rover_)                                                         // first set information
+      ._set_obs_handler(rover_)                                                         // set observation handler
+      ._set_solution(const_cast<PvtSolutionRecord*>(std::addressof(solution_.last())))  // set solution to output
+      ._set_atmosphere_error(satellite_number())                                        // set atmosphere error
+      ._set_wls(3 + clock_parameter_number(), signal_number(), rover_->logger())        // set wls
+      ._handle_variance(rover_->settings()->random);                                    // handle variance
 }
 
-SppPayload& SppPayload::_set_information(std::shared_ptr<GnssHandler>& handler) noexcept {
+__SppPayload& __SppPayload::_set_maskfilters(const TaskConfig& task_config) noexcept {
+  filters_ = task_config.filter().mask_filter.get();
+  return *this;
+}
+
+__SppPayload& __SppPayload::_set_information(std::shared_ptr<GnssHandler>& handler) noexcept {
   info_ = handler->update_runtime_info();
   return *this;
 }
 
-SppPayload& SppPayload::_set_obs_handler(std::shared_ptr<GnssHandler>& handler,
-                                         const TaskConfig& task_config) noexcept {
-  obs_handler_ =
-      std::make_unique<ObsHandlerType>(handler->generate_rawobs_handler(task_config.filter().mask_filter.get()));
+__SppPayload& __SppPayload::_set_obs_handler(std::shared_ptr<GnssHandler>& handler) noexcept {
+  obs_handler_ = std::make_unique<ObsHandlerType>(handler->generate_rawobs_handler(filters_));
   return *this;
 }
 
-SppPayload& SppPayload::_set_clock_map(const std::shared_ptr<GnssHandler>& handler) noexcept {
+__SppPayload& __SppPayload::_set_clock_map(const std::shared_ptr<GnssHandler>& handler) noexcept {
   u8 index = 0;
   std::ranges::for_each(handler->record()->obs->code_map() | std::views::keys,
                         [&](ConstellationEnum cons) { clock_map_[cons] = index++; });
   return *this;
 }
 
-EpochUtc SppPayload::_epoch() const noexcept { return info_->epoch; }
+EpochUtc __SppPayload::epoch() const noexcept { return info_->epoch; }
 
-bool SppPayload::_position_solvable() const noexcept {
-  return info_ && obs_handler_ && _signal_number() >= 3 + _clock_parameter_number();
+bool __SppPayload::_position_solvable() const noexcept {
+  return info_ && obs_handler_ && signal_number() >= 3 + clock_parameter_number();
 }
 
-bool SppPayload::_velocity_solvable() const noexcept { return info_ && obs_handler_ && _satellite_number() >= 3 + 1; }
+bool __SppPayload::_velocity_solvable() const noexcept { return info_ && obs_handler_ && satellite_number() >= 3 + 1; }
 
-u16 SppPayload::_satellite_number() const noexcept { return static_cast<u16>(obs_handler_->size()); }
+u16 __SppPayload::satellite_number() const noexcept { return static_cast<u16>(obs_handler_->size()); }
 
-u16 SppPayload::_signal_number() const noexcept {
+u16 __SppPayload::signal_number() const noexcept {
   u16 sig_num = 0;
   std::ranges::for_each(*obs_handler_, [&sig_num](const GnssRawObsHandler& handler) { sig_num += handler.sig.size(); });
   return sig_num;
 }
 
-void SppPayload::_handle_variance(sensors::gnss::RandomModelEnum model) const noexcept {
+void __SppPayload::_handle_variance(sensors::gnss::RandomModelEnum model) const noexcept {
   std::ranges::for_each(*obs_handler_,
                         [model](const GnssRawObsHandler& handler) { handler.handle_signal_variance(model); });
 }
 
-SppPayload& SppPayload::_set_atmosphere_error(u16 number) noexcept {
+__SppPayload& __SppPayload::_set_atmosphere_error(u16 number) noexcept {
   trop_error_ = std::make_unique<AtmosphereError>(number, 0);
   iono_error_ = std::make_unique<AtmosphereError>(number, 0);
   return *this;
 }
 
-SppPayload& SppPayload::_set_wls(int parameter_size, int observation_size,
-                                 std::shared_ptr<spdlog::logger> logger) noexcept {
+__SppPayload& __SppPayload::_set_wls(u32 parameter_size, u32 observation_size,
+                                     std::shared_ptr<spdlog::logger> logger) noexcept {
   wls_ = std::make_unique<algorithm::WeightedLeastSquare<f64>>(parameter_size, observation_size, logger);
   wls_->parameter().block(0, 0, 3, 1) = sol_->position;  // preset position
   return *this;
 }
 
-SppPayload& SppPayload::_set_solution(PvtSolutionRecord* sol) noexcept {
+__SppPayload& __SppPayload::_set_solution(PvtSolutionRecord* sol) noexcept {
   sol_ = sol;
   sol_->time = info_->epoch;  // set solution time
   return *this;
 }
 
-auto SppPayload::_raw_obs_at(u16 index) const noexcept -> const sensors::gnss::GnssRawObsHandler& {
+auto __SppPayload::_raw_obs_at(u16 index) const noexcept -> const sensors::gnss::GnssRawObsHandler& {
   return obs_handler_->at(index);
 }
 
-auto SppPayload::_trop_error_at(u16 index) const noexcept -> f64 { return trop_error_->at(index); }
+auto __SppPayload::_trop_error_at(u16 index) const noexcept -> f64 { return trop_error_->at(index); }
 
-auto SppPayload::_iono_error_at(u16 index) const noexcept -> f64 { return iono_error_->at(index); }
+auto __SppPayload::_iono_error_at(u16 index) const noexcept -> f64 { return iono_error_->at(index); }
 
-u8 SppPayload::_clock_parameter_number() const noexcept { return clock_map_.size(); }
+u8 __SppPayload::clock_parameter_number() const noexcept { return clock_map_.size(); }
 
-u8 SppPayload::_clock_parameter_index(sensors::gnss::Sv sv) const noexcept { return clock_map_.at(sv.system()); }
+u8 __SppPayload::clock_parameter_index(sensors::gnss::Sv sv) const noexcept { return clock_map_.at(sv.system()); }
 
-void SppPayload::_calculate_atmosphere_error(TropModelEnum trop, IonoModelEnum iono) noexcept {
+void __SppPayload::_calculate_atmosphere_error(TropModelEnum trop, IonoModelEnum iono) noexcept {
   for (u16 sat_index = 0; sat_index < obs_handler_->size(); ++sat_index) {
     auto& obs = obs_handler_->at(sat_index);
     obs.sv_info->update_ea_from(sol_->position);                  // update satellite elevation and azimuth
@@ -146,19 +146,19 @@ void SppPayload::_calculate_atmosphere_error(TropModelEnum trop, IonoModelEnum i
   }
 }
 
-f64 SppPayload::_position_iter_once() noexcept {
+f64 __SppPayload::_position_iter_once() noexcept {
   wls_->correct();
   sol_->position = wls_->parameter().block(0, 0, 3, 1);
   sol_->blh = sol_->position.to_blh();
   return wls_->parameter_correction().block(0, 0, 3, 1).norm();
 }
 
-f64 SppPayload::_velocity_iter_once() noexcept {
+f64 __SppPayload::_velocity_iter_once() noexcept {
   wls_->correct();
   return wls_->parameter_correction().block(0, 0, 3, 1).norm();
 }
 
-void SppPayload::_reset() noexcept {
+void __SppPayload::_reset() noexcept {
   obs_handler_.reset();
   iono_error_.reset();
   trop_error_.reset();
@@ -167,7 +167,7 @@ void SppPayload::_reset() noexcept {
   sol_ = nullptr;
 }
 
-void SppPayload::_position_evaluate() noexcept {
+void __SppPayload::_position_evaluate() noexcept {
   wls_->evaluate();
   // position
   sol_->position = wls_->parameter().block(0, 0, 3, 1);
@@ -191,7 +191,7 @@ void SppPayload::_position_evaluate() noexcept {
   wls_.reset();  // reset wls
 }
 
-void SppPayload::_velocity_evaluate() noexcept {
+void __SppPayload::_velocity_evaluate() noexcept {
   wls_->evaluate();
   // velocity
   sol_->velocity = wls_->parameter().block(0, 0, 3, 1);
@@ -203,20 +203,20 @@ void SppPayload::_velocity_evaluate() noexcept {
   wls_.reset();  // reset wls
 }
 
-Spp::Spp(std::string_view cfg_path, bool enabled_mt)
-    : Task(cfg_path), rover_(config_.rover_station(enabled_mt)), sol_(std::make_unique<PvtSolutionRecord>()) {
-  this->_set_clock_map(rover_);
+Spp::Spp(const TaskConfig& task_config, bool enabled_mt)
+    : rover_(task_config.rover_station(enabled_mt)), solution_(task_config.solution().capacity) {
+  this->_set_clock_map(rover_)._set_maskfilters(task_config);
 }
 
-auto Spp::solution() const noexcept -> const PvtSolutionRecord* { return sol_.get(); }
+auto Spp::solution() const noexcept -> const PvtSolutionRecord* { return std::addressof(solution_.last()); }
 
 void Spp::model_spp_position() noexcept {
   u16 sig_index = 0;  // signal index
   auto& wls = _wls();
-  for (u16 sat_index = 0; sat_index < _satellite_number(); ++sat_index) {
+  for (u16 sat_index = 0; sat_index < satellite_number(); ++sat_index) {
     auto& obs = _raw_obs_at(sat_index);
     auto sv_info = obs.sv_info;
-    auto clock_index = _clock_parameter_index(sv_info->sv);
+    auto clock_index = clock_parameter_index(sv_info->sv);
     for (auto sig : obs.sig) {
       handle_spp_signal_model(wls, sig, sv_info, _trop_error_at(sat_index), _iono_error_at(sat_index), sig_index++,
                               3 + clock_index);
@@ -227,7 +227,7 @@ void Spp::model_spp_position() noexcept {
 
 void Spp::model_spp_velocity() noexcept {
   if (!_position_solvable()) return;
-  auto sat_nums = _satellite_number();
+  auto sat_nums = satellite_number();
   std::vector<f64> doppler(sat_nums, 0);
   for (u16 sat_index = 0; sat_index < sat_nums; ++sat_index) {
     u8 dopper_obs_num = 0;
@@ -241,7 +241,7 @@ void Spp::model_spp_velocity() noexcept {
   _set_wls(4, sat_nums, rover_->logger());
   for (u16 sat_index = 0; sat_index < sat_nums; ++sat_index) {
     auto sv_info = _raw_obs_at(sat_index).sv_info;
-    handle_spp_velocity_model(_wls(), sol_->position, sv_info, doppler[sat_index], sat_index);
+    handle_spp_velocity_model(_wls(), solution_.last().position, sv_info, doppler[sat_index], sat_index);
   }
   _wls().weight().setIdentity();  // set weight to identity matrix
 }
@@ -275,12 +275,21 @@ bool Spp::solve_velocity() noexcept {
   return true;
 }
 
-bool Spp::next_solution() noexcept {
-  if (!load_spp_payload()) return false;
+bool Spp::load_next_epoch() noexcept {
+  solution_.push();
+  return rover_->update_record();
+}
+
+bool Spp::solve() noexcept {
+  load_spp_payload();
   bool done = false;
   done = solve_position();
   done = solve_velocity();
   return done;
 }
+
+auto Spp::station() const noexcept -> const GnssHandler* { return rover_.get(); }
+
+SppServer::SppServer(std::string_view cfg_path, bool enabled_mt) : Task(cfg_path), Spp(task_config(), enabled_mt) {}
 
 }  // namespace navp::solution

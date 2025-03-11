@@ -23,12 +23,14 @@ mode = 5
 #   FactorGraphOptimization = 2,
 algorithm = 0
 
-base = "base001"
-
-rover = "default"
+base = "static_base001"
+rover = "static_rover001"
+logger = "main"
+capacity = 5              # solution capacity
+ratio = 2.0               # ambiguity resolution ratio
 
 [output]
-dir = "/root/project/nav_cxx/ouut"
+dir = "/root/project/nav_cxx/output"
 
 
 [filter]

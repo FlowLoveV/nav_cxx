@@ -31,25 +31,25 @@ namespace navp::io::sp3 {
 // read function
 bool readsp3(std::istream& fileStream,     ///< stream to read content from
              std::vector<Peph>& pephList,  ///< vector of precise ephemerides for one epoch
-             int opt,                      ///< options options (1: only observed + 2: only predicted + 4: not combined)
+             i32 opt,                      ///< options options (1: only observed + 2: only predicted + 4: not combined)
              TimeSystemEnum& tsys,         ///< time system
              f64* bfact)                   ///< bfact values from header
 {
   GTime time = {};
 
   // keep track of file number
-  static int index = 0;
+  static i32 index = 0;
   index++;
 
-  int hashCount = 0;
-  int cCount = 0;
-  int fCount = 0;
+  i32 hashCount = 0;
+  i32 cCount = 0;
+  i32 fCount = 0;
 
   bool epochFound = false;
   std::string line;
   while (fileStream) {
     // return early when an epoch is complete
-    int peek = fileStream.peek();
+    i32 peek = fileStream.peek();
     if (peek == '*' && epochFound) {
       return true;
     }
@@ -77,7 +77,7 @@ bool readsp3(std::istream& fileStream,     ///< stream to read content from
       bool pred_c = false;
 
       ConstellationEnum sys = code2sys(buff[1]);
-      int prn = (int)str2num(buff, 2, 2);
+      i32 prn = (i32)str2num(buff, 2, 2);
 
       Sv sv{.prn = (navp::u8)prn, .constellation = {.id = sys}};
       if (!sv) continue;
@@ -94,7 +94,7 @@ bool readsp3(std::istream& fileStream,     ///< stream to read content from
       }
 
       // positions/rates
-      for (int j = 0; j < 3; j++) {
+      for (i32 j = 0; j < 3; j++) {
         /* read option for predicted value */
         if (j < 3 && (opt & 1) && pred_p) continue;
         if (j < 3 && (opt & 2) && !pred_p) continue;
@@ -131,7 +131,7 @@ bool readsp3(std::istream& fileStream,     ///< stream to read content from
       }
 
       // clocks / rates
-      for (int j = 3; j < 4; j++) {
+      for (i32 j = 3; j < 4; j++) {
         /* read option for predicted value */
         if (j == 3 && (opt & 1) && pred_c) continue;
         if (j == 3 && (opt & 2) && !pred_c) continue;
@@ -182,7 +182,7 @@ Quick and dirty read of the velocities
 @todo change later.
     */
     if (buff[0] == 'V') {
-      for (int i = 0; i < 3; ++i) {
+      for (i32 i = 0; i < 3; ++i) {
         f64 val = str2num(buff, 4 + i * 14, 14);
         pephList.back().vel[i] = val * 0.1;
       }
@@ -193,7 +193,7 @@ Quick and dirty read of the velocities
       if (hashCount == 1) {
         // first line is time and type
         // 				type = buff[2];
-        int error = str2time(buff, 3, 28, time);  // time system unknown at beginning but does not matter
+        i32 error = str2time(buff, 3, 28, time);  // time system unknown at beginning but does not matter
         if (error) return false;
 
         continue;

@@ -24,6 +24,10 @@ struct NAVP_EXPORT EphemerisResult {
   f64 dt_trans, dtsv, fd_dtsv;           // signal transmission time(s) 、 clock bias(s) 、 clock speed
   mutable f64 elevation{0}, azimuth{0};  // satellite elevation、azimuth （rad)
 
+  struct ViewVector {
+    f64 x, y, z, distance;
+  };
+
   void rotate_correct() noexcept;
 
   void update_ea_from(const utils::CoordinateXyz& pos) const noexcept;
@@ -31,6 +35,8 @@ struct NAVP_EXPORT EphemerisResult {
   std::string format_as_string() const noexcept;
 
   void view_vector_to(const utils::CoordinateXyz& station_pos, f64& x, f64& y, f64& z, f64& distance) const noexcept;
+
+  auto view_vector_to(const utils::CoordinateXyz& station_pos) const noexcept -> ViewVector;
 };
 
 // features:
@@ -104,7 +110,7 @@ class NAVP_EXPORT EphemerisSolver {
 
   std::vector<const Navigation*> nav_vec_;
 
-  void erase() noexcept;
+  void trim_storage() noexcept;
 
   std::unique_ptr<TimeSvMap> sv_status_ = nullptr;  // sv status
   i32 storage_ = -1;                                // satellite status storage

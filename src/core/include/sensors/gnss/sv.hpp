@@ -14,6 +14,12 @@ namespace navp::sensors::gnss {
 struct NAVP_EXPORT Constellation {
   static Result<Constellation, GnssParseConstellationError> form_str(const char* str);
 
+  inline operator ConstellationEnum() const noexcept { return id; }
+
+  inline Constellation operator=(ConstellationEnum cons) noexcept { return Constellation{.id = cons}; }
+
+  u8 max_prn() const noexcept;
+
   bool is_sbas() const;
 
   bool is_mixed() const;
@@ -43,15 +49,15 @@ struct NAVP_EXPORT Sv {
 
   operator bool() const noexcept;
 
-  ConstellationEnum system() const noexcept;
+  Constellation system() const noexcept;
 
-  ConstellationEnum& system() noexcept;
+  Constellation& system() noexcept;
 
   u8 prn;
   Constellation constellation;
 };
 
-std::vector<Sv> get_sv_sats(ConstellationEnum cons);
+std::vector<Sv> get_sv_sats(Constellation cons);
 
 }  // namespace navp::sensors::gnss
 
@@ -107,6 +113,6 @@ struct NAVP_EXPORT std::formatter<navp::sensors::gnss::Sv, char> {
 template <>
 struct NAVP_EXPORT std::hash<navp::sensors::gnss::Sv> {
   size_t operator()(const navp::sensors::gnss::Sv& sv) const {
-    return hash<navp::u8>()(sv.prn) ^ (hash<navp::u8>()((navp::u8)(sv.system())) << 1);
+    return hash<navp::u8>()(sv.prn) ^ (hash<navp::u8>()((navp::u8)(sv.system().id)) << 1);
   }
 };

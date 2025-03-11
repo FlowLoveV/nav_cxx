@@ -13,6 +13,9 @@
 namespace navp::io::rinex {
 class RinexStream;
 }
+namespace navp::filter {
+class MaskFilters;
+}
 
 namespace navp::sensors::gnss {
 
@@ -26,7 +29,11 @@ using CodeMap = std::unordered_map<ConstellationEnum, std::unordered_set<ObsCode
 struct NAVP_EXPORT RawSig {
   enum ValidIndicator : u8 {
     Valid = 0,
-    CycleSlip = 1,
+    MissingPseudorange = 0b1,
+    MissingCarrierPhase = 0b10,
+    MissingDoppler = 0b100,
+    MissingSnr = 0b1000,
+    CycleSlip,
   };
 
   ObsCodeEnum code = ObsCodeEnum::NONE;          // Reported code type
@@ -40,7 +47,7 @@ struct NAVP_EXPORT RawSig {
 
   inline bool operator<(const RawSig& b) const { return (code < b.code); }
 
-  inline bool is_valid() const noexcept { return valid == Valid; }
+  bool is_valid(const filter::MaskFilters* mask_filter = nullptr) const noexcept;
 
   inline bool is_cycle_slip() const noexcept { return valid == CycleSlip; }
 };
@@ -70,17 +77,17 @@ struct NAVP_EXPORT GObs {
   u8 code_count() const noexcept;
 
   template <typename Func>
-  void for_each_frequency(Func&& func) {
-    for (auto&& [_, sigs] : sigs_list) {
-      std::invoke(std::forward<Func>(func), std::forward<std::list<Sig>>(sigs));
+  void for_each_frequency(this const auto& self, Func&& func) {
+    for (auto&& [_, sigs] : self.sigs_list) {
+      std::invoke(std::forward<Func>(func), sigs);
     }
   }
 
   template <typename Func>
-  void for_each_code(Func&& func) {
-    for (auto&& [_, sigs] : sigs_list) {
+  void for_each_code(this const auto& self, Func&& func) {
+    for (auto&& [_, sigs] : self.sigs_list) {
       for (auto&& sig : sigs) {
-        std::invoke(std::forward<Func>(func), std::forward<Sig>(sig));
+        std::invoke(std::forward<Func>(func), sig);
       }
     }
   }
@@ -159,7 +166,7 @@ class NAVP_EXPORT GnssObsRecord : public io::Record {
   // add obs list and update obs_map
   void add_obs_list(ObsList&& obs_list) noexcept;
   // erase
-  void erase() noexcept;
+  void trim_storage() noexcept;
 
   i32 storage_ = -1;                        // observation storage, when storage_ < 0, meaning limitless
   u32 frequceny_ = 1;                       // observation frequency

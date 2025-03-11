@@ -7,8 +7,8 @@ namespace navp::sensors::gnss {
 namespace details {
 
 // stardand random model
-constexpr f32 stardand_pseudorange_var = 1.0f;
-constexpr f32 stardand_carrier_var = 0.02f;
+constexpr f32 stardand_pseudorange_var = 1.0f * 1.0f;
+constexpr f32 stardand_carrier_var = 0.02f * 0.02f;
 
 // elevation based random model
 

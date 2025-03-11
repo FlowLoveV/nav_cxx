@@ -73,7 +73,7 @@ ostream& operator<<(ostream& stream, const Duration& duration) {
  * return : converted number (0.0:error)
  */
 f64 str2num(const char* s, i32 i, i32 n) {
-  double value;
+  f64 value;
   char str[256], *p = str;
 
   if (i < 0 || (i32)strlen(s) < i || (i32)sizeof(str) - 1 < n) return 0.;

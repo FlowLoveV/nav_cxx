@@ -15,7 +15,7 @@ class NAVP_EXPORT RinexRecord {
   ~RinexRecord();
 
   /// get version of rinex file
-  double version() const noexcept;
+  f64 version() const noexcept;
 
   /// get system of rinex file
   ConstellationEnum system() const noexcept;

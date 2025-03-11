@@ -83,8 +83,17 @@ class NAVP_EXPORT NavConfigManger : public toml::parse_result {
   NAV_NODISCARD_ERROR_HANDLE auto rover_station(bool enabled_mt = false) const noexcept
       -> std::shared_ptr<sensors::gnss::GnssHandler>;
 
+  // logger
+  NAV_NODISCARD_ERROR_HANDLE auto logger() const noexcept -> std::shared_ptr<spdlog::logger>;
+
+  // capacity
+  NAV_NODISCARD_ERROR_HANDLE auto capacity() const noexcept -> i32;
+
   // filters
   NAV_NODISCARD_ERROR_HANDLE auto filters() const noexcept -> std::vector<std::string_view>;
+
+  // ratio limit
+  NAV_NODISCARD_ERROR_HANDLE auto ratio() const noexcept -> f32;
 
   // output stream
   NAV_NODISCARD_ERROR_HANDLE auto output_dir() const noexcept -> std::string;
@@ -116,13 +125,20 @@ class NAVP_EXPORT GlobalConfig {
  private:
   GlobalConfig();
 
-  static solution::NavConfigManger& get_instance() noexcept;
+  static solution::NavConfigManger& _get_instance() noexcept;
 
-  static std::unique_ptr<sensors::gnss::GnssPayload> get_station_handler(std::string_view station_name) noexcept;
+  static std::unique_ptr<sensors::gnss::GnssPayload> _get_station_handler(std::string_view station_name) noexcept;
+
+  static std::shared_ptr<spdlog::logger> _get_logger(std::string_view logger_name) noexcept;
 
   static std::string config_path_;
   static std::once_flag flag_;
   static solution::NavConfigManger config_;
+  static std::mutex mutex_;
+
+  // map of station handler
+  static std::unordered_map<std::string, std::shared_ptr<sensors::gnss::GnssHandler>> st_station_handler_map_;
+  static std::unordered_map<std::string, std::shared_ptr<sensors::gnss::GnssHandler>> mt_station_handler_map_;
 };
 
 }  // namespace navp

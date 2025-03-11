@@ -294,7 +294,7 @@ struct Duration {
       sec = static_cast<i64>(seconds);
     } else {
       f128 integral;
-      f128 fractional = std::modf(static_cast<double>(seconds), &integral);
+      f128 fractional = std::modf(static_cast<f64>(seconds), &integral);
       sec = static_cast<i64>(integral);
       atto = static_cast<i64>(fractional * 1e18);
     }

@@ -7,8 +7,4 @@ namespace navp::sensors::gnss {
 
 class CycleSlip;
 
-class CycleSlip {
-  EpochUtc time;
-};
-
 }  // namespace navp::sensors::gnss

@@ -8,13 +8,13 @@
 using navp::i32;
 using namespace navp::solution;
 
-class MySpp : public Spp {
+class MySpp : public SppServer {
  public:
-  using Spp::Spp;
+  using SppServer::SppServer;
 
   virtual ~MySpp() override = default;
 
-  void set_file(std::string_view name) {
+  void set_output_file(std::string_view name) {
     auto full_name = std::format("{}/{}", task_config().output().output_dir, name);
     file_ = std::make_unique<navp::io::custom::SolutionStream>(full_name, std::ios::out);
   }
@@ -27,7 +27,7 @@ class MySpp : public Spp {
   virtual void action() override {
     auto& ref = *rover_->station_info()->ref_pos.get();
     while (true) {
-      if (next_solution()) {
+      if (load_next_epoch() && solve()) {
         auto sol = solution();
         sol->put_record(*file_);
         navp::utils::NavVector3f64 error = sol->position.coord() - ref.coord();
@@ -45,10 +45,10 @@ class MySpp : public Spp {
 
 i32 main(i32 argc, char* argv[]) {
   cpptrace::register_terminate_handler();
-  navp::GlobalConfig::initialize("/root/project/nav_cxx/bin/config.toml");  // initialize config
+  navp::GlobalConfig::initialize("/root/project/nav_cxx/config/config.toml");  // initialize config
   std::string_view config_path("/root/project/nav_cxx/config/rtk_config.toml");
   MySpp spp(config_path);
-  spp.set_file("spp.sol");
+  spp.set_output_file("spp.sol");
   spp.run();
   return 0;
 }

@@ -1,0 +1,76 @@
+#!!! read me !!!
+
+# --------- Stations Configuration  ----------- #
+
+# fiexd                         false        true
+# type                          0-rover      1-base
+# source                        0-file       1-network          2-serial port
+# reference_position_style      0-XYZ        1-BLH
+# Iono Model                    0-none       1-measurement      2-bspline          3-spherical caps   4-spherical harmonics  5-local
+# Trop Model                    0-saas       1-sbas             2-vmf3             3-gpt2             4-cssr
+# Random Model                  0-standard   1-elevation        2-snr              3-custom
+
+# --------- Stations Configuration  ----------- #
+
+
+# --------- Logger Configuration  ----------- #
+
+# level  0-trace 1-debug 2-info 3-warn 4-err 5-critical 6-off
+
+# --------- Logger Configuration  ----------- #
+
+#!!! read me !!!
+
+# this is a file source station example
+[stations.static_rover001]
+type = 0
+source = 0
+fixed = true
+reference_position_style = 0
+reference_position = [-2267804.5263, 5009342.3723, 3220991.8632]
+capacity = 5 # gnss observation capacity
+frequency = 1
+navigation = [
+    "/root/project/nav_cxx/test_resources/SPP/NovatelOEM20211114-01.nav",
+    "/root/project/nav_cxx/test_resources/SPP/NovatelOEM20211114-01.21N",
+]
+observation = "/root/project/nav_cxx/test_resources/SPP/NovatelOEM20211114-01-GPS&BDS-Double.obs"
+trop = 0
+iono = 0
+random = 0
+enabled_codes = {}
+logger_name = "main" # register logger for this station
+
+[stations.static_base001]
+type = 1
+source = 0
+fiexed = true
+reference_position_style = 0
+reference_position = [-2267804.5263, 5009342.3723, 3220991.8632]
+capacity = 5
+frequency = 1
+navigation = ["/root/project/nav_cxx/test_resources/RTK/01/Base-Double.nav"]
+observation = "/root/project/nav_cxx/test_resources/RTK/01/Base-Double.obs"
+trop = 0
+iono = 0
+random = 0
+enabled_codes = {}
+logger_name = "main"
+
+
+[logger.main]
+name = "main" # should be same with logger.###
+flush_on = 4
+enable_console = true
+console_level = 3
+console_pattern = "[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] [thread %t] %v"
+file = [
+    { enable_multithread = false, level = 2, pattern = "[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t] [%n] %v", path = "/root/project/nav_cxx/log/nav/nav.log", type = 0 },
+]
+
+[solution_format.default]
+angle_type = "DEG"      # DMS/RAD/DEG
+coordinate_type = "XYZ" # XYZ/BLH
+time_type = "UTC"       # UTC/GPST/BDT
+seperator = " "         # seperator between fields
+show_details = false    # show details of solution

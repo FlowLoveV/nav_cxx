@@ -23,9 +23,11 @@ REGISTER_CONFIG_ITEM(ExecutorCfg, "executor");    // std::string
 
 // solution config
 REGISTER_CONFIG_ITEM(SolutionCfg, "solution");
-REGISTER_CONFIG_ITEM(SolutionModeCfg, "mode");    // integer
-REGISTER_CONFIG_ITEM(SolutionBaseCfg, "base");    // std::string
-REGISTER_CONFIG_ITEM(SolutionRoverCfg, "rover");  // std::string
+REGISTER_CONFIG_ITEM(SolutionModeCfg, "mode");      // integer
+REGISTER_CONFIG_ITEM(SolutionBaseCfg, "base");      // std::string
+REGISTER_CONFIG_ITEM(SolutionRoverCfg, "rover");    // std::string
+REGISTER_CONFIG_ITEM(SolutionCapacity, "capacity")  // integer
+REGISTER_CONFIG_ITEM(SolutionRatio, "ratio")        // float
 
 // output config
 REGISTER_CONFIG_ITEM(OutputCfg, "output");
@@ -330,7 +332,7 @@ auto get_logger(const toml::node* node) noexcept -> ConfigResult<std::shared_ptr
       for (const auto& file_log : *file_log_array) {
         if (auto _file = file_log.as_table()) {
           FileLoggerConfig file_logger_config;
-          auto file_node = &file_log;
+          auto file_node = std::addressof(file_log);
           file_logger_config.level =
               get_integer_as<level_enum>(get_child_node(file_node, LoggerFileLevelCfg).unwrap_throw()).unwrap_throw();
           file_logger_config.enable_multithread =
@@ -406,9 +408,25 @@ auto NavConfigManger::rover_station(bool enabled_mt) const noexcept -> std::shar
   }
 }
 
+auto NavConfigManger::logger() const noexcept -> std::shared_ptr<spdlog::logger> {
+  auto node = get_node(this, SolutionCfg, GlobalLoggerCfg).unwrap_throw();
+  auto logger_name = solution::get_as<std::string>(node).unwrap_throw();
+  return GlobalConfig::get_logger(logger_name);
+}
+
+auto NavConfigManger::capacity() const noexcept -> i32 {
+  auto node = get_node(this, SolutionCfg, SolutionCapacity).unwrap_throw();
+  return get_integer_as<i32>(node).unwrap_throw();
+}
+
 auto NavConfigManger::filters() const noexcept -> std::vector<std::string_view> {
   auto node = get_node(this, FilterCfg, FilterItemsCfg);
   return get_table_as<std::string_view>(node.unwrap_throw()).unwrap_throw();
+}
+
+auto NavConfigManger::ratio() const noexcept -> f32 {
+  auto node = get_node(this, SolutionCfg, SolutionRatio).unwrap_throw();
+  return static_cast<f32>(solution::get_as<double>(node).unwrap_throw());
 }
 
 auto NavConfigManger::output_dir() const noexcept -> std::string {
@@ -423,19 +441,23 @@ namespace navp {
 using namespace solution;
 using namespace sensors::gnss;
 
+// initialize static members
 std::string GlobalConfig::config_path_;
 std::once_flag GlobalConfig::flag_;
 NavConfigManger GlobalConfig::config_;
+std::mutex GlobalConfig::mutex_;
+std::unordered_map<std::string, std::shared_ptr<sensors::gnss::GnssHandler>> GlobalConfig::st_station_handler_map_;
+std::unordered_map<std::string, std::shared_ptr<sensors::gnss::GnssHandler>> GlobalConfig::mt_station_handler_map_;
 
 void GlobalConfig::initialize(std::string config_path) noexcept { config_path_ = config_path; }
 
-solution::NavConfigManger& GlobalConfig::get_instance() noexcept {
+solution::NavConfigManger& GlobalConfig::_get_instance() noexcept {
   std::call_once(flag_, [&]() { config_ = NavConfigManger(config_path_); });
   return config_;
 }
 
-std::unique_ptr<GnssPayload> GlobalConfig::get_station_handler(std::string_view station_name) noexcept {
-  auto& config = get_instance();
+std::unique_ptr<GnssPayload> GlobalConfig::_get_station_handler(std::string_view station_name) noexcept {
+  auto& config = _get_instance();
   auto station_node = get_node(&config_, GlobalStationCfg, station_name).unwrap_throw();
   auto station = std::make_unique<GnssPayload>();
 
@@ -444,7 +466,7 @@ std::unique_ptr<GnssPayload> GlobalConfig::get_station_handler(std::string_view 
    */
   {
     auto logger_node = get_child_node(station_node, StationLoggerCfg).unwrap_throw();
-    station->logger_ = get_logger(get_as<std::string>(logger_node).unwrap_throw());
+    station->logger_ = _get_logger(get_as<std::string>(logger_node).unwrap_throw());
   }
 
   auto& logger = station->logger_;
@@ -558,20 +580,44 @@ std::unique_ptr<GnssPayload> GlobalConfig::get_station_handler(std::string_view 
 }
 
 std::shared_ptr<sensors::gnss::GnssHandler> GlobalConfig::get_station_st(std::string_view station_name) noexcept {
-  auto station_handler = get_station_handler(station_name);
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (auto it = st_station_handler_map_.find(station_name.data()); it != st_station_handler_map_.end()) {
+    return it->second;
+  }
+  auto station_handler = _get_station_handler(station_name);
   auto gnss_st = std::make_shared<GnssSt>(std::move(*station_handler));
+  st_station_handler_map_[station_name.data()] = gnss_st;
   return gnss_st;
 }
 
 std::shared_ptr<sensors::gnss::GnssHandler> GlobalConfig::get_station_mt(std::string_view station_name) noexcept {
-  auto station_handler = get_station_handler(station_name);
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (auto it = mt_station_handler_map_.find(station_name.data()); it != mt_station_handler_map_.end()) {
+    return it->second;
+  }
+  auto station_handler = _get_station_handler(station_name);
   auto gnss_mt = std::make_shared<GnssMt>(std::move(*station_handler));
+  mt_station_handler_map_[station_name.data()] = gnss_mt;
   return gnss_mt;
 }
 
 std::shared_ptr<spdlog::logger> GlobalConfig::get_logger(std::string_view logger_name) noexcept {
-  auto logger_node = get_node(&get_instance(), GlobalLoggerCfg, logger_name).unwrap_throw();
-  return solution::get_logger(logger_node).unwrap_throw();
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (auto logger = spdlog::get(logger_name.data())) {
+    return logger;
+  }
+  auto logger_node = get_node(&_get_instance(), GlobalLoggerCfg, logger_name).unwrap_throw();
+  auto logger = solution::get_logger(logger_node).unwrap_throw();
+  return logger;
+}
+
+std::shared_ptr<spdlog::logger> GlobalConfig::_get_logger(std::string_view logger_name) noexcept {
+  if (auto logger = spdlog::get(logger_name.data())) {
+    return logger;
+  }
+  auto logger_node = get_node(&_get_instance(), GlobalLoggerCfg, logger_name).unwrap_throw();
+  auto logger = solution::get_logger(logger_node).unwrap_throw();
+  return logger;
 }
 
 }  // namespace navp
